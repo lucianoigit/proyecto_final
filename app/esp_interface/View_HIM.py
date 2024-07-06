@@ -3,17 +3,23 @@ from PIL import Image, ImageTk
 import time
 import json
 import os
+
+from matplotlib import pyplot as plt
 from app.abstracts.ICommunication import CommunicationInterface
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from app.abstracts.IProcessing import ProcessingInterface
 import sys
 
+from app.services.reports_service import ReportsService
+
 class View(ctk.CTk):
-    def __init__(self, communication_service: CommunicationInterface, processing_service: ProcessingInterface):
+    def __init__(self, communication_service: CommunicationInterface, processing_service: ProcessingInterface, reports_service: ReportsService):
         super().__init__()
         self.title("Delta Robot")
         self.geometry("800x600")
         self.communication_service = communication_service
         self.processing_service = processing_service
+        self.reports_service = reports_service
         self.mtx = None
         self.dist = None
         self.calibracion = False
@@ -74,8 +80,33 @@ class View(ctk.CTk):
         reports_panel.grid_columnconfigure(0, weight=1)
         reports_panel.grid_rowconfigure(0, weight=1)
 
-        self.reports_text_box = ctk.CTkTextbox(reports_panel, state="disabled", fg_color="#5e5e5e", text_color="#ffffff")
-        self.reports_text_box.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
+        self.reports_scrollable_frame = ctk.CTkScrollableFrame(reports_panel, fg_color="#3e3e3e")
+        self.reports_scrollable_frame.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
+
+        filter_category_button = ctk.CTkButton(reports_panel, text="Filtrar por Categoría", command=self.filter_by_category, fg_color="#5e5e5e", hover_color="#7e7e7e", text_color="#ffffff")
+        filter_category_button.grid(row=1, column=0, padx=10, pady=10, sticky="ew")
+
+        filter_confidence_button = ctk.CTkButton(reports_panel, text="Filtrar por Confianza", command=self.filter_by_confidence, fg_color="#5e5e5e", hover_color="#7e7e7e", text_color="#ffffff")
+        filter_confidence_button.grid(row=1, column=1, padx=10, pady=10, sticky="ew")
+
+        delete_button = ctk.CTkButton(reports_panel, text="Eliminar Seleccionado", command=self.delete_selected, fg_color="#5e5e5e", hover_color="#7e7e7e", text_color="#ffffff")
+        delete_button.grid(row=1, column=2, padx=10, pady=10, sticky="ew")
+
+        edit_button = ctk.CTkButton(reports_panel, text="Editar Seleccionado", command=self.edit_selected, fg_color="#5e5e5e", hover_color="#7e7e7e", text_color="#ffffff")
+        edit_button.grid(row=1, column=3, padx=10, pady=10, sticky="ew")
+
+        # Paneles de estadísticas
+        stats_panel = ctk.CTkFrame(reports_panel, fg_color="#3e3e3e")
+        stats_panel.grid(row=0, column=2, sticky="nsew", padx=20, pady=20)
+        
+        self.total_residues_label = ctk.CTkLabel(stats_panel, text="", fg_color="#5e5e5e", text_color="#ffffff")
+        self.total_residues_label.grid(row=0, column=0, padx=10, pady=10, sticky="ew")
+
+        self.category_pie_chart = ctk.CTkLabel(stats_panel, text="", text_color="#ffffff")
+        self.category_pie_chart.grid(row=1, column=0, padx=10, pady=10, sticky="ew")
+
+        self.daily_histogram = ctk.CTkLabel(stats_panel, text="", fg_color="#5e5e5e", text_color="#ffffff")
+        self.daily_histogram.grid(row=1, column=2, padx=10, pady=10, sticky="ew")
 
         # Panel de configuración
         configure_panel = ctk.CTkFrame(self, fg_color="#3e3e3e")
@@ -130,6 +161,8 @@ class View(ctk.CTk):
     def hide_all_panels(self):
         for panel in self.panels.values():
             panel.grid_remove()
+
+
     def receive_data(self):
         try:
             # Verificar si el servicio de comunicación está listo
@@ -191,30 +224,20 @@ class View(ctk.CTk):
             self.mtx, self.dist = self.processing_service.calibrate(dirpath="./calibracion", prefix="tablero-ajedrez", image_format="jpg", square_size=30, width=7, height=7)
             self.calibracion = True
 
-        max_retries = 3  # Máximo número de reintentos
-        attempts = 0
+        self.communication_service.send_message("¿Estás listo?\n")
+        img = self.processing_service.capture_image()
+        img_undistorted = self.processing_service.undistorted_image(img)
+        df_filtrado,imagenresutado,residue_list = self.processing_service.detected_objects(img_undistorted,0.2,(416,416))
+        self.processing_service.save_residue_list(residue_list)
 
-        while attempts < max_retries:
-            self.communication_service.send_message("¿Estás listo?\n")
-            img = self.processing_service.capture_image()
-            img_undistorted = self.processing_service.undistorted_image(img)
-            df_filtrado, imagenresutado = self.processing_service.detected_objects(img_undistorted)
-            start_time = time.time()
 
-            while time.time() - start_time < 5:  # Espera 5 segundos
-                data = self.communication_service.receive_data()
-                if data == "OK":
-                    resultJSON = self.generar_informacion(df_filtrado)
-                    print("Resultado de clasificación:", resultJSON)
-                    self.update_image(imagenresutado)
-                    self.reports.append(resultJSON)
-                    return
+        """ self.data = self.communication_service.receive_data() """
+        """    if data == "OK": """
+        """ resultJSON = self.generar_informacion(df_filtrado) """
+        """ print("Resultado de clasificación:", resultJSON) """
+        """ self.update_image(imagenresutado) """
+        """  self.reports.append(resultJSON) """
 
-            print("No se recibió respuesta 'OK' después de 5 segundos. Reintentando...")
-            attempts += 1
-
-        print("No se recibió respuesta 'OK' después de varios intentos. Abortando la operación.")
-        sys.exit(1)  # Salir del programa con un código de error
 
     def tomar_foto(self):
         img = self.processing_service.capture_image()
@@ -240,9 +263,104 @@ class View(ctk.CTk):
         self.image_label.configure(image=ctk_img)
         self.image_label.image = ctk_img  # Guardar una referencia para evitar que la imagen sea recolectada por el garbage collector
 
+    def update_image(self, img):
+        # Convertir la imagen a un formato que pueda ser usado por Tkinter
+        img = Image.fromarray(img)  # Asegúrate de que 'img' sea un array de numpy
+        ctk_img = ctk.CTkImage(img, size=(400, 300))  # Ajusta el tamaño de la imagen según sea necesario
+        self.image_label.configure(image=ctk_img)
+        self.image_label.image = ctk_img  # Guardar una referencia para evitar que la imagen sea recolectada por el garbage collector
+
     def update_reports(self):
-        self.reports_text_box.configure(state="normal")
-        self.reports_text_box.delete("1.0", ctk.END)
-        for report in self.reports:
-            self.reports_text_box.insert(ctk.END, report + "\n")
-        self.reports_text_box.configure(state="disabled")
+        for widget in self.reports_scrollable_frame.winfo_children():
+            widget.destroy()
+
+        headers = ["ID", "Nombre", "Categoría", "Confianza", "Fecha"]
+        for col, header in enumerate(headers):
+            label = ctk.CTkLabel(self.reports_scrollable_frame, text=header, fg_color="#5e5e5e", text_color="#ffffff")
+            label.grid(row=0, column=col, padx=10, pady=5)
+
+        reports = self.reports_service.get_all_rankings()
+        for row_num, report in enumerate(reports, start=1):
+            report_data = [report.id, report.nombre, report.categoria, report.confianza, report.fecha_deteccion]
+            for col_num, data in enumerate(report_data):
+                label = ctk.CTkLabel(self.reports_scrollable_frame, text=data, fg_color="#3e3e3e", text_color="#ffffff")
+                label.grid(row=row_num, column=col_num, padx=10, pady=5)
+
+        self.update_statistics(reports)
+
+    def filter_by_category(self):
+        category = self.get_user_input("Ingrese la categoría a filtrar")
+        reports = self.reports_service.filter_by_category(category)
+        self.update_reports_list(reports)
+
+    def filter_by_confidence(self):
+        min_confidence = self.get_user_input("Ingrese la confianza mínima a filtrar")
+        reports = self.reports_service.filter_by_confidence(float(min_confidence))
+        self.update_reports_list(reports)
+
+    def delete_selected(self):
+        report_id = self.selected_report
+        if report_id is not None:
+            self.reports_service.delete_ranking(report_id)
+            self.update_reports()
+        else:
+            messagebox.showerror("Error", "No se ha seleccionado ningún reporte.")
+
+    def edit_selected(self):
+        report_id = self.selected_report
+        if report_id is not None:
+            new_data = self.get_user_input("Ingrese los nuevos datos en formato JSON")
+            report = self.reports_service.get_ranking_by_id(report_id)
+            for key, value in json.loads(new_data).items():
+                setattr(report, key, value)
+            self.reports_service.residue_repository.update_residue(report_id, **report.__dict__)
+            self.update_reports()
+        else:
+            messagebox.showerror("Error", "No se ha seleccionado ningún reporte.")
+
+    def get_user_input(self, prompt):
+        user_input = ctk.simpledialog.askstring("Input", prompt, parent=self)
+        return user_input
+
+    def update_reports_list(self, reports):
+        for widget in self.reports_scrollable_frame.winfo_children():
+            widget.destroy()
+
+        headers = ["ID", "Nombre", "Categoría", "Confianza", "Fecha"]
+        for col, header in enumerate(headers):
+            label = ctk.CTkLabel(self.reports_scrollable_frame, text=header, fg_color="#5e5e5e", text_color="#ffffff")
+            label.grid(row=0, column=col, padx=10, pady=5)
+
+        for row_num, report in enumerate(reports, start=1):
+            report_data = [report.id, report.nombre, report.categoria, report.confianza, report.fecha_deteccion]
+            for col_num, data in enumerate(report_data):
+                label = ctk.CTkLabel(self.reports_scrollable_frame, text=data, fg_color="#3e3e3e", text_color="#ffffff")
+                label.grid(row=row_num, column=col_num, padx=10, pady=5)
+
+    def update_statistics(self, reports):
+        total_residues = len(reports)
+        self.total_residues_label.configure(text=f"Total de Residuos: {total_residues}")
+
+        # Update category pie chart
+        categories = [report.categoria for report in reports]
+        category_counts = {category: categories.count(category) for category in set(categories)}
+        fig1, ax1 = plt.subplots()
+        ax1.pie(category_counts.values(), labels=category_counts.keys(), autopct='%1.1f%%')
+        ax1.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
+        self.update_figure(self.category_pie_chart, fig1)
+
+        # Update daily histogram
+        dates = [report.fecha_deteccion for report in reports]
+        date_counts = {date: dates.count(date) for date in set(dates)}
+        fig2, ax2 = plt.subplots()
+        ax2.bar(date_counts.keys(), date_counts.values())
+        ax2.set_xlabel('Fecha')
+        ax2.set_ylabel('Cantidad de Residuos')
+        self.update_figure(self.daily_histogram, fig2)
+
+    def update_figure(self, container, figure):
+        for widget in container.winfo_children():
+            widget.destroy()
+        canvas = FigureCanvasTkAgg(figure, master=container)
+        canvas.draw()
+        canvas.get_tk_widget().pack(fill='both', expand=True)

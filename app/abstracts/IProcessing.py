@@ -16,3 +16,7 @@ class ProcessingInterface(ABC):
     @abstractmethod
     def capture_image(self):
         pass
+    
+    @abstractmethod
+    def save_residue_list(self):
+        pass

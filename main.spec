@@ -16,6 +16,7 @@ a = Analysis(
         ('C:\\Users\\lucas\\OneDrive\\Escritorio\\luciano\\proyecto_final\\app\\esp_interface\\icons\\iniciar.png', 'app/esp_interface/icons/iniciar.png'),
         ('C:\\Users\\lucas\\OneDrive\\Escritorio\\luciano\\proyecto_final\\app\\esp_interface\\icons\\stop.png', 'app/esp_interface/icons/stop.png'),
         ('C:\\Users\\lucas\\OneDrive\\Escritorio\\luciano\\proyecto_final\\calibracion', 'calibracion'),
+        ('C:\\Users\\lucas\\OneDrive\\Escritorio\\luciano\\proyecto_final\\test.db', 'test.db'),
     ],
     hiddenimports=[],
     hookspath=[],
@@ -25,6 +26,7 @@ a = Analysis(
     noarchive=False,
     optimize=0,
 )
+
 pyz = PYZ(a.pure)
 
 exe = EXE(
@@ -47,4 +49,3 @@ exe = EXE(
     codesign_identity=None,
     entitlements_file=None,
 )
-
