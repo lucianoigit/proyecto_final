@@ -227,7 +227,7 @@ class View(ctk.CTk):
         self.communication_service.send_message("¿Estás listo?\n")
         img = self.processing_service.capture_image()
         img_undistorted = self.processing_service.undistorted_image(img)
-        df_filtrado,imagenresutado,residue_list = self.processing_service.detected_objects(img_undistorted,0.2,(416,416))
+        df_filtrado,imagenresutado,residue_list = self.processing_service.detected_objects(img_undistorted,0.2)
         self.processing_service.save_residue_list(residue_list)
 
 

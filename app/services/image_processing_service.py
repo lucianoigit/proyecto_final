@@ -1,26 +1,21 @@
-from datetime import datetime, time
+from datetime import datetime
 from app.dbModels.ResidueDto import ResidueDTO
 from app.repositories.residue_repository import ResidueRepository
 import cv2
 import numpy as np
 import glob
-import torch
 from app.abstracts.IProcessing import ProcessingInterface
 from app.services.IA_model_service import MLModelService
-
 
 class ImageProcessingService(ProcessingInterface):
 
     def __init__(self, residue_repository: ResidueRepository, use_model: MLModelService):
-
         self.mtx = None
         self.dist = None
         self.residue_repository = residue_repository
         self.use_model = use_model
 
-
     def calibrate(self, dirpath, prefix, image_format, square_size, width, height):
-
         images = glob.glob(f"{dirpath}/{prefix}*.{image_format}")
         objp = np.zeros((width * height, 3), np.float32)
         objp[:, :2] = np.mgrid[0:width, 0:height].T.reshape(-1, 2) * square_size
@@ -49,40 +44,40 @@ class ImageProcessingService(ProcessingInterface):
         img_undistorted = cv2.undistort(img, self.mtx, self.dist, None, newcameramtx)
         return img_undistorted
 
-    def detected_objects(self, img_undistorted, confianza_minima=0.2, tamano_entrada=(416, 416)):
+    def detected_objects(self, img_undistorted, confianza_minima=0.2):
         try:
-            df_filtrado, imagenresutado = self.use_model.run_model(img_undistorted,confianza_minima)
+            print("Procesando imagen...")
+            df_filtrado, img_resultado = self.use_model.run_model(img_undistorted, confianza_minima)
+            print("Imagen procesada.", df_filtrado)
 
-            self.use_model.show_result(imagenresutado)
+            if df_filtrado is not None:
+                self.use_model.show_result(df_filtrado, img_resultado)
+                print(df_filtrado)
 
-            df_filtrado['x_center'] = (df_filtrado['xmin'] + df_filtrado['xmax']) / 2
-            df_filtrado['y_center'] = (df_filtrado['ymin'] + df_filtrado['ymax']) / 2
+                residue_list = []
+                for _, row in df_filtrado.iterrows():
+                    residue_dto = ResidueDTO(
+                        nombre=row['class_name'],  # Usar el nombre de la clase
+                        categoria=row['class'],  # Usar el nombre de la clase
+                        confianza=row['confidence'],
+                        x_min=row['xmin'],
+                        y_min=row['ymin'],
+                        x_max=row['xmax'],
+                        y_max=row['ymax'],
+                        fecha_deteccion=datetime.now(),
+                        imagen_referencia="default_image"
+                    )
+                    residue_list.append(residue_dto)
+                
+                return df_filtrado, img_resultado, residue_list
+            else:
+                print("No hay detecciones.")
+                return None, None, []
 
-
-            residue_list = []
-            # Guardar en la base de datos usando ResidueDTO
-            for _, row in df_filtrado.iterrows():
-                residue_dto = ResidueDTO(
-                    nombre=row['name'],
-                    categoria=row['class'],
-                    confianza=row['confidence'],
-                    x_min=row['xmin'],
-                    x_max=row['xmax'],
-                    y_min=row['ymin'],
-                    y_max=row['ymax'],
-                    fecha_deteccion=datetime.now(),
-                    imagen_referencia="default_image"
-                )
-                print(f"residuo particular", residue_dto)
-                residue_list.append(residue_dto)
-                print(f"residuos recolectados", residue_list)
-            
-            return df_filtrado, imagenresutado, residue_list
-        
         except Exception as e:
-            print(f"Error al detectar objetos: {e}")
-            return [], None, []
-
+            print(f"Error durante la detección: {e}")
+            return None, None, []
+        
     def save_residue_list(self, residue_list):
         print(f"residuos recolectados en bdd", residue_list)
         for residue_dto in residue_list:
@@ -98,7 +93,6 @@ class ImageProcessingService(ProcessingInterface):
                 fecha_deteccion=residue_dto.fecha_deteccion,
                 imagen_referencia=residue_dto.imagen_referencia
             )
-
 
     def capture_image(self):
         cam = cv2.VideoCapture(0)
