@@ -3,6 +3,7 @@ from ultralytics import YOLO
 from app.abstracts.IMLModel import MLModelInterface
 import pandas as pd
 
+
 class MLModelService(MLModelInterface):
     def __init__(self, model_path: str):
         self.model_path = model_path

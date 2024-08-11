@@ -16,7 +16,8 @@ class View(ctk.CTk):
     def __init__(self, communication_service: CommunicationInterface, processing_service: ProcessingInterface, reports_service: ReportsService):
         super().__init__()
         self.title("Delta Robot")
-        self.geometry("800x600")
+        self.geometry("800x480")
+        #self.resizable(False,False)
         self.communication_service = communication_service
         self.processing_service = processing_service
         self.reports_service = reports_service
@@ -26,7 +27,7 @@ class View(ctk.CTk):
         self.reports = []
         self.image = None
 
-        self.communication_service.initialize_communication()
+        self.panels = {}
         self.create_widgets()
 
     def create_widgets(self):
@@ -37,7 +38,7 @@ class View(ctk.CTk):
         menu_bar = ctk.CTkFrame(self, corner_radius=0, fg_color="#3e3e3e")
         menu_bar.grid(row=2, column=0, sticky="ew")
         
-        connectivity_button = ctk.CTkButton(menu_bar, text="", image=self.load_icon("icons/connectivity.png"), command=self.connectivity, width=80, height=80, fg_color="#5e5e5e", hover_color="#7e7e7e", text_color="#ffffff")
+        connectivity_button = ctk.CTkButton(menu_bar, text="", image=self.load_icon("icons/connectivity.png"), command=self.show_connectivity_panel, width=80, height=80, fg_color="#5e5e5e", hover_color="#7e7e7e", text_color="#ffffff")
         connectivity_button.grid(row=0, column=0, padx=10, pady=10)
         
         start_section_button = ctk.CTkButton(menu_bar, text="", image=self.load_icon("icons/start.png"), command=self.show_main_panel, width=80, height=80, fg_color="#5e5e5e", hover_color="#7e7e7e", text_color="#ffffff")
@@ -52,15 +53,14 @@ class View(ctk.CTk):
         close_button = ctk.CTkButton(menu_bar, text="", image=self.load_icon("icons/close.png"), command=self.close_application, width=80, height=80, fg_color="#5e5e5e", hover_color="#7e7e7e", text_color="#ffffff")
         close_button.grid(row=0, column=4, padx=10, pady=10)
 
-        self.panels = {}
-
+        # Panel principal
         main_panel = ctk.CTkFrame(self, fg_color="#3e3e3e")
         main_panel.grid(row=1, column=0, sticky="nsew", padx=20, pady=20)
         self.panels["main"] = main_panel
 
         main_panel.grid_columnconfigure((0, 3), weight=1)
         main_panel.grid_columnconfigure((1, 2), weight=0)
-        main_panel.grid_rowconfigure(2, weight=1)  # Adjust row for image display
+        main_panel.grid_rowconfigure(2, weight=1)
 
         start_button = ctk.CTkButton(main_panel, text="", image=self.load_icon("icons/iniciar.png"), command=self.start_process, fg_color="#5e5e5e", hover_color="#7e7e7e", text_color="#ffffff")
         start_button.grid(row=1, column=1, padx=5, pady=5, sticky="ew")
@@ -71,14 +71,29 @@ class View(ctk.CTk):
         self.image_label = ctk.CTkLabel(main_panel, text="Imagen clasificada aparecerá aquí", anchor="center", fg_color="#3e3e3e", text_color="#ffffff")
         self.image_label.grid(row=2, column=0, columnspan=4, padx=10, pady=10, sticky="nsew")
 
+        # Panel de conectividad
+        connectivity_panel = ctk.CTkFrame(self, fg_color="#3e3e3e")
+        self.panels["connectivity"] = connectivity_panel
+
+        connectivity_panel.grid_columnconfigure(0, weight=1)
+        connectivity_panel.grid_rowconfigure(1, weight=1)
+
+        self.message_entry = ctk.CTkEntry(connectivity_panel, width=200, placeholder_text="Escriba un mensaje...")
+        self.message_entry.grid(row=0, column=0, padx=10, pady=10, sticky="ew")
+
+        send_button = ctk.CTkButton(connectivity_panel, text="Enviar", command=self.send_message, width=80, height=40, fg_color="#5e5e5e", hover_color="#7e7e7e", text_color="#ffffff")
+        send_button.grid(row=0, column=1, padx=10, pady=10)
+
+        self.text_box = ctk.CTkTextbox(connectivity_panel, height=300, fg_color="#3e3e3e", text_color="#ffffff")
+        self.text_box.grid(row=1, column=0, columnspan=2, padx=10, pady=10, sticky="nsew")
 
         # Panel de informes
         reports_panel = ctk.CTkFrame(self, fg_color="#3e3e3e")
         reports_panel.grid(row=1, column=0, sticky="nsew", padx=20, pady=20)
         self.panels["reports"] = reports_panel
         
-        reports_panel.grid_columnconfigure(0, weight=1)
-        reports_panel.grid_rowconfigure(0, weight=1)
+        reports_panel.grid_columnconfigure(1, weight=1)
+        reports_panel.grid_rowconfigure(1, weight=1)
 
         self.reports_scrollable_frame = ctk.CTkScrollableFrame(reports_panel, fg_color="#3e3e3e")
         self.reports_scrollable_frame.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
@@ -106,7 +121,7 @@ class View(ctk.CTk):
         self.category_pie_chart.grid(row=1, column=0, padx=10, pady=10, sticky="ew")
 
         self.daily_histogram = ctk.CTkLabel(stats_panel, text="", fg_color="#5e5e5e", text_color="#ffffff")
-        self.daily_histogram.grid(row=1, column=2, padx=10, pady=10, sticky="ew")
+        self.daily_histogram.grid(row=2, column=0, padx=10, pady=10, sticky="ew")
 
         # Panel de configuración
         configure_panel = ctk.CTkFrame(self, fg_color="#3e3e3e")
@@ -158,41 +173,40 @@ class View(ctk.CTk):
         self.panels["reports"].tkraise()
         self.update_reports()
 
+    def show_connectivity_panel(self):
+        self.hide_all_panels()
+        self.panels["connectivity"].grid()
+        self.panels["connectivity"].tkraise()
+
     def hide_all_panels(self):
         for panel in self.panels.values():
             panel.grid_remove()
 
+    def send_message(self):
+        data = self.message_entry.get()
+        if data:
+            self.communication_service.send_message(data)
+            print(f"Mensaje enviado: {data}")
+            self.message_entry.delete(0, ctk.END)
 
     def receive_data(self):
         try:
-            # Verificar si el servicio de comunicación está listo
             if self.communication_service and self.communication_service.ser and self.communication_service.ser.is_open:
                 data = self.communication_service.receive_data()
+                print("data: ", data)
                 if data:
+                    
                     self.text_box.insert(ctk.END, f"{data}\n")
                     self.text_box.see(ctk.END)
         except Exception as e:
             print(f"Error al recibir datos: {e}")
-
-        # Programar la siguiente llamada de receive_data
         self.after(100, self.receive_data)
-
-
-    def send_message(self):
-        message = self.message_entry.get() + '\n'
-        self.communication_service.send_message(message)
-        self.message_entry.delete(0, ctk.END)
-
-    def connectivity(self):
-        # Lógica para conectividad
-        pass
 
     def start_process(self):
         self.clasificacion()
 
     def stop_process(self):
         pass
-
 
     def calibrate_camera(self):
         # Lógica para calibración de cámara
@@ -224,20 +238,18 @@ class View(ctk.CTk):
             self.mtx, self.dist = self.processing_service.calibrate(dirpath="./calibracion", prefix="tablero-ajedrez", image_format="jpg", square_size=30, width=7, height=7)
             self.calibracion = True
 
-        self.communication_service.send_message("¿Estás listo?\n")
+        self.communication_service.send_message("HOLA")
         img = self.processing_service.capture_image()
         img_undistorted = self.processing_service.undistorted_image(img)
-        df_filtrado,imagenresutado,residue_list = self.processing_service.detected_objects(img_undistorted,0.2)
+        df_filtrado, imagenresutado, residue_list = self.processing_service.detected_objects(img_undistorted, 0.2)
         self.processing_service.save_residue_list(residue_list)
 
-
-        """ self.data = self.communication_service.receive_data() """
-        """    if data == "OK": """
-        """ resultJSON = self.generar_informacion(df_filtrado) """
-        """ print("Resultado de clasificación:", resultJSON) """
-        """ self.update_image(imagenresutado) """
-        """  self.reports.append(resultJSON) """
-
+        data = self.communication_service.receive_data()
+        if data == "hola":
+            resultJSON = self.generar_informacion(df_filtrado)
+            print("Resultado de clasificación:", resultJSON)
+            self.update_image(imagenresutado)
+            self.reports.append(resultJSON)
 
     def tomar_foto(self):
         img = self.processing_service.capture_image()
@@ -257,14 +269,6 @@ class View(ctk.CTk):
         return json.dumps(df_filtrado.to_dict(orient='records'))
 
     def update_image(self, img):
-        # Convertir la imagen a un formato que pueda ser usado por Tkinter
-        img = Image.fromarray(img)  # Asegúrate de que 'img' sea un array de numpy
-        ctk_img = ctk.CTkImage(img, size=(400, 300))  # Ajusta el tamaño de la imagen según sea necesario
-        self.image_label.configure(image=ctk_img)
-        self.image_label.image = ctk_img  # Guardar una referencia para evitar que la imagen sea recolectada por el garbage collector
-
-    def update_image(self, img):
-        # Convertir la imagen a un formato que pueda ser usado por Tkinter
         img = Image.fromarray(img)  # Asegúrate de que 'img' sea un array de numpy
         ctk_img = ctk.CTkImage(img, size=(400, 300))  # Ajusta el tamaño de la imagen según sea necesario
         self.image_label.configure(image=ctk_img)
@@ -341,15 +345,13 @@ class View(ctk.CTk):
         total_residues = len(reports)
         self.total_residues_label.configure(text=f"Total de Residuos: {total_residues}")
 
-        # Update category pie chart
         categories = [report.categoria for report in reports]
         category_counts = {category: categories.count(category) for category in set(categories)}
         fig1, ax1 = plt.subplots()
         ax1.pie(category_counts.values(), labels=category_counts.keys(), autopct='%1.1f%%')
-        ax1.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
+        ax1.axis('equal')
         self.update_figure(self.category_pie_chart, fig1)
 
-        # Update daily histogram
         dates = [report.fecha_deteccion for report in reports]
         date_counts = {date: dates.count(date) for date in set(dates)}
         fig2, ax2 = plt.subplots()
@@ -363,4 +365,4 @@ class View(ctk.CTk):
             widget.destroy()
         canvas = FigureCanvasTkAgg(figure, master=container)
         canvas.draw()
-        canvas.get_tk_widget().pack(fill='both', expand=True)
+        canvas.get_tk_widget().pack(fill='none', expand=True)
