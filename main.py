@@ -15,7 +15,7 @@ def main():
     db.create_database()
 
     SERIAL_PORT = 'COM4'
-    BAUD_RATE = 115200
+    BAUD_RATE = 9600
   
     
     with db.session() as session:
