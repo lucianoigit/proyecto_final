@@ -40,6 +40,9 @@ class View(ctk.CTk):
         
         connectivity_button = ctk.CTkButton(menu_bar, text="", image=self.load_icon("icons/connectivity.png"), command=self.show_connectivity_panel, width=80, height=80, fg_color="#5e5e5e", hover_color="#7e7e7e", text_color="#ffffff")
         connectivity_button.grid(row=0, column=0, padx=10, pady=10)
+
+        connect = ctk.CTkButton(menu_bar, text="", image=self.load_icon("icons/connectivity.png"), command=self.communication_service.initialize_communication, width=80, height=80, fg_color="#5e5e5e", hover_color="#7e7e7e", text_color="#ffffff")
+        connect.grid(row=2, column=0, padx=10, pady=10)
         
         start_section_button = ctk.CTkButton(menu_bar, text="", image=self.load_icon("icons/start.png"), command=self.show_main_panel, width=80, height=80, fg_color="#5e5e5e", hover_color="#7e7e7e", text_color="#ffffff")
         start_section_button.grid(row=0, column=1, padx=10, pady=10)
