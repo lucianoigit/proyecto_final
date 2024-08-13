@@ -28,6 +28,7 @@ class SerialService:
         else:
             print("El puerto serial no está disponible para enviar mensajes")
 
+    
     def receive_data(self):
         try:
             if self.ser and self.ser.is_open:
@@ -39,10 +40,12 @@ class SerialService:
                         if "\n" in self.buffer:  # Revisa el fin de línea adecuado
                             messages = self.buffer.split("\n")
                             self.buffer = messages.pop()  # Guarda cualquier fragmento incompleto
-                            return messages
+                            if messages:
+                                return messages  # Devuelve solo el primer mensaje completo
         except Exception as e:
             print(f"Error al recibir datos: {e}")
-        return []
+        return ""
+
 
     def start_reading(self):
         if not self.running:

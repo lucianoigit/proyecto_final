@@ -41,7 +41,7 @@ class View(ctk.CTk):
         connectivity_button = ctk.CTkButton(menu_bar, text="", image=self.load_icon("icons/connectivity.png"), command=self.show_connectivity_panel, width=80, height=80, fg_color="#5e5e5e", hover_color="#7e7e7e", text_color="#ffffff")
         connectivity_button.grid(row=0, column=0, padx=10, pady=10)
 
-        connect = ctk.CTkButton(menu_bar, text="", image=self.load_icon("icons/connectivity.png"), command=self.communication_service.initialize_communication, width=80, height=80, fg_color="#5e5e5e", hover_color="#7e7e7e", text_color="#ffffff")
+        connect = ctk.CTkButton(menu_bar, text="", image=self.load_icon("icons/connectivity.png"), command=self.start_communication, width=80, height=80, fg_color="#5e5e5e", hover_color="#7e7e7e", text_color="#ffffff")
         connect.grid(row=2, column=0, padx=10, pady=10)
         
         start_section_button = ctk.CTkButton(menu_bar, text="", image=self.load_icon("icons/start.png"), command=self.show_main_panel, width=80, height=80, fg_color="#5e5e5e", hover_color="#7e7e7e", text_color="#ffffff")
@@ -197,10 +197,7 @@ class View(ctk.CTk):
             if self.communication_service and self.communication_service.ser and self.communication_service.ser.is_open:
                 data = self.communication_service.receive_data()
                 print("data: ", data)
-                if data:
-                    
-                    self.text_box.insert(ctk.END, f"{data}\n")
-                    self.text_box.see(ctk.END)
+                return data
         except Exception as e:
             print(f"Error al recibir datos: {e}")
         self.after(100, self.receive_data)
@@ -369,3 +366,22 @@ class View(ctk.CTk):
         canvas = FigureCanvasTkAgg(figure, master=container)
         canvas.draw()
         canvas.get_tk_widget().pack(fill='none', expand=True)
+
+
+    def start_communication(self):
+        self.communication_service.initialize_communication()
+        time.sleep(2)
+        self.communication_service.send_message("CONECTAR")
+        data = self.receive_data()
+        print(f"DATOS EN START: {data}")
+
+    # def start_comunication(self):
+    #     self.communication_service.initialize_communication()
+    #     time.sleep(2)
+    #     self.communication_service.send_message("CONECTAR")
+    #     if self.communication_service and self.communication_service.ser and self.communication_service.ser.is_open:
+    #             data = self.communication_service.receive_data()
+    #             print(f"DATOS RECIBIDOS: {data}")
+    #             if data == "Conectado":
+    #                 print(f"DATOS RECIBIDOS: {data}")
+    #                 print("Conexión establecida")
