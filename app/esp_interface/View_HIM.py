@@ -147,7 +147,7 @@ class View(ctk.CTk):
         conveyor_config_button.grid(row=1, column=1, padx=10, pady=10, sticky="nsew")
 
         self.show_main_panel()
-        self.receive_data()
+        #self.receive_data()
 
     def load_icon(self, path):
         # Obtener la ruta base correcta dependiendo de si el script está empaquetado por PyInstaller o no
@@ -191,16 +191,6 @@ class View(ctk.CTk):
             self.communication_service.send_message(data)
             print(f"Mensaje enviado: {data}")
             self.message_entry.delete(0, ctk.END)
-
-    def receive_data(self):
-        try:
-            if self.communication_service and self.communication_service.ser and self.communication_service.ser.is_open:
-                data = self.communication_service.receive_data()
-                print("data: ", data)
-                return data
-        except Exception as e:
-            print(f"Error al recibir datos: {e}")
-        self.after(100, self.receive_data)
 
     def start_process(self):
         self.clasificacion()
@@ -369,19 +359,12 @@ class View(ctk.CTk):
 
 
     def start_communication(self):
-        self.communication_service.initialize_communication()
-        time.sleep(2)
-        self.communication_service.send_message("CONECTAR")
-        data = self.receive_data()
-        print(f"DATOS EN START: {data}")
+            # CALLBACK
+            def handle_response(response):
+                if response == "OK":
+                    print("Conexion establecida con exito")
+                else:
+                    print("Fallo la conexion", response)
 
-    # def start_comunication(self):
-    #     self.communication_service.initialize_communication()
-    #     time.sleep(2)
-    #     self.communication_service.send_message("CONECTAR")
-    #     if self.communication_service and self.communication_service.ser and self.communication_service.ser.is_open:
-    #             data = self.communication_service.receive_data()
-    #             print(f"DATOS RECIBIDOS: {data}")
-    #             if data == "Conectado":
-    #                 print(f"DATOS RECIBIDOS: {data}")
-    #                 print("Conexión establecida")
+            self.communication_service.send_and_receive("CONECTADO", "Conectado", handle_response)
+

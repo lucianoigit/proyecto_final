@@ -20,3 +20,7 @@ class CommunicationInterface(ABC):
     @abstractmethod
     def stop_reading(self):
         pass
+
+    @abstractmethod
+    def send_and_receive(self,message,expected_message):
+        pass

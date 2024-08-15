@@ -27,6 +27,7 @@ def main():
         
         app = View(serial_service, image_service, reports_service)
         app.mainloop()
+        del serial_service  
 
 if __name__ == "__main__":
     main()
