@@ -16,11 +16,13 @@ def main():
 
     SERIAL_PORT = 'COM3'
     BAUD_RATE = 115200
+
   
     
     with db.session() as session:
         residue_repository = ResidueRepository(session)
         serial_service = SerialService(SERIAL_PORT, BAUD_RATE)
+        serial_service.initialize_communication()
         use_model = MLModelService(model_path='./yolov5s.pt')
         reports_service = ReportsService(residue_repository)
         image_service = ImageProcessingService(residue_repository, use_model)

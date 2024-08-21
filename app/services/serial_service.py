@@ -1,6 +1,7 @@
 import serial
 import threading
 import time
+import queue
 
 class SerialService:
     def __init__(self, port, baud_rate):
@@ -11,6 +12,7 @@ class SerialService:
         self.running = False
         self.buffer = ""
         self.lock = threading.Lock()
+        self.message_queue = queue.Queue()
         self.response_event = threading.Event()
 
     def initialize_communication(self):
@@ -24,27 +26,61 @@ class SerialService:
 
     def send_message(self, message):
         print("Mensaje enviado:", message)
-        message += "\r\n"
+        message += "\n"  # Asegúrate de que el mensaje tenga un salto de línea al final
         if self.ser and self.ser.is_open:
             self.ser.write(message.encode("utf-8"))
         else:
             print("El puerto serial no está disponible para enviar mensajes")
 
+
     def send_and_receive(self, message, expected_response, callback):
         self.send_message(message)
         def wait_for_response():
-            if self.response_event.wait(timeout=10): # ESPERA AL EVENTO O LO ELIMINA
-                with self.lock:
-                    if expected_response in self.buffer:
-                        self.buffer = ""
+            start_time = time.time()
+            while time.time() - start_time < 10:  # Período de espera
+                try:
+                    response = self.message_queue.get(timeout=10 - (time.time() - start_time))  # Intenta obtener un mensaje de la cola
+                    print(f"expected_response: ", expected_response)
+                    print(f"response:", response)
+                    if expected_response.strip() == response.strip():
                         callback("OK")
-                    else:
-                        callback("No response")
-                self.response_event.clear()
-            else:
-                callback("Timeout")
+                except queue.Empty:
+                    pass
         threading.Thread(target=wait_for_response).start()
 
+
+
+    # def send_and_receive(self, message, expected_response, callback):
+    #     self.send_message(message)
+
+    #     def wait_for_response():
+    #         start_time = time.time()
+
+    #         while time.time() - start_time < 10:
+    #             try:
+    #                 response = self.message_queue.get(timeout=10 - (time.time() - start_time))
+    #                 if expected_response == response:
+    #                     callback("OK")
+    #                     return
+    #             except queue.Empty:
+    #                 pass
+    #             callback("No response")
+    #         #     self.response_event.wait(timeout=1)  # Espera de 1 segundo antes de verificar
+    #         #     with self.lock:
+    #         #         # Procesar el buffer para extraer y comparar el mensaje completo
+    #         #         while '\n' in self.buffer:
+    #         #             received_message, self.buffer = self.buffer.split('\n', 1)
+    #         #             received_message = received_message.strip()
+    #         #             if received_message == expected_response.strip():
+    #         #                 callback("OK")
+    #         #                 self.response_event.clear()  # Reiniciar el evento
+    #         #                 return
+    #         #     # Clear event and retry
+    #         #     self.response_event.clear()
+
+    #         # callback("Timeout")
+
+    #     threading.Thread(target=wait_for_response).start()
 
     def receive_data(self):
         try:
@@ -53,11 +89,27 @@ class SerialService:
                     data = self.ser.read(self.ser.in_waiting).decode("utf-8", errors="replace")
                     with self.lock:
                         self.buffer += data
-                        print(f"Datos en bruto: {data}")
+                        # Procesar el buffer para extraer mensajes
+                        while '\n' in self.buffer:
+                            # pos = self.buffer.find('\n')
+                            # line = self.buffer[:pos].split()
+                            # self.buffer = self.buffer[pos + 1:]
+                            # self.message_queue.put(line)
+
+                            message, self.buffer = self.buffer.split('\n', 1)
+                            if message.strip():  # Evitar procesar mensajes vacíos
+                                self.message_queue.put(message)
+                                print(f"Mensaje recibido: {message.strip()}")
+                            
+                            self.response_event.set()
                         # NOTIFICACION DE EVENTO
-                        self.response_event.set()
+                        # self.response_event.set()
         except Exception as e:
             print(f"Error al recibir datos: {e}")
+
+    def _reading_loop(self):
+        while self.running:
+            self.receive_data()
 
     def _start_reading(self):
         if not self.running:
@@ -69,11 +121,6 @@ class SerialService:
         self.running = False
         if self.read_thread:
             self.read_thread.join()
-
-    def _reading_loop(self):
-        while self.running:
-            self.receive_data()
-  
 
     def __del__(self):
         self._stop_reading()

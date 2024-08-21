@@ -365,6 +365,5 @@ class View(ctk.CTk):
                     print("Conexion establecida con exito")
                 else:
                     print("Fallo la conexion", response)
-
-            self.communication_service.send_and_receive("CONECTADO", "Conectado", handle_response)
+            self.communication_service.send_and_receive("CONECTAR", "Conectado", handle_response)
 
