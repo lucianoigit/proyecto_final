@@ -202,64 +202,87 @@ class View(ctk.CTk):
 
         self.text_box = ctk.CTkTextbox(connectivity_panel, height=300, fg_color="#3e3e3e", text_color="#ffffff")
         self.text_box.grid(row=1, column=0, columnspan=2, padx=10, pady=10, sticky="nsew")
-
-        # Panel de informes
-        reports_panel = ctk.CTkFrame(self, fg_color="#3e3e3e")
-        reports_panel.grid(row=1, column=0, sticky="nsew", padx=20, pady=20)
+        # Panel de informes con selección
+        reports_panel = ctk.CTkFrame(self, fg_color=self.bg_color)  # Fondo principal aplicado
+        reports_panel.grid(row=0, column=1, sticky="nsew", padx=20, pady=20)
         self.panels["reports"] = reports_panel
-        
+
         reports_panel.grid_columnconfigure(1, weight=1)
         reports_panel.grid_rowconfigure(1, weight=1)
 
-        self.reports_scrollable_frame = ctk.CTkScrollableFrame(reports_panel, fg_color="#3e3e3e")
-        self.reports_scrollable_frame.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
+        # Menú de selección para cambiar entre lista, gráfico de torta y histograma
+        self.view_options = ["Lista de Clasificación", "Gráfico de Torta", "Histograma"]
+        self.selected_view = ctk.StringVar(value=self.view_options[0])  # Valor por defecto
 
-        filter_category_button = ctk.CTkButton(reports_panel, text="Filtrar por Categoría", command=self.filter_by_category, fg_color="#5e5e5e", hover_color="#7e7e7e", text_color="#ffffff")
-        filter_category_button.grid(row=1, column=0, padx=10, pady=10, sticky="ew")
+        # Ajustamos tamaño y colores del menú de selección
+        select_view_menu = ctk.CTkOptionMenu(reports_panel, values=self.view_options, 
+                                            command=self.update_view, variable=self.selected_view,
+                                            width=200, height=40,  # Ajuste del tamaño
+                                            fg_color=self.btn_color,  # Color del botón
+                                            text_color=self.text_color,  # Color del texto
+                                            button_color=self.nav_color)  # Color del botón desplegable
+        select_view_menu.grid(row=0, column=0, padx=10, pady=10, sticky="ew")
 
-        filter_confidence_button = ctk.CTkButton(reports_panel, text="Filtrar por Confianza", command=self.filter_by_confidence, fg_color="#5e5e5e", hover_color="#7e7e7e", text_color="#ffffff")
-        filter_confidence_button.grid(row=1, column=1, padx=10, pady=10, sticky="ew")
+        # Marco para la lista de clasificación
+        self.reports_scrollable_frame = ctk.CTkScrollableFrame(
+            reports_panel, 
+            fg_color=self.nav_color,  # Color de fondo ajustado
+            width=400,  # Ancho ajustado
+            height=300  # Alto ajustado
+        )
+        self.reports_scrollable_frame.grid(row=1, column=0, padx=10, pady=10, sticky="nsew")
 
-        delete_button = ctk.CTkButton(reports_panel, text="Eliminar Seleccionado", command=self.delete_selected, fg_color="#5e5e5e", hover_color="#7e7e7e", text_color="#ffffff")
-        delete_button.grid(row=1, column=2, padx=10, pady=10, sticky="ew")
+        # Panel para los gráficos de estadísticas
+        self.stats_panel = ctk.CTkFrame(reports_panel, fg_color=self.img_frame_color)  # Fondo ajustado
+        self.stats_panel.grid(row=1, column=0, padx=10, pady=10, sticky="nsew")
 
-        edit_button = ctk.CTkButton(reports_panel, text="Editar Seleccionado", command=self.edit_selected, fg_color="#5e5e5e", hover_color="#7e7e7e", text_color="#ffffff")
-        edit_button.grid(row=1, column=3, padx=10, pady=10, sticky="ew")
-
-        # Paneles de estadísticas
-        stats_panel = ctk.CTkFrame(reports_panel, fg_color="#3e3e3e")
-        stats_panel.grid(row=0, column=2, sticky="nsew", padx=20, pady=20)
-        
-        self.total_residues_label = ctk.CTkLabel(stats_panel, text="", fg_color="#5e5e5e", text_color="#ffffff")
+        # Paneles para estadísticas individuales
+        self.total_residues_label = ctk.CTkLabel(self.stats_panel, text="", fg_color=self.btn_color, text_color=self.btn_color)
         self.total_residues_label.grid(row=0, column=0, padx=10, pady=10, sticky="ew")
 
-        self.category_pie_chart = ctk.CTkLabel(stats_panel, text="", text_color="#ffffff")
+        self.category_pie_chart = ctk.CTkLabel(self.stats_panel, text="", text_color=self.btn_color)
         self.category_pie_chart.grid(row=1, column=0, padx=10, pady=10, sticky="ew")
 
-        self.daily_histogram = ctk.CTkLabel(stats_panel, text="", fg_color="#5e5e5e", text_color="#ffffff")
+        self.daily_histogram = ctk.CTkLabel(self.stats_panel, text="", fg_color=self.btn_color, text_color=self.btn_color)
         self.daily_histogram.grid(row=2, column=0, padx=10, pady=10, sticky="ew")
 
-        # Panel de configuración
-        configure_panel = ctk.CTkFrame(self, fg_color="#3e3e3e")
-        configure_panel.grid(row=1, column=0, sticky="nsew", padx=20, pady=20)
+                # Panel de configuración con fondo blanco
+        configure_panel = ctk.CTkFrame(self, fg_color=self.img_frame_color)  # Fondo blanco
+        configure_panel.grid(row=0, column=1, sticky="nsew", padx=20, pady=20)
         self.panels["configure"] = configure_panel
 
+        # Configurar la cuadrícula para el panel de configuración
         configure_panel.grid_columnconfigure((0, 1), weight=1)
         configure_panel.grid_rowconfigure((0, 1), weight=1)
 
-        calibration_button = ctk.CTkButton(configure_panel, text="Calibración de Cámara", command=self.calibrate_camera, fg_color="#5e5e5e", hover_color="#7e7e7e", text_color="#ffffff")
+        # Botón de calibración de cámara
+        calibration_button = ctk.CTkButton(configure_panel, text="Calibración de Cámara", 
+                                        command=self.calibrate_camera, fg_color=self.nav_color, 
+                                        hover_color="#a3a7d9", text_color=self.text_color)
         calibration_button.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
 
-        ml_model_button = ctk.CTkButton(configure_panel, text="Calibración de Modelo ML", command=self.calibrate_ml_model, fg_color="#5e5e5e", hover_color="#7e7e7e", text_color="#ffffff")
+        # Botón de calibración de modelo ML
+        ml_model_button = ctk.CTkButton(configure_panel, text="Calibración de Modelo ML", 
+                                        command=self.calibrate_ml_model, fg_color=self.nav_color, 
+                                        hover_color="#a3a7d9", text_color=self.text_color)
         ml_model_button.grid(row=0, column=1, padx=10, pady=10, sticky="nsew")
 
-        camera_type_button = ctk.CTkButton(configure_panel, text="Calibración Tipo de Cámara", command=self.calibrate_camera_type, fg_color="#5e5e5e", hover_color="#7e7e7e", text_color="#ffffff")
+        # Botón de calibración de tipo de cámara
+        camera_type_button = ctk.CTkButton(configure_panel, text="Calibración Tipo de Cámara", 
+                                        command=self.calibrate_camera_type, fg_color=self.nav_color, 
+                                        hover_color="#a3a7d9", text_color=self.text_color)
         camera_type_button.grid(row=1, column=0, padx=10, pady=10, sticky="nsew")
 
-        conveyor_config_button = ctk.CTkButton(configure_panel, text="Configuración de Cinta Transportadora", command=self.configure_conveyor, fg_color="#5e5e5e", hover_color="#7e7e7e", text_color="#ffffff")
+        # Botón de configuración de cinta transportadora
+        conveyor_config_button = ctk.CTkButton(configure_panel, text="Configuración de Cinta Transportadora", 
+                                            command=self.configure_conveyor, fg_color=self.btn_color, 
+                                            hover_color="#a3a7d9", text_color=self.text_color)
         conveyor_config_button.grid(row=1, column=1, padx=10, pady=10, sticky="nsew")
-                # Crear paneles de las otras secciones
 
+        # Ajustar las proporciones de las columnas y filas del grid
+        for i in range(2):  # Ajustar el número según la cantidad de filas o columnas que necesites
+            configure_panel.grid_columnconfigure(i, weight=1)
+            configure_panel.grid_rowconfigure(i, weight=1)
 
         self.show_main_panel()
         #self.receive_data()
@@ -427,14 +450,14 @@ class View(ctk.CTk):
 
         headers = ["ID", "Nombre", "Categoría", "Confianza", "Fecha"]
         for col, header in enumerate(headers):
-            label = ctk.CTkLabel(self.reports_scrollable_frame, text=header, fg_color="#5e5e5e", text_color="#ffffff")
+            label = ctk.CTkLabel(self.reports_scrollable_frame, text=header, fg_color="#5e5e5e", text_color=self.btn_color)
             label.grid(row=0, column=col, padx=10, pady=5)
 
         reports = self.reports_service.get_all_rankings()
         for row_num, report in enumerate(reports, start=1):
             report_data = [report.id, report.nombre, report.categoria, report.confianza, report.fecha_deteccion]
             for col_num, data in enumerate(report_data):
-                label = ctk.CTkLabel(self.reports_scrollable_frame, text=data, fg_color="#3e3e3e", text_color="#ffffff")
+                label = ctk.CTkLabel(self.reports_scrollable_frame, text=data, fg_color="#3e3e3e", text_color=self.btn_color)
                 label.grid(row=row_num, column=col_num, padx=10, pady=5)
 
         self.update_statistics(reports)
@@ -479,33 +502,60 @@ class View(ctk.CTk):
 
         headers = ["ID", "Nombre", "Categoría", "Confianza", "Fecha"]
         for col, header in enumerate(headers):
-            label = ctk.CTkLabel(self.reports_scrollable_frame, text=header, fg_color="#5e5e5e", text_color="#ffffff")
+            label = ctk.CTkLabel(self.reports_scrollable_frame, text=header, fg_color=self.img_frame_color, text_color=self.btn_color)
             label.grid(row=0, column=col, padx=10, pady=5)
 
         for row_num, report in enumerate(reports, start=1):
             report_data = [report.id, report.nombre, report.categoria, report.confianza, report.fecha_deteccion]
             for col_num, data in enumerate(report_data):
-                label = ctk.CTkLabel(self.reports_scrollable_frame, text=data, fg_color="#3e3e3e", text_color="#ffffff")
+                label = ctk.CTkLabel(self.reports_scrollable_frame, text=data, fg_color=self.img_frame_color, text_color=self.btn_color)
                 label.grid(row=row_num, column=col_num, padx=10, pady=5)
 
-    def update_statistics(self, reports):
+    # Método para actualizar la vista según la opción seleccionada
+    def update_view(self, selected_option):
+        reports = self.reports_service.get_all_rankings()  # Obtener los datos de informes
+
+        if selected_option == "Lista de Clasificación":
+            self.stats_panel.grid_remove()
+            self.reports_scrollable_frame.grid()
+            self.update_reports_list(reports)
+        elif selected_option == "Gráfico de Torta":
+            self.reports_scrollable_frame.grid_remove()
+            self.daily_histogram.grid_remove()
+            self.stats_panel.grid()
+            self.category_pie_chart.grid()
+            self.update_statistics(reports, chart_type="pie")
+        elif selected_option == "Histograma":
+            self.reports_scrollable_frame.grid_remove()
+            self.category_pie_chart.grid_remove()
+            self.stats_panel.grid()
+            self.daily_histogram.grid()
+            self.update_statistics(reports, chart_type="histogram")
+
+    # Modificamos la función para que acepte el tipo de gráfico a mostrar
+    def update_statistics(self, reports, chart_type="pie"):
         total_residues = len(reports)
         self.total_residues_label.configure(text=f"Total de Residuos: {total_residues}")
 
         categories = [report.categoria for report in reports]
         category_counts = {category: categories.count(category) for category in set(categories)}
-        fig1, ax1 = plt.subplots()
-        ax1.pie(category_counts.values(), labels=category_counts.keys(), autopct='%1.1f%%')
-        ax1.axis('equal')
-        self.update_figure(self.category_pie_chart, fig1)
 
-        dates = [report.fecha_deteccion for report in reports]
-        date_counts = {date: dates.count(date) for date in set(dates)}
-        fig2, ax2 = plt.subplots()
-        ax2.bar(date_counts.keys(), date_counts.values())
-        ax2.set_xlabel('Fecha')
-        ax2.set_ylabel('Cantidad de Residuos')
-        self.update_figure(self.daily_histogram, fig2)
+        if chart_type == "pie":
+            # Tamaño reducido de la figura
+            fig1, ax1 = plt.subplots(figsize=(4, 3))  # Ajustar tamaño de gráfico (ancho, alto)
+            ax1.pie(category_counts.values(), labels=category_counts.keys(), autopct='%1.1f%%')
+            ax1.axis('equal')
+            self.update_figure(self.category_pie_chart, fig1)
+        elif chart_type == "histogram":
+            dates = [report.fecha_deteccion for report in reports]
+            date_counts = {date: dates.count(date) for date in set(dates)}
+            
+            # Tamaño reducido de la figura
+            fig2, ax2 = plt.subplots(figsize=(4, 3))  # Ajustar tamaño de gráfico (ancho, alto)
+            ax2.bar(date_counts.keys(), date_counts.values())
+            ax2.set_xlabel('Fecha')
+            ax2.set_ylabel('Cantidad de Residuos')
+            self.update_figure(self.daily_histogram, fig2)
 
     def update_figure(self, container, figure):
         for widget in container.winfo_children():
