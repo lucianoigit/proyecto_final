@@ -1,5 +1,5 @@
 import customtkinter as ctk
-from PIL import Image, ImageTk
+from PIL import Image, ImageTk,ImageOps
 import time
 import json
 import os
@@ -27,52 +27,165 @@ class View(ctk.CTk):
         self.reports = []
         self.image = None
 
+        # Paleta de colores aplicada
+        self.bg_color = "#dbe7fc"  # Fondo principal
+        self.btn_color = "#bcbefa"  # Color de los botones
+        self.nav_color = "#ffffff"  # Fondo del menú de navegación
+        self.img_frame_color = "#ffffff"  # Fondo del cuadro de imagen
+        self.text_color = "#000000"  # Color del texto
+
+        # Aplicar fondo principal
+        self.configure(fg_color=self.bg_color)
+
         self.panels = {}
         self.create_widgets()
 
     def create_widgets(self):
-        self.grid_columnconfigure(0, weight=1)
-        self.grid_rowconfigure(1, weight=1)
-        
-        # Menú de navegación en la parte inferior
-        menu_bar = ctk.CTkFrame(self, corner_radius=0, fg_color="#3e3e3e")
-        menu_bar.grid(row=2, column=0, sticky="ew")
-        
-        connectivity_button = ctk.CTkButton(menu_bar, text="", image=self.load_icon("icons/connectivity.png"), command=self.show_connectivity_panel, width=80, height=80, fg_color="#5e5e5e", hover_color="#7e7e7e", text_color="#ffffff")
+        self.grid_columnconfigure(1, weight=1)  # Column for content
+        self.grid_rowconfigure(0, weight=1)
+
+        # Menú de navegación lateral
+        nav_bar = ctk.CTkFrame(self, corner_radius=0, fg_color=self.bg_color)
+        nav_bar.grid(row=0, column=0, sticky="ns", padx=10, pady=10)  # Ajustado a la izquierda (navegación lateral)
+
+        # Botones de navegación para cambiar de sección
+        connectivity_button = ctk.CTkButton(nav_bar, 
+                                            text="",  # Sin texto
+                                            image=self.load_icon("icons/connectivity.png"),  # Imagen cargada
+                                            width=150, height=50,
+                                            fg_color=self.bg_color,  # Mismo color que el fondo
+                                            border_color=self.btn_color,  # Color del borde
+                                            border_width=2,  # Ancho del borde
+                                            hover_color=self.img_frame_color,  # Color hover
+                                            text_color=self.text_color)
         connectivity_button.grid(row=0, column=0, padx=10, pady=10)
 
-        connect = ctk.CTkButton(menu_bar, text="", image=self.load_icon("icons/connectivity.png"), command=self.start_communication, width=80, height=80, fg_color="#5e5e5e", hover_color="#7e7e7e", text_color="#ffffff")
-        connect.grid(row=2, column=0, padx=10, pady=10)
-        
-        start_section_button = ctk.CTkButton(menu_bar, text="", image=self.load_icon("icons/start.png"), command=self.show_main_panel, width=80, height=80, fg_color="#5e5e5e", hover_color="#7e7e7e", text_color="#ffffff")
-        start_section_button.grid(row=0, column=1, padx=10, pady=10)
-        
-        configure_button = ctk.CTkButton(menu_bar, text="", image=self.load_icon("icons/settings.png"), command=self.show_configure_panel, width=80, height=80, fg_color="#5e5e5e", hover_color="#7e7e7e", text_color="#ffffff")
-        configure_button.grid(row=0, column=2, padx=10, pady=10)
-        
-        dashboard_button = ctk.CTkButton(menu_bar, text="", image=self.load_icon("icons/dashboard.png"), command=self.show_dashboard, width=80, height=80, fg_color="#5e5e5e", hover_color="#7e7e7e", text_color="#ffffff")
-        dashboard_button.grid(row=0, column=3, padx=10, pady=10)
-        
-        close_button = ctk.CTkButton(menu_bar, text="", image=self.load_icon("icons/close.png"), command=self.close_application, width=80, height=80, fg_color="#5e5e5e", hover_color="#7e7e7e", text_color="#ffffff")
-        close_button.grid(row=0, column=4, padx=10, pady=10)
+        # Otros botones con el mismo estilo
+        start_section_button = ctk.CTkButton(nav_bar, 
+                                            text="", 
+                                            image=self.load_icon("icons/start.png"),
+                                            width=150, height=50,
+                                            fg_color=self.bg_color,
+                                            border_color=self.btn_color,
+                                            border_width=2,
+                                            hover_color=self.img_frame_color)
+        start_section_button.grid(row=1, column=0, padx=10, pady=10)
 
-        # Panel principal
-        main_panel = ctk.CTkFrame(self, fg_color="#3e3e3e")
-        main_panel.grid(row=1, column=0, sticky="nsew", padx=20, pady=20)
+        configure_button = ctk.CTkButton(nav_bar, 
+                                        text="", 
+                                        image=self.load_icon("icons/settings.png"),
+                                        width=150, height=50,
+                                        fg_color=self.bg_color,
+                                        border_color=self.btn_color,
+                                        border_width=2,
+                                        hover_color=self.img_frame_color)
+        configure_button.grid(row=2, column=0, padx=10, pady=10)
+
+        dashboard_button = ctk.CTkButton(nav_bar, 
+                                        text="", 
+                                        image=self.load_icon("icons/dashboard.png"),
+                                        width=150, height=50,
+                                        fg_color=self.bg_color,
+                                        border_color=self.btn_color,
+                                        border_width=2,
+                                        hover_color=self.img_frame_color)
+        dashboard_button.grid(row=3, column=0, padx=10, pady=10)
+
+        close_button = ctk.CTkButton(nav_bar, 
+                                    text="", 
+                                    image=self.load_icon("icons/close.png"),
+                                    width=150, height=50,
+                                    fg_color=self.bg_color,
+                                    border_color=self.btn_color,
+                                    border_width=2,
+                                    hover_color=self.img_frame_color,
+                                    command=self.close_application)
+        close_button.grid(row=4, column=0, padx=10, pady=10)
+
+        # Panel principal para el contenido
+        main_panel = ctk.CTkFrame(self, fg_color=self.img_frame_color)
+        main_panel.grid(row=0, column=1, sticky="nsew", padx=20, pady=20)  # A la derecha del menú de navegación
         self.panels["main"] = main_panel
 
-        main_panel.grid_columnconfigure((0, 3), weight=1)
-        main_panel.grid_columnconfigure((1, 2), weight=0)
+        main_panel.grid_columnconfigure(0, weight=1)
         main_panel.grid_rowconfigure(2, weight=1)
 
-        start_button = ctk.CTkButton(main_panel, text="", image=self.load_icon("icons/iniciar.png"), command=self.start_process, fg_color="#5e5e5e", hover_color="#7e7e7e", text_color="#ffffff")
-        start_button.grid(row=1, column=1, padx=5, pady=5, sticky="ew")
+        # Crear botón de inicio y detener
+        self.start_button = ctk.CTkButton(main_panel, text="", 
+                                        command=self.on_start_button_clicked, 
+                                        image=self.load_icon("icons/start.png"),
+                                        fg_color=self.img_frame_color, 
+                                        border_color=self.btn_color,              
+                                        border_width=2,
+                                        hover_color=self.bg_color,
+                                        text_color=self.text_color)
+        self.start_button.grid(row=1, column=0, padx=5, pady=5, sticky="ew")
 
-        stop_button = ctk.CTkButton(main_panel, text="", image=self.load_icon("icons/stop.png"), command=self.stop_process, fg_color="#5e5e5e", hover_color="#7e7e7e", text_color="#ffffff")
-        stop_button.grid(row=1, column=2, padx=5, pady=5, sticky="ew")
+        self.stop_button = ctk.CTkButton(main_panel, text="", 
+                                        command=self.on_stop_button_clicked, 
+                                        image=self.load_icon("icons/stop.png"),
+                                        fg_color=self.img_frame_color, 
+                                        border_width=2,
+                                        border_color=self.btn_color,
+                                        hover_color=self.bg_color,
+                                        text_color=self.text_color)
+        self.stop_button.grid(row=1, column=0, padx=5, pady=5, sticky="ew")
+        self.stop_button.grid_remove()  # Inicialmente ocultamos el botón de detener
 
-        self.image_label = ctk.CTkLabel(main_panel, text="Imagen clasificada aparecerá aquí", anchor="center", fg_color="#3e3e3e", text_color="#ffffff")
-        self.image_label.grid(row=2, column=0, columnspan=4, padx=10, pady=10, sticky="nsew")
+
+
+        # Área de imagen clasificada
+        self.image_label = ctk.CTkLabel(main_panel, text="Imagen clasificada aparecerá aquí", anchor="center", fg_color=self.img_frame_color, text_color=self.text_color)
+        self.image_label.grid(row=2, column=0, columnspan=2, padx=10, pady=10, sticky="nsew")
+
+        # Tabla para mostrar los últimos 5 artículos clasificados
+        self.articles_frame = ctk.CTkScrollableFrame(main_panel, fg_color=self.img_frame_color)
+        self.articles_frame.grid(row=3, column=0, columnspan=2, padx=10, pady=10, sticky="nsew")
+
+        # Configurar las columnas de la tabla
+# Crear la tabla con formato estilo Excel
+        headers = ["ID", "Nombre", "Categoría", "Confianza", "Fecha"]
+        col_widths = [50, 100, 100, 100, 100]  # Definir los anchos de las columnas
+        row_height = 30  # Altura fija para las filas
+
+        # Configurar las columnas de la tabla estilo Excel
+        for col, header in enumerate(headers):
+            # Crear un frame con borde para cada celda de encabezado
+            frame = ctk.CTkFrame(self.articles_frame, fg_color=self.img_frame_color, corner_radius=0)
+            frame.grid(row=0, column=col, padx=1, pady=1, sticky="nsew")
+            
+            # Crear el label dentro del frame para mostrar el texto
+            label = ctk.CTkLabel(frame,
+                                text=header,
+                                fg_color=self.nav_color,
+                                text_color=self.btn_color,
+                                corner_radius=0,
+                                width=col_widths[col],
+                                height=row_height,
+                                anchor="center")  # Centrar el texto
+            label.grid(sticky="nsew")  # Expandir el label dentro del frame
+
+        # Aquí agregamos las filas de los artículos
+        for row_num, article in enumerate(self.reports[-5:], start=1):
+            article_data = [article['id'], article['nombre'], article['categoria'], article['confianza'], article['fecha']]
+            for col_num, data in enumerate(article_data):
+                # Crear un frame con borde para cada celda de datos
+                frame = ctk.CTkFrame(self.articles_frame, fg_color=self.img_frame_color, corner_radius=0)
+                frame.grid(row=row_num, column=col_num, padx=1, pady=1, sticky="nsew")
+                
+                # Crear el label dentro del frame para mostrar el dato
+                cell = ctk.CTkLabel(frame,
+                                    text=data,
+                                    fg_color=self.nav_color,
+                                    text_color=self.btn_color,
+                                    corner_radius=0,
+                                    width=col_widths[col_num],
+                                    height=row_height,
+                                    anchor="center")
+                cell.grid(sticky="nsew")  # Expandir el label dentro del frame
+
+                # Inicialmente llenamos la tabla
+        self.update_articles_table()
 
         # Panel de conectividad
         connectivity_panel = ctk.CTkFrame(self, fg_color="#3e3e3e")
@@ -145,21 +258,64 @@ class View(ctk.CTk):
 
         conveyor_config_button = ctk.CTkButton(configure_panel, text="Configuración de Cinta Transportadora", command=self.configure_conveyor, fg_color="#5e5e5e", hover_color="#7e7e7e", text_color="#ffffff")
         conveyor_config_button.grid(row=1, column=1, padx=10, pady=10, sticky="nsew")
+                # Crear paneles de las otras secciones
+
 
         self.show_main_panel()
         #self.receive_data()
 
-    def load_icon(self, path):
+    def update_articles_table(self):
+        # Limpiar filas anteriores
+        for widget in self.articles_frame.winfo_children()[5:]:  # Ignoramos las primeras 5 que son los headers
+            widget.destroy()
+
+        # Obtener los últimos 5 artículos
+        last_five_articles = self.reports[-5:] if len(self.reports) > 5 else self.reports
+
+        # Mostrar artículos en la tabla
+        for row_num, article in enumerate(last_five_articles, start=1):
+            article_data = [article['id'], article['nombre'], article['categoria'], article['confianza'], article['fecha']]
+            for col_num, data in enumerate(article_data):
+                label = ctk.CTkLabel(self.articles_frame, text=data, fg_color=self.img_frame_color, text_color=self.text_color)
+                label.grid(row=row_num, column=col_num, padx=5, pady=5, sticky="ew")
+
+    def change_image_to_white(image):
+        # Convierte la imagen a escala de grises y luego la colorea de blanco
+        return ImageOps.colorize(image.convert('L'), black="white", white="white")
+    
+    # Funciones para manejar la lógica de los botones
+    def on_start_button_clicked(self):
+        # Lógica para iniciar el proceso
+        self.start_process()
+
+        # Ocultar el botón de inicio y mostrar el de detener
+        self.start_button.grid_remove()
+        self.stop_button.grid()
+
+    def on_stop_button_clicked(self):
+        # Lógica para detener el proceso
+        self.stop_process()
+
+        # Ocultar el botón de detener y mostrar el de inicio nuevamente
+        self.stop_button.grid_remove()
+        self.start_button.grid()
+
+
+    def load_icon(self, path, hover=False):
         # Obtener la ruta base correcta dependiendo de si el script está empaquetado por PyInstaller o no
         base_path = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
         icon_path = os.path.join(base_path, path)
         try:
             # Cargar la imagen y ajustar el tamaño según sea necesario
-            return ImageTk.PhotoImage(Image.open(icon_path).resize((50, 50)))
+            image = Image.open(icon_path).resize((50, 50))
+            if hover:
+                # Cambiar el color de la imagen a blanco cuando hover=True
+                image = change_image_to_white(image)
+            return ImageTk.PhotoImage(image)
         except Exception as e:
             print(f"Error cargando el icono en {path}: {e}")
             return None
-
+        
     def show_main_panel(self):
         self.hide_all_panels()
         self.panels["main"].grid()
@@ -184,6 +340,8 @@ class View(ctk.CTk):
     def hide_all_panels(self):
         for panel in self.panels.values():
             panel.grid_remove()
+
+
 
     def send_message(self):
         data = self.message_entry.get()
@@ -214,8 +372,6 @@ class View(ctk.CTk):
         # Lógica para configuración de cinta transportadora
         pass
 
-    def configure(self):
-        self.show_configure_panel()
 
     def show_dashboard(self):
         self.show_reports_panel()
@@ -224,22 +380,23 @@ class View(ctk.CTk):
         self.quit()
 
     def clasificacion(self):
-        if not self.calibracion:
-            self.mtx, self.dist = self.processing_service.calibrate(dirpath="./calibracion", prefix="tablero-ajedrez", image_format="jpg", square_size=30, width=7, height=7)
-            self.calibracion = True
+            if not self.calibracion:
+                self.mtx, self.dist = self.processing_service.calibrate(dirpath="./calibracion", prefix="tablero-ajedrez", image_format="jpg", square_size=30, width=7, height=7)
+                self.calibracion = True
 
-        self.communication_service.send_message("HOLA")
-        img = self.processing_service.capture_image()
-        img_undistorted = self.processing_service.undistorted_image(img)
-        df_filtrado, imagenresutado, residue_list = self.processing_service.detected_objects(img_undistorted, 0.2)
-        self.processing_service.save_residue_list(residue_list)
+            self.communication_service.send_message("HOLA")
+            img = self.processing_service.capture_image()
+            img_undistorted = self.processing_service.undistorted_image(img)
+            df_filtrado, imagenresutado, residue_list = self.processing_service.detected_objects(img_undistorted, 0.2)
+            self.processing_service.save_residue_list(residue_list)
 
-        data = self.communication_service.receive_data()
-        if data == "hola":
-            resultJSON = self.generar_informacion(df_filtrado)
-            print("Resultado de clasificación:", resultJSON)
-            self.update_image(imagenresutado)
-            self.reports.append(resultJSON)
+            data = self.communication_service.receive_data()
+            if data == "hola":
+                resultJSON = self.generar_informacion(df_filtrado)
+                print("Resultado de clasificación:", resultJSON)
+                self.update_image(imagenresutado)
+                self.reports.append(resultJSON)
+                self.update_articles_table()
 
     def tomar_foto(self):
         img = self.processing_service.capture_image()
