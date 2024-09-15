@@ -49,7 +49,7 @@ class View(ctk.CTk):
         nav_bar.grid(row=0, column=0, sticky="ns", padx=10, pady=10)  # Ajustado a la izquierda (navegación lateral)
 
         # Botones de navegación para cambiar de sección
-        connectivity_button = ctk.CTkButton(nav_bar, 
+        connectivity_button = ctk.CTkButton(nav_bar, command=self.show_connectivity_panel,
                                             text="",  # Sin texto
                                             image=self.load_icon("icons/connectivity.png"),  # Imagen cargada
                                             width=150, height=50,
@@ -61,7 +61,7 @@ class View(ctk.CTk):
         connectivity_button.grid(row=0, column=0, padx=10, pady=10)
 
         # Otros botones con el mismo estilo
-        start_section_button = ctk.CTkButton(nav_bar, 
+        start_section_button = ctk.CTkButton(nav_bar, command=self.show_main_panel,
                                             text="", 
                                             image=self.load_icon("icons/start.png"),
                                             width=150, height=50,
@@ -71,7 +71,7 @@ class View(ctk.CTk):
                                             hover_color=self.img_frame_color)
         start_section_button.grid(row=1, column=0, padx=10, pady=10)
 
-        configure_button = ctk.CTkButton(nav_bar, 
+        configure_button = ctk.CTkButton(nav_bar, command=self.show_configure_panel,
                                         text="", 
                                         image=self.load_icon("icons/settings.png"),
                                         width=150, height=50,
@@ -81,7 +81,7 @@ class View(ctk.CTk):
                                         hover_color=self.img_frame_color)
         configure_button.grid(row=2, column=0, padx=10, pady=10)
 
-        dashboard_button = ctk.CTkButton(nav_bar, 
+        dashboard_button = ctk.CTkButton(nav_bar, command=self.show_dashboard,
                                         text="", 
                                         image=self.load_icon("icons/dashboard.png"),
                                         width=150, height=50,
@@ -92,7 +92,7 @@ class View(ctk.CTk):
         dashboard_button.grid(row=3, column=0, padx=10, pady=10)
 
         close_button = ctk.CTkButton(nav_bar, 
-                                    text="", 
+                                    text="",
                                     image=self.load_icon("icons/close.png"),
                                     width=150, height=50,
                                     fg_color=self.bg_color,
