@@ -14,7 +14,7 @@ def main():
     db = Database(DATABASE_URL)
     db.create_database()
 
-    SERIAL_PORT = 'COM3'
+    SERIAL_PORT = 'COM4'
     BAUD_RATE = 115200
 
   

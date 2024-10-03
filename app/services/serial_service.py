@@ -25,10 +25,11 @@ class SerialService:
             print(f"Error al abrir el puerto serial {self.port}: {e}")
 
     def send_message(self, message):
-        print("Mensaje enviado:", message)
+        
         message += "\n"  # Asegúrate de que el mensaje tenga un salto de línea al final
         if self.ser and self.ser.is_open:
             self.ser.write(message.encode("utf-8"))
+            print("Mensaje enviado:", message)
         else:
             print("El puerto serial no está disponible para enviar mensajes")
 

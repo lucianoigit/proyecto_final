@@ -51,11 +51,12 @@ class ImageProcessingService(ProcessingInterface):
             print("Imagen procesada.", df_filtrado)
 
             if df_filtrado is not None:
-                self.use_model.show_result(df_filtrado, img_resultado)
+     
                 print(df_filtrado)
 
                 residue_list = []
                 for _, row in df_filtrado.iterrows():
+                    print(f"Procesando fila: {row}")
                     residue_dto = ResidueDTO(
                         nombre=row['class_name'],  # Usar el nombre de la clase
                         categoria=row['class'],  # Usar el nombre de la clase
@@ -67,8 +68,9 @@ class ImageProcessingService(ProcessingInterface):
                         fecha_deteccion=datetime.now(),
                         imagen_referencia="default_image"
                     )
+                    print("ResidueDTO",residue_dto)
                     residue_list.append(residue_dto)
-                
+                print("ResidueList",residue_list)
                 return df_filtrado, img_resultado, residue_list
             else:
                 print("No hay detecciones.")

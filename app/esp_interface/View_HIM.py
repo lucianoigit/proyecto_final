@@ -26,6 +26,7 @@ class View(ctk.CTk):
         self.calibracion = False
         self.reports = []
         self.image = None
+        self.conected = False
 
         # Paleta de colores aplicada
         self.bg_color = "#dbe7fc"  # Fondo principal
@@ -403,23 +404,57 @@ class View(ctk.CTk):
         self.quit()
 
     def clasificacion(self):
-            if not self.calibracion:
-                self.mtx, self.dist = self.processing_service.calibrate(dirpath="./calibracion", prefix="tablero-ajedrez", image_format="jpg", square_size=30, width=7, height=7)
-                self.calibracion = True
+        if not self.calibracion:
+            self.mtx, self.dist = self.processing_service.calibrate(
+                dirpath="./calibracion", 
+                prefix="tablero-ajedrez", 
+                image_format="jpg", 
+                square_size=30, 
+                width=7, 
+                height=7
+            )
+            self.calibracion = True
 
-            self.communication_service.send_message("HOLA")
-            img = self.processing_service.capture_image()
-            img_undistorted = self.processing_service.undistorted_image(img)
-            df_filtrado, imagenresutado, residue_list = self.processing_service.detected_objects(img_undistorted, 0.2)
-            self.processing_service.save_residue_list(residue_list)
+        img = self.processing_service.capture_image()
+        img_undistorted = self.processing_service.undistorted_image(img)
+        df_filtrado, imagenresutado, residue_list = self.processing_service.detected_objects(img_undistorted, 0.2)
 
-            data = self.communication_service.receive_data()
-            if data == "hola":
+        def coordenadas_generator(df_filtrado, z=50):
+            for _, row in df_filtrado.iterrows():
+                # Calcular las coordenadas x e y, usando el promedio entre xmin/xmax y ymin/ymax
+                x = round(((row['xmin'] + row['xmax']) / 2), 2)
+                y = round(((row['ymin'] + row['ymax']) / 2), 2)
+                clase = int(row["class"])
+                yield x, y, z, clase
+
+        def saveArticle(response):
+            print("response", response)
+            if response == "OK":
+                self.processing_service.save_residue_list(residue_list)
                 resultJSON = self.generar_informacion(df_filtrado)
                 print("Resultado de clasificación:", resultJSON)
                 self.update_image(imagenresutado)
                 self.reports.append(resultJSON)
                 self.update_articles_table()
+            else:
+                print("Fallo la conexión", response)
+
+        # Control para enviar `c=1` en el primer comando, y `c=0` en los siguientes
+        first_command = True
+        c = 1  # Valor inicial de `c` es 1 para el primer comando
+
+        # Enviar los comandos con clase
+        for x, y, z, clase in coordenadas_generator(df_filtrado):
+            command = f"MOVE,{x},{y},{z},{c},{clase}"
+            print(f"Enviando comando: {command}")
+            self.communication_service.send_and_receive(command, command, saveArticle)
+
+            # Después del primer comando, cambiar `c` a 0
+            if first_command:
+                first_command = False
+                c = 0
+
+        print("SE TERMINÓ LA CLASIFICACIÓN")
 
     def tomar_foto(self):
         img = self.processing_service.capture_image()
@@ -569,6 +604,7 @@ class View(ctk.CTk):
             # CALLBACK
             def handle_response(response):
                 if response == "OK":
+                    self.conected = True
                     print("Conexion establecida con exito")
                 else:
                     print("Fallo la conexion", response)
