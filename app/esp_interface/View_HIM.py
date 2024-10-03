@@ -5,6 +5,7 @@ import json
 import os
 
 from matplotlib import pyplot as plt
+from app.abstracts.ITransport import TransportInterface
 from app.abstracts.ICommunication import CommunicationInterface
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from app.abstracts.IProcessing import ProcessingInterface
@@ -13,7 +14,7 @@ import sys
 from app.services.reports_service import ReportsService
 
 class View(ctk.CTk):
-    def __init__(self, communication_service: CommunicationInterface, processing_service: ProcessingInterface, reports_service: ReportsService):
+    def __init__(self, communication_service: CommunicationInterface, processing_service: ProcessingInterface, reports_service: ReportsService,transport_service:TransportInterface):
         super().__init__()
         self.title("Delta Robot")
         self.geometry("800x480")
@@ -21,12 +22,17 @@ class View(ctk.CTk):
         self.communication_service = communication_service
         self.processing_service = processing_service
         self.reports_service = reports_service
+        self.transport_service = transport_service
         self.mtx = None
         self.dist = None
         self.calibracion = False
         self.reports = []
         self.image = None
         self.conected = False
+        self.x_center =None
+        self.y_center = None
+        self.offset = None
+        self.isOpen = False
 
         # Paleta de colores aplicada
         self.bg_color = "#dbe7fc"  # Fondo principal
@@ -414,48 +420,79 @@ class View(ctk.CTk):
                 height=7
             )
             self.calibracion = True
+        # Generamos el rectangulo
+        
+        self.transport_service.generate_square()
+        x_center,y_center = self.transport_service.calculate_center()
+        
+        # Seteamos el centro
+        self.x_center = x_center
+        self.y_center = y_center
+        
+        # Seteamos el offset
+        
+        self.offset = self.transport_service.get_offset()
+        
+        while (self.isOpen == True):
+            
+            img = self.processing_service.capture_image()
+            img_undistorted = self.processing_service.undistorted_image(img)
+            df_filtrado, imagenresutado, residue_list = self.processing_service.detected_objects(img_undistorted, 0.2)
 
-        img = self.processing_service.capture_image()
-        img_undistorted = self.processing_service.undistorted_image(img)
-        df_filtrado, imagenresutado, residue_list = self.processing_service.detected_objects(img_undistorted, 0.2)
+            def coordenadas_generator(df_filtrado, z=50):
+                for _, row in df_filtrado.iterrows():
+                    # Calcular las coordenadas x e y, usando el promedio entre xmin/xmax y ymin/ymax
+                    x = round(((row['xmin'] + row['xmax']) / 2), 2)
+                    y = round(((row['ymin'] + row['ymax']) / 2), 2)
+                    clase = int(row["class"])
+                    yield x, y, z, clase
+                    
+            ## CONTROL DE MENSAJES
+            
+            def saveArticle(response):
+                print("response", response)
+                if response == "OK":
+                    self.processing_service.save_residue_list(residue_list)
+                    resultJSON = self.generar_informacion(df_filtrado)
+                    print("Resultado de clasificación:", resultJSON)
+                    self.update_image(imagenresutado)
+                    self.reports.append(resultJSON)
+                    self.update_articles_table()
+                else:
+                    print("Fallo la conexión", response)
+            
+            final_message = "FIN"
+            
+            print(f"Enviando comando de finalización: {final_message}")
+            
+            def confirm_end(response):
+                if response == "OK":
+                    print("Confirmación recibida: Todos los objetos han sido enviados.")
+                else:
+                    print("Fallo la confirmación de fin", response)
+            # Control para enviar `c=1` en el primer comando, y `c=0` en los siguientes
+            first_command = True
+            
+            c = self.offset  # Valor inicial de `c` es 1 para el primer comando
 
-        def coordenadas_generator(df_filtrado, z=50):
-            for _, row in df_filtrado.iterrows():
-                # Calcular las coordenadas x e y, usando el promedio entre xmin/xmax y ymin/ymax
-                x = round(((row['xmin'] + row['xmax']) / 2), 2)
-                y = round(((row['ymin'] + row['ymax']) / 2), 2)
-                clase = int(row["class"])
-                yield x, y, z, clase
+            # Enviar los comandos con clase
+            for x, y, z, clase in coordenadas_generator(df_filtrado):
+                command = f"MOVE,{x},{y},{z},{c},{clase}"
+                print(f"Enviando comando: {command}")
+                self.communication_service.send_and_receive(command, "OK", saveArticle)
 
-        def saveArticle(response):
-            print("response", response)
-            if response == "OK":
-                self.processing_service.save_residue_list(residue_list)
-                resultJSON = self.generar_informacion(df_filtrado)
-                print("Resultado de clasificación:", resultJSON)
-                self.update_image(imagenresutado)
-                self.reports.append(resultJSON)
-                self.update_articles_table()
-            else:
-                print("Fallo la conexión", response)
+                # Después del primer comando, cambiar `c` a 0
+                if first_command:
+                    first_command = False
+                    c = 0
+                    
+            # **Enviar mensaje de finalización**: Este comando indicará que se han enviado todos los objetos
 
-        # Control para enviar `c=1` en el primer comando, y `c=0` en los siguientes
-        first_command = True
-        c = 1  # Valor inicial de `c` es 1 para el primer comando
 
-        # Enviar los comandos con clase
-        for x, y, z, clase in coordenadas_generator(df_filtrado):
-            command = f"MOVE,{x},{y},{z},{c},{clase}"
-            print(f"Enviando comando: {command}")
-            self.communication_service.send_and_receive(command, command, saveArticle)
-
-            # Después del primer comando, cambiar `c` a 0
-            if first_command:
-                first_command = False
-                c = 0
-
-        print("SE TERMINÓ LA CLASIFICACIÓN")
-
+            # Enviar el comando de finalización y esperar confirmación
+            self.communication_service.send_and_receive(final_message, "OK", confirm_end)
+            print("SE TERMINÓ LA CLASIFICACIÓN")
+    
     def tomar_foto(self):
         img = self.processing_service.capture_image()
         self.update_image(img)

@@ -5,6 +5,7 @@ from app.services.IA_model_service import MLModelService
 from app.services.reports_service import ReportsService
 from app.services.serial_service import SerialService
 from app.services.image_processing_service import ImageProcessingService
+from app.services.transporter_service import TransportService
 from database.db import Database
 import serial
 
@@ -26,8 +27,9 @@ def main():
         use_model = MLModelService(model_path='./yolov5s.pt')
         reports_service = ReportsService(residue_repository)
         image_service = ImageProcessingService(residue_repository, use_model)
+        transport_service = TransportService()
         
-        app = View(serial_service, image_service, reports_service)
+        app = View(serial_service, image_service, reports_service,transport_service)
         app.mainloop()
         del serial_service  
 
