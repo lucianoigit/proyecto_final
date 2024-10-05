@@ -1,4 +1,5 @@
 from datetime import datetime
+import threading
 from app.dbModels.ResidueDto import ResidueDTO
 from app.repositories.residue_repository import ResidueRepository
 import cv2
@@ -14,6 +15,61 @@ class ImageProcessingService(ProcessingInterface):
         self.dist = None
         self.residue_repository = residue_repository
         self.use_model = use_model
+        
+        self.detection_thread = None  # Variable para el hilo de detección
+
+    def detected_objects(self, img_undistorted, confianza_minima=0.2):
+        try:
+            print("Procesando imagen...")
+            df_filtrado, img_resultado = self.use_model.run_model(img_undistorted, confianza_minima)
+            print("Imagen procesada.", df_filtrado)
+
+            if df_filtrado is not None:
+                residue_list = []
+                for _, row in df_filtrado.iterrows():
+                    print(f"Procesando fila: {row}")
+                    residue_dto = ResidueDTO(
+                        nombre=row['class_name'],
+                        categoria=row['class'],
+                        confianza=row['confidence'],
+                        x_min=row['xmin'],
+                        y_min=row['ymin'],
+                        x_max=row['xmax'],
+                        y_max=row['ymax'],
+                        fecha_deteccion=datetime.now(),
+                        imagen_referencia="default_image"
+                    )
+                    print("ResidueDTO", residue_dto)
+                    residue_list.append(residue_dto)
+                print("ResidueList", residue_list)
+                return df_filtrado, img_resultado, residue_list
+            else:
+                print("No hay detecciones.")
+                return None, None, []
+
+        except Exception as e:
+            print(f"Error durante la detección: {e}")
+            return None, None, []
+
+    def detected_objects_in_background(self, img_undistorted, confianza_minima=0.2, callback=None):
+        """
+        Ejecuta detected_objects en un hilo separado para no bloquear la interfaz.
+        El `callback` se llamará con los resultados cuando la detección termine.
+        """
+
+        def run_detection():
+            df_filtrado, img_resultado, residue_list = self.detected_objects(img_undistorted, confianza_minima)
+            if callback:
+                callback(df_filtrado, img_resultado, residue_list)
+
+        # Crear y arrancar el hilo
+        self.detection_thread = threading.Thread(target=run_detection)
+        self.detection_thread.start()
+
+    def wait_for_detection(self):
+        """ Espera a que el hilo de detección termine, si existe. """
+        if self.detection_thread:
+            self.detection_thread.join()
 
     def calibrate(self, dirpath, prefix, image_format, square_size, width, height):
         images = glob.glob(f"{dirpath}/{prefix}*.{image_format}")
@@ -43,7 +99,7 @@ class ImageProcessingService(ProcessingInterface):
         newcameramtx, roi = cv2.getOptimalNewCameraMatrix(self.mtx, self.dist, (w, h), 1, (w, h))
         img_undistorted = cv2.undistort(img, self.mtx, self.dist, None, newcameramtx)
         return img_undistorted
-
+    """ 
     def detected_objects(self, img_undistorted, confianza_minima=0.2):
         try:
             print("Procesando imagen...")
@@ -58,8 +114,8 @@ class ImageProcessingService(ProcessingInterface):
                 for _, row in df_filtrado.iterrows():
                     print(f"Procesando fila: {row}")
                     residue_dto = ResidueDTO(
-                        nombre=row['class_name'],  # Usar el nombre de la clase
-                        categoria=row['class'],  # Usar el nombre de la clase
+                        nombre=row['class_name'],  
+                        categoria=row['class'],  
                         confianza=row['confidence'],
                         x_min=row['xmin'],
                         y_min=row['ymin'],
@@ -78,11 +134,11 @@ class ImageProcessingService(ProcessingInterface):
 
         except Exception as e:
             print(f"Error durante la detección: {e}")
-            return None, None, []
+            return None, None, [] """
         
     def save_residue_list(self, residue_list):
         print(f"residuos recolectados en bdd", residue_list)
-        for residue_dto in residue_list:
+        """   for residue_dto in residue_list:
             print(f"residuo particular en bdd ", residue_dto)
             self.residue_repository.add_residue(
                 nombre=residue_dto.nombre,
@@ -94,7 +150,7 @@ class ImageProcessingService(ProcessingInterface):
                 y_max=residue_dto.y_max,
                 fecha_deteccion=residue_dto.fecha_deteccion,
                 imagen_referencia=residue_dto.imagen_referencia
-            )
+            ) """
 
     def capture_image(self):
         cam = cv2.VideoCapture(0)

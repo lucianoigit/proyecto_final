@@ -496,12 +496,12 @@ class View(ctk.CTk):
             def saveArticle(response):
 
                 if response == "OK":
-                    self.processing_service.save_residue_list(self.residue_list)
+                    #self.processing_service.save_residue_list(self.residue_list)
                     resultJSON = self.generar_informacion(self.df_filtrado)
                     print("Resultado de clasificación:", resultJSON)
                     self.update_image(self.image_resultado)
                     self.reports.append(resultJSON)  # Agregar el resultado a los reports
-                    self.update_articles_table()
+                    #self.update_articles_table()
 
                 else:
 
