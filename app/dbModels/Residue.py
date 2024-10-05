@@ -1,3 +1,4 @@
+import uuid
 from database.db import Base
 from sqlalchemy import Column, Integer, String, Float, DateTime
 
@@ -7,7 +8,7 @@ from sqlalchemy import Column, Integer, String, Float, DateTime
 class Residue(Base):
     __tablename__ = 'objetos'
 
-    id = Column(Integer, primary_key=True)
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))  # Usar UUID como id
     nombre = Column(String)
     categoria = Column(String)
     confianza = Column(Float)

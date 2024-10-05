@@ -18,6 +18,7 @@ class View(ctk.CTk):
         super().__init__()
         self.title("Delta Robot")
         self.geometry("800x480")
+        self.root = self  # Asegúrate de que root es la instancia de la ventana
         #self.resizable(False,False)
         self.communication_service = communication_service
         self.processing_service = processing_service
@@ -32,7 +33,12 @@ class View(ctk.CTk):
         self.x_center =None
         self.y_center = None
         self.offset = None
-        self.isOpen = False
+        self.isOpen = True
+        self.isDisponible = False
+        self.image_resultado =  None
+        self.df_filtrado = None
+        self.image_resultado = None
+        self.residue_list = None
 
         # Paleta de colores aplicada
         self.bg_color = "#dbe7fc"  # Fondo principal
@@ -409,90 +415,130 @@ class View(ctk.CTk):
     def close_application(self):
         self.quit()
 
+    def iniciar_clasificacion(self):
+        if self.isOpen:
+
+
+            if self.df_filtrado is None or self.df_filtrado.empty:
+                # Clasificamos
+                img = self.processing_service.capture_image()
+
+                # Verificar si la imagen fue capturada correctamente
+                if img is None:
+                    print("Error: No se pudo capturar la imagen.")
+                    self.root.after(500, self.iniciar_clasificacion)  # Asegurarse de que invoque el método correcto
+                    return
+
+                try:
+                    img_undistorted = self.processing_service.undistorted_image(img)
+                except Exception as e:
+                    print(f"Error al procesar la imagen: {e}")
+                    self.root.after(500, self.iniciar_clasificacion)  # Asegurarse de que invoque el método correcto
+                    return
+
+                df_filtrado, imagenresutado, residue_list = self.processing_service.detected_objects(img_undistorted, 0.2)
+
+                # Guardamos los resultados
+                self.df_filtrado = df_filtrado
+                self.image_resultado = imagenresutado
+                self.residue_list = residue_list
+
+            # Verificamos la disponibilidad y procedemos a enviar los datos si está disponible
+            self.verificar_disponibilidad()
+
+            # Volver a ejecutar este ciclo después de 500 ms para no bloquear la interfaz
+            self.root.after(500, self.iniciar_clasificacion)
+
     def clasificacion(self):
+        """
+        Método principal de clasificación.
+        """
         if not self.calibracion:
             self.mtx, self.dist = self.processing_service.calibrate(
-                dirpath="./calibracion", 
-                prefix="tablero-ajedrez", 
-                image_format="jpg", 
-                square_size=30, 
-                width=7, 
+                dirpath="./calibracion",
+                prefix="tablero-ajedrez",
+                image_format="jpg",
+                square_size=30,
+                width=7,
                 height=7
             )
-            self.calibracion = True
-        # Generamos el rectangulo
-        
-        self.transport_service.generate_square()
-        x_center,y_center = self.transport_service.calculate_center()
-        
-        # Seteamos el centro
+        self.calibracion = True
+
+        # Generamos el rectángulo
+        self.transport_service.generate_square(100, 100, 100, 100)
+        x_center, y_center = self.transport_service.calculate_center()
+
+        # Seteamos el centro y el offset
         self.x_center = x_center
         self.y_center = y_center
-        
-        # Seteamos el offset
-        
         self.offset = self.transport_service.get_offset()
-        
-        while (self.isOpen == True):
-            
-            img = self.processing_service.capture_image()
-            img_undistorted = self.processing_service.undistorted_image(img)
-            df_filtrado, imagenresutado, residue_list = self.processing_service.detected_objects(img_undistorted, 0.2)
 
-            def coordenadas_generator(df_filtrado, z=50):
-                for _, row in df_filtrado.iterrows():
-                    # Calcular las coordenadas x e y, usando el promedio entre xmin/xmax y ymin/ymax
-                    x = round(((row['xmin'] + row['xmax']) / 2), 2)
-                    y = round(((row['ymin'] + row['ymax']) / 2), 2)
-                    clase = int(row["class"])
-                    yield x, y, z, clase
-                    
-            ## CONTROL DE MENSAJES
-            
+        # Iniciar la clasificación de manera continua
+        self.iniciar_clasificacion()  # Asegurarse de ejecutar el método correctamente
+
+    def verificar_disponibilidad(self):
+        def change_disponibilidad(command):
+            if command == "OK":
+                self.isDisponible = True
+
+                self.enviar_datos_clasificados()
+            else:
+                self.isDisponible = False
+                print("Dispositivo no disponible, esperando...")
+
+        # Enviar el mensaje para verificar disponibilidad
+        self.communication_service.send_and_receive("DISPONIBILIDAD", "BUFFER_VACIO", change_disponibilidad)
+
+    def enviar_datos_clasificados(self):
+        
+        if self.isDisponible and self.df_filtrado is not None:
+
             def saveArticle(response):
-                print("response", response)
+
                 if response == "OK":
-                    self.processing_service.save_residue_list(residue_list)
-                    resultJSON = self.generar_informacion(df_filtrado)
+                    self.processing_service.save_residue_list(self.residue_list)
+                    resultJSON = self.generar_informacion(self.df_filtrado)
                     print("Resultado de clasificación:", resultJSON)
-                    self.update_image(imagenresutado)
-                    self.reports.append(resultJSON)
+                    self.update_image(self.image_resultado)
+                    self.reports.append(resultJSON)  # Agregar el resultado a los reports
                     self.update_articles_table()
+
                 else:
-                    print("Fallo la conexión", response)
-            
-            final_message = "FIN"
-            
-            print(f"Enviando comando de finalización: {final_message}")
-            
+
+                    print("Fallo la conexión:", response)
+
             def confirm_end(response):
                 if response == "OK":
-                    print("Confirmación recibida: Todos los objetos han sido enviados.")
+                    # Limpiar los datos
+                    self.isDisponible = False
+                    self.df_filtrado = None
+                    self.image_resultado = None
+                    self.residue_list = None
                 else:
-                    print("Fallo la confirmación de fin", response)
-            # Control para enviar `c=1` en el primer comando, y `c=0` en los siguientes
-            first_command = True
-            
-            c = self.offset  # Valor inicial de `c` es 1 para el primer comando
+                    print("Fallo la confirmación de fin:", response)
 
-            # Enviar los comandos con clase
-            for x, y, z, clase in coordenadas_generator(df_filtrado):
-                command = f"MOVE,{x},{y},{z},{c},{clase}"
-                print(f"Enviando comando: {command}")
+            # Enviar los comandos de los objetos clasificados
+            first_command = True
+            c = self.offset
+
+            for x, y, z, clase in self.coordenadas_generator(self.df_filtrado):
+                command = f"{x},{y},{z},{c},{clase}"
                 self.communication_service.send_and_receive(command, "OK", saveArticle)
 
-                # Después del primer comando, cambiar `c` a 0
                 if first_command:
                     first_command = False
                     c = 0
-                    
-            # **Enviar mensaje de finalización**: Este comando indicará que se han enviado todos los objetos
 
+            # Enviar mensaje de finalización
+            self.communication_service.send_and_receive("FIN", "OK", confirm_end)
 
-            # Enviar el comando de finalización y esperar confirmación
-            self.communication_service.send_and_receive(final_message, "OK", confirm_end)
-            print("SE TERMINÓ LA CLASIFICACIÓN")
-    
+    def coordenadas_generator(self, df_filtrado, z=50):
+        for _, row in df_filtrado.iterrows():
+            x = round(((row['xmin'] + row['xmax']) / 2), 2)
+            y = round(((row['ymin'] + row['ymax']) / 2), 2)
+            clase = int(row["class"])
+            yield x, y, z, clase
+
     def tomar_foto(self):
         img = self.processing_service.capture_image()
         self.update_image(img)

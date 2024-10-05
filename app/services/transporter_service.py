@@ -31,12 +31,6 @@ class TransportService(TransportInterface):
         top_left = (self.x1, self.y1)
         bottom_right = (self.x2, self.y2)
         
-        cv2.rectangle(img, top_left, bottom_right, color, thickness)
-        
-        # Mostrar la imagen con el cuadrado generado
-        cv2.imshow('Cuadrado generado', img)
-        cv2.waitKey(0)  
-        cv2.destroyAllWindows()
 
         return {"top_left": top_left, "bottom_right": bottom_right}  # Devuelve las coordenadas del cuadrado
 
