@@ -436,19 +436,27 @@ class View(ctk.CTk):
                     self.root.after(500, self.iniciar_clasificacion)  # Asegurarse de que invoque el método correcto
                     return
 
-                df_filtrado, imagenresutado, residue_list = self.processing_service.detected_objects(img_undistorted, 0.2)
-
-                # Guardamos los resultados
+            def detection_callback(df_filtrado, img_resultado, residue_list):
+                        # Actualiza la UI cuando el hilo de detección termine
                 self.df_filtrado = df_filtrado
-                self.image_resultado = imagenresutado
+                self.image_resultado = img_resultado
                 self.residue_list = residue_list
+                self.update_articles_table()  # Actualiza la tabla con los datos detectados
+                self.update_image(self.image_resultado)  # Actualiza la imagen en la UI
+
+                # Ejecuta el procesamiento en segundo plano
+                img_undistorted = self.processing_service.undistorted_image(img)
+                self.processing_service.detected_objects_in_background(img_undistorted, 0.2, detection_callback)
+                      
 
             # Verificamos la disponibilidad y procedemos a enviar los datos si está disponible
             self.verificar_disponibilidad()
 
             # Volver a ejecutar este ciclo después de 500 ms para no bloquear la interfaz
             self.root.after(500, self.iniciar_clasificacion)
+            
 
+        
     def clasificacion(self):
         """
         Método principal de clasificación.
@@ -500,7 +508,7 @@ class View(ctk.CTk):
                     resultJSON = self.generar_informacion(self.df_filtrado)
                     print("Resultado de clasificación:", resultJSON)
                     self.update_image(self.image_resultado)
-                    self.reports.append(resultJSON)  # Agregar el resultado a los reports
+                    #self.reports.append(resultJSON)  # Agregar el resultado a los reports
                     #self.update_articles_table()
 
                 else:

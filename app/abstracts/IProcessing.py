@@ -8,7 +8,10 @@ class ProcessingInterface(ABC):
     @abstractmethod
     def undistorted_image(self, img):
         pass
-
+    
+    @abstractmethod
+    def detected_objects_in_background(self, img_undistorted, confianza_minima=0.2, callback=None):
+        pass
     @abstractmethod
     def detected_objects(self, img_undistorted, confianza_minima=0.2, tamano_entrada=(416, 416)):
         pass

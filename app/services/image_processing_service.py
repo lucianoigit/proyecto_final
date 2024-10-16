@@ -59,12 +59,16 @@ class ImageProcessingService(ProcessingInterface):
 
         def run_detection():
             df_filtrado, img_resultado, residue_list = self.detected_objects(img_undistorted, confianza_minima)
+
+            # Aquí usamos el método after para actualizar la UI en el hilo principal
             if callback:
-                callback(df_filtrado, img_resultado, residue_list)
+                # Si necesitas pasar los datos de vuelta al hilo principal para actualizar la interfaz
+                self.root.after(0, lambda: callback(df_filtrado, img_resultado, residue_list))
 
         # Crear y arrancar el hilo
         self.detection_thread = threading.Thread(target=run_detection)
         self.detection_thread.start()
+
 
     def wait_for_detection(self):
         """ Espera a que el hilo de detección termine, si existe. """
