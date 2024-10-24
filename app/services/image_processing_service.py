@@ -7,6 +7,8 @@ import numpy as np
 import glob
 from app.abstracts.IProcessing import ProcessingInterface
 from app.services.IA_model_service import MLModelService
+import picamera
+import picamera.array
 
 class ImageProcessingService(ProcessingInterface):
 
