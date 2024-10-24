@@ -107,6 +107,9 @@ class SerialService:
         if self.ser:
             self.ser.close()
             print(f"Puerto serial {self.port} cerrado correctamente.")
+            
+    def getStatus(self):
+        return self.ser
 
     def __del__(self):
         self.close()  # Asegurar que se cierra el puerto serial cuando se destruye la instancia

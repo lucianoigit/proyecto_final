@@ -14,7 +14,7 @@ import sys
 from app.services.reports_service import ReportsService
 
 class View(ctk.CTk):
-    def __init__(self, communication_service: CommunicationInterface, processing_service: ProcessingInterface, reports_service: ReportsService,transport_service:TransportInterface):
+    def __init__(self, communication_service: CommunicationInterface, processing_service: ProcessingInterface, reports_service: ReportsService,transport_service:TransportInterface,ser):
         super().__init__()
         self.title("Delta Robot")
         self.geometry("800x480")
@@ -33,7 +33,7 @@ class View(ctk.CTk):
         self.x_center =None
         self.y_center = None
         self.offset = None
-        self.isOpen = True
+        self.isOpen = ser
         self.isDisponible = False
         self.image_resultado =  None
         self.df_filtrado = None
@@ -416,8 +416,8 @@ class View(ctk.CTk):
         self.quit()
 
     def iniciar_clasificacion(self):
-        if self.isOpen:
-
+        if self.isOpen != None:
+            print ("entramos a la")
 
             if self.df_filtrado is None or self.df_filtrado.empty:
                 # Clasificamos
@@ -454,7 +454,8 @@ class View(ctk.CTk):
 
             # Volver a ejecutar este ciclo después de 500 ms para no bloquear la interfaz
             self.root.after(500, self.iniciar_clasificacion)
-            
+        else:
+            print ("No puede iniciar sin conectarse al robot")
 
         
     def clasificacion(self):

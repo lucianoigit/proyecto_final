@@ -24,12 +24,13 @@ def main():
         residue_repository = ResidueRepository(session)
         serial_service = SerialService(SERIAL_PORT, BAUD_RATE)
         serial_service.initialize_communication()
+        ser = serial_service.getStatus()
         use_model = MLModelService(model_path='./yolov5s.pt')
         reports_service = ReportsService(residue_repository)
         image_service = ImageProcessingService(residue_repository, use_model)
         transport_service = TransportService()
         
-        app = View(serial_service, image_service, reports_service,transport_service)
+        app = View(serial_service, image_service, reports_service,transport_service,ser)
         app.mainloop()
         del serial_service  
 
