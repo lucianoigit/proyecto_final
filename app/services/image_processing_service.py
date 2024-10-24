@@ -157,7 +157,8 @@ class ImageProcessingService(ProcessingInterface):
             ) """
 
     def capture_image(self):
-        cam = cv2.VideoCapture(0)
-        ret, foto = cam.read()
-        cam.release()
+        with picamera.PiCamera() as camera:
+            with picamera.array.PiRGBArray(camera) as stream:
+                camera.capture(stream, format='bgr')
+                foto = stream.array
         return foto
