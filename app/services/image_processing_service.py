@@ -7,8 +7,7 @@ import numpy as np
 import glob
 from app.abstracts.IProcessing import ProcessingInterface
 from app.services.IA_model_service import MLModelService
-import picamera
-import picamera.array
+from picamera2 import Picamera2
 
 class ImageProcessingService(ProcessingInterface):
 
@@ -159,8 +158,10 @@ class ImageProcessingService(ProcessingInterface):
             ) """
 
     def capture_image(self):
-        with picamera.PiCamera() as camera:
-            with picamera.array.PiRGBArray(camera) as stream:
-                camera.capture(stream, format='bgr')
-                foto = stream.array
+        picam2 = Picamera2()
+        picam2.configure(picam2.create_still_configuration())
+        picam2.start()
+        time.sleep(2)  # Esperar un poco para que la cámara ajuste el enfoque y la exposición
+        foto = picam2.capture_array()
+        picam2.stop()
         return foto
