@@ -46,8 +46,7 @@ class View(ctk.CTk):
         self.y2=None
         self.mmx = None
         self.mmy = None 
-                # Inicializar la cámara al inicio
-        self.processing_service.start_camera()
+        
 
         # Paleta de colores aplicada
         self.bg_color = "#dbe7fc"  # Fondo principal
