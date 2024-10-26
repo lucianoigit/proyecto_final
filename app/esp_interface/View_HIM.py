@@ -339,7 +339,6 @@ class View(ctk.CTk):
         # Ocultar el botón de detener y mostrar el de inicio nuevamente
         self.stop_button.grid_remove()
         self.start_button.grid()
-
     def calibrate_camera_type(self):
         # Crear una ventana emergente para ingresar parámetros
         calibration_window = ctk.CTkToplevel(self)
@@ -350,7 +349,7 @@ class View(ctk.CTk):
         scrollable_frame = ctk.CTkScrollableFrame(calibration_window, width=400, height=500)
         scrollable_frame.pack(fill="both", expand=True, padx=10, pady=10)
 
-        # Variables para almacenar las coordenadas del rectángulo
+        # Variables para almacenar las coordenadas seleccionadas
         self.points = []  # Lista para almacenar los puntos seleccionados
 
         # Función para abrir la cámara y capturar los clics usando Picamera2
@@ -371,42 +370,46 @@ class View(ctk.CTk):
                     # Dibujar un círculo en el punto seleccionado
                     cv2.circle(frame, (x, y), 5, (0, 255, 0), -1)
                     # Actualizar la ventana con el punto marcado
-                    cv2.imshow("Seleccione cuatro puntos", frame)
+                    cv2.imshow("Seleccione puntos", frame)
 
-                    # Si se seleccionaron 4 puntos, cerrar la ventana
-                    if len(self.points) == 4:
-                        cv2.destroyWindow("Seleccione cuatro puntos")
+                    # Permitir que se seleccionen más puntos sin límite fijo
+                    if len(self.points) >= 2:
+                        update_coordinates_fields()
+
+            def update_coordinates_fields():
+                # Si hay al menos 2 puntos seleccionados, actualizar los campos de coordenadas
+                if len(self.points) >= 2:
+                    x1, y1 = self.points[0]
+                    x2, y2 = self.points[-1]  # Usar el último punto seleccionado
+
+                    # Asignar las coordenadas seleccionadas a los campos de entrada
+                    x1_entry.delete(0, ctk.END)
+                    y1_entry.delete(0, ctk.END)
+                    x2_entry.delete(0, ctk.END)
+                    y2_entry.delete(0, ctk.END)
+
+                    x1_entry.insert(0, str(x1))
+                    y1_entry.insert(0, str(y1))
+                    x2_entry.insert(0, str(x2))
+                    y2_entry.insert(0, str(y2))
 
             while True:
                 # Capturar el frame desde Picamera2
                 frame = picam2.capture_array()
 
                 # Mostrar la imagen en la ventana
-                cv2.imshow("Seleccione cuatro puntos", frame)
+                cv2.imshow("Seleccione puntos", frame)
 
                 # Configurar el evento de clic
-                cv2.setMouseCallback("Seleccione cuatro puntos", click_event)
+                cv2.setMouseCallback("Seleccione puntos", click_event)
 
-                # Esperar a que el usuario cierre la ventana o seleccione cuatro puntos
-                if cv2.waitKey(1) & 0xFF == ord('q') or len(self.points) == 4:
+                # Esperar a que el usuario cierre la ventana o presione 'q'
+                if cv2.waitKey(1) & 0xFF == ord('q'):
                     break
 
             # Detener la cámara y cerrar la ventana
             picam2.stop()
             cv2.destroyAllWindows()
-
-            # Asignar las coordenadas seleccionadas a los campos de entrada
-            if len(self.points) >= 2:
-                (x1, y1), (x2, y2) = self.points[:2]
-                x1_entry.delete(0, ctk.END)
-                y1_entry.delete(0, ctk.END)
-                x2_entry.delete(0, ctk.END)
-                y2_entry.delete(0, ctk.END)
-                
-                x1_entry.insert(0, str(x1))
-                y1_entry.insert(0, str(y1))
-                x2_entry.insert(0, str(x2))
-                y2_entry.insert(0, str(y2))
 
         # Campos de entrada para parámetros de calibración dentro del scrollable frame
         square_size_label = ctk.CTkLabel(scrollable_frame, text="Tamaño del cuadrado:")
@@ -424,7 +427,7 @@ class View(ctk.CTk):
         height_entry = ctk.CTkEntry(scrollable_frame)
         height_entry.pack(pady=5)
 
-        # Campos de entrada para las coordenadas del rectángulo
+        # Campos de entrada para las coordenadas seleccionadas
         x1_label = ctk.CTkLabel(scrollable_frame, text="Coordenada X1:")
         x1_label.pack(pady=10)
         x1_entry = ctk.CTkEntry(scrollable_frame)
@@ -478,6 +481,7 @@ class View(ctk.CTk):
         # Botón para iniciar la calibración
         start_button = ctk.CTkButton(scrollable_frame, text="Iniciar Calibración", command=start_calibration)
         start_button.pack(pady=20)
+
 
             
     def load_icon(self, path, hover=False):
