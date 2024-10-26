@@ -341,13 +341,14 @@ class View(ctk.CTk):
         self.start_button.grid()
 
     def calibrate_camera_type(self):
-        # Crear un marco que actuará como un popup en la ventana principal
-        popup_frame = ctk.CTkFrame(self, width=420, height=520, fg_color="white", corner_radius=10)
-        popup_frame.place(relx=0.5, rely=0.5, anchor="center")  # Centrar el popup en la ventana principal
+        # Crear una ventana emergente para ingresar parámetros
+        calibration_window = ctk.CTkToplevel(self)
+        calibration_window.title("Configuración de Calibración")
+        calibration_window.geometry("800x480")  # Ajustar el tamaño si es necesario
 
-        # Crear un marco desplazable dentro del popup
-        scrollable_frame = ctk.CTkScrollableFrame(popup_frame, width=400, height=500)
-        scrollable_frame.pack(pady=10, padx=10, fill="both", expand=True)
+        # Crear un marco desplazable dentro de la ventana emergente
+        scrollable_frame = ctk.CTkScrollableFrame(calibration_window, width=400, height=500)
+        scrollable_frame.pack(fill="both", expand=True, padx=10, pady=10)
 
         # Variables para almacenar las coordenadas del rectángulo
         self.points = []  # Lista para almacenar los puntos seleccionados
@@ -356,7 +357,7 @@ class View(ctk.CTk):
         def open_camera_and_select_points():
             # Inicializar Picamera2
             picam2 = Picamera2()
-            picam2.preview_configuration.main.size = (640, 480)  # Configurar el tamaño de la ventana de previsualización
+            picam2.preview_configuration.main.size = (800, 480)  # Configurar el tamaño de la ventana de previsualización
             picam2.preview_configuration.main.format = "RGB888"
             picam2.configure("preview")
 
@@ -470,17 +471,13 @@ class View(ctk.CTk):
                     y2=y2
                 )
                 
-                popup_frame.destroy()  # Cerrar el popup después de iniciar la calibración
+                calibration_window.destroy()  # Cerrar la ventana después de iniciar la calibración
             except ValueError:
                 print("Por favor, ingrese valores numéricos válidos.")
 
         # Botón para iniciar la calibración
         start_button = ctk.CTkButton(scrollable_frame, text="Iniciar Calibración", command=start_calibration)
         start_button.pack(pady=20)
-
-        # Botón para cerrar el popup sin hacer nada
-        close_button = ctk.CTkButton(scrollable_frame, text="Cerrar", command=popup_frame.destroy)
-        close_button.pack(pady=10)
 
         
     def load_icon(self, path, hover=False):
