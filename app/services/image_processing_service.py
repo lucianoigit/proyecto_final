@@ -20,7 +20,36 @@ class ImageProcessingService(ProcessingInterface):
         self.use_model = use_model
         self.transport_service = transport_service  # Servicio de transporte para conversiones
         self.detection_thread = None  # Variable para el hilo de detección
+        self.picam2 = None  # Inicialización de la cámara
 
+    def start_camera(self):
+        """Inicializa y arranca la cámara."""
+        if self.picam2 is None:
+            self.picam2 = Picamera2()
+            self.picam2.configure(self.picam2.create_still_configuration())
+            self.picam2.start()
+            print("Cámara iniciada.")
+
+    def stop_camera(self):
+        """Detiene y libera la cámara."""
+        if self.picam2 is not None:
+            self.picam2.stop()
+            self.picam2 = None
+            print("Cámara detenida.")
+
+    def capture_image(self):
+        """Captura una imagen usando la cámara inicializada."""
+        if self.picam2 is None:
+            print("Error: La cámara no está inicializada.")
+            return None
+        try:
+            time.sleep(2)  # Esperar un poco para que la cámara ajuste el enfoque y la exposición
+            foto = self.picam2.capture_array()
+            return foto
+        except Exception as e:
+            print(f"Error al capturar la imagen: {e}")
+            return None
+        
     def detected_objects(self, img_undistorted, confianza_minima=0.2, relation_x=0, relation_y=0, roi=None):
         try:
             print("Procesando imagen...")
@@ -119,11 +148,3 @@ class ImageProcessingService(ProcessingInterface):
         print(f"Residuos recolectados en BDD:", residue_list)
         # Implementar la lógica de guardado en la base de datos si es necesario
 
-    def capture_image(self):
-        picam2 = Picamera2()
-        picam2.configure(picam2.create_still_configuration())
-        picam2.start()
-        time.sleep(2)  # Esperar un poco para que la cámara ajuste el enfoque y la exposición
-        foto = picam2.capture_array()
-        picam2.stop()
-        return foto
