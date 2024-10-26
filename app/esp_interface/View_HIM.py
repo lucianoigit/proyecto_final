@@ -479,7 +479,7 @@ class View(ctk.CTk):
         start_button = ctk.CTkButton(scrollable_frame, text="Iniciar Calibración", command=start_calibration)
         start_button.pack(pady=20)
 
-        
+            
     def load_icon(self, path, hover=False):
         # Obtener la ruta base correcta dependiendo de si el script está empaquetado por PyInstaller o no
         base_path = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
