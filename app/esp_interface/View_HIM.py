@@ -3,7 +3,8 @@ from PIL import Image, ImageTk,ImageOps
 import time
 import json
 import os
-
+import cv2
+from picamera2 import Picamera2
 from matplotlib import pyplot as plt
 from app.abstracts.ITransport import TransportInterface
 from app.abstracts.ICommunication import CommunicationInterface
@@ -39,6 +40,12 @@ class View(ctk.CTk):
         self.df_filtrado = None
         self.image_resultado = None
         self.residue_list = None
+        self.x1=None
+        self.x2=None
+        self.y1=None
+        self.y2=None
+        self.mmx = None
+        self.mmy = None 
 
         # Paleta de colores aplicada
         self.bg_color = "#dbe7fc"  # Fondo principal
@@ -270,7 +277,7 @@ class View(ctk.CTk):
 
         # Botón de calibración de cámara
         calibration_button = ctk.CTkButton(configure_panel, text="Calibración de Cámara", 
-                                        command=self.calibrate_camera, fg_color=self.nav_color, 
+                                        command=self.calibrate_camera_type, fg_color=self.nav_color, 
                                         hover_color="#a3a7d9", text_color=self.text_color)
         calibration_button.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
 
@@ -281,10 +288,7 @@ class View(ctk.CTk):
         ml_model_button.grid(row=0, column=1, padx=10, pady=10, sticky="nsew")
 
         # Botón de calibración de tipo de cámara
-        camera_type_button = ctk.CTkButton(configure_panel, text="Calibración Tipo de Cámara", 
-                                        command=self.calibrate_camera_type, fg_color=self.nav_color, 
-                                        hover_color="#a3a7d9", text_color=self.text_color)
-        camera_type_button.grid(row=1, column=0, padx=10, pady=10, sticky="nsew")
+
 
         # Botón de configuración de cinta transportadora
         conveyor_config_button = ctk.CTkButton(configure_panel, text="Configuración de Cinta Transportadora", 
@@ -337,6 +341,141 @@ class View(ctk.CTk):
         self.start_button.grid()
 
 
+    def calibrate_camera_type(self):
+        # Crear una ventana emergente para ingresar parámetros
+        calibration_window = ctk.CTkToplevel(self)
+        calibration_window.title("Configuración de Calibración")
+        calibration_window.geometry("400x500")
+
+        # Variables para almacenar las coordenadas del rectángulo
+        self.points = []  # Lista para almacenar los puntos seleccionados
+
+        # Función para abrir la cámara y capturar los clics usando Picamera2
+        def open_camera_and_select_points():
+            # Inicializar Picamera2
+            picam2 = Picamera2()
+            picam2.preview_configuration.main.size = (640, 480)  # Configurar el tamaño de la ventana de previsualización
+            picam2.preview_configuration.main.format = "RGB888"
+            picam2.configure("preview")
+
+            # Iniciar la cámara
+            picam2.start()
+
+            def click_event(event, x, y, flags, param):
+                if event == cv2.EVENT_LBUTTONDOWN:
+                    # Agregar el punto seleccionado a la lista
+                    self.points.append((x, y))
+                    # Dibujar un círculo en el punto seleccionado
+                    cv2.circle(frame, (x, y), 5, (0, 255, 0), -1)
+                    # Actualizar la ventana con el punto marcado
+                    cv2.imshow("Seleccione cuatro puntos", frame)
+
+                    # Si se seleccionaron 4 puntos, cerrar la ventana
+                    if len(self.points) == 4:
+                        cv2.destroyWindow("Seleccione cuatro puntos")
+
+            while True:
+                # Capturar el frame desde Picamera2
+                frame = picam2.capture_array()
+
+                # Mostrar la imagen en la ventana
+                cv2.imshow("Seleccione cuatro puntos", frame)
+
+                # Configurar el evento de clic
+                cv2.setMouseCallback("Seleccione cuatro puntos", click_event)
+
+                # Esperar a que el usuario cierre la ventana o seleccione cuatro puntos
+                if cv2.waitKey(1) & 0xFF == ord('q') or len(self.points) == 4:
+                    break
+
+            # Detener la cámara y cerrar la ventana
+            picam2.stop()
+            cv2.destroyAllWindows()
+
+            # Asignar las coordenadas seleccionadas a los campos de entrada
+            if len(self.points) >= 2:
+                (x1, y1), (x2, y2) = self.points[:2]
+                x1_entry.delete(0, ctk.END)
+                y1_entry.delete(0, ctk.END)
+                x2_entry.delete(0, ctk.END)
+                y2_entry.delete(0, ctk.END)
+                
+                x1_entry.insert(0, str(x1))
+                y1_entry.insert(0, str(y1))
+                x2_entry.insert(0, str(x2))
+                y2_entry.insert(0, str(y2))
+
+        # Campos de entrada para parámetros de calibración
+        square_size_label = ctk.CTkLabel(calibration_window, text="Tamaño del cuadrado:")
+        square_size_label.pack(pady=10)
+        square_size_entry = ctk.CTkEntry(calibration_window)
+        square_size_entry.pack(pady=5)
+
+        width_label = ctk.CTkLabel(calibration_window, text="Ancho físico (mm):")
+        width_label.pack(pady=10)
+        width_entry = ctk.CTkEntry(calibration_window)
+        width_entry.pack(pady=5)
+
+        height_label = ctk.CTkLabel(calibration_window, text="Altura física (mm):")
+        height_label.pack(pady=10)
+        height_entry = ctk.CTkEntry(calibration_window)
+        height_entry.pack(pady=5)
+
+        # Campos de entrada para las coordenadas del rectángulo
+        x1_label = ctk.CTkLabel(calibration_window, text="Coordenada X1:")
+        x1_label.pack(pady=10)
+        x1_entry = ctk.CTkEntry(calibration_window)
+        x1_entry.pack(pady=5)
+
+        y1_label = ctk.CTkLabel(calibration_window, text="Coordenada Y1:")
+        y1_label.pack(pady=10)
+        y1_entry = ctk.CTkEntry(calibration_window)
+        y1_entry.pack(pady=5)
+
+        x2_label = ctk.CTkLabel(calibration_window, text="Coordenada X2:")
+        x2_label.pack(pady=10)
+        x2_entry = ctk.CTkEntry(calibration_window)
+        x2_entry.pack(pady=5)
+
+        y2_label = ctk.CTkLabel(calibration_window, text="Coordenada Y2:")
+        y2_label.pack(pady=10)
+        y2_entry = ctk.CTkEntry(calibration_window)
+        y2_entry.pack(pady=5)
+
+        # Botón para abrir la cámara y seleccionar los puntos
+        select_points_button = ctk.CTkButton(calibration_window, text="Seleccionar Puntos en la Cámara", command=open_camera_and_select_points)
+        select_points_button.pack(pady=20)
+
+        # Función para iniciar la calibración con los valores proporcionados
+        def start_calibration():
+            try:
+                square_size = int(square_size_entry.get())
+                physical_width_mm = int(width_entry.get())
+                physical_height_mm = int(height_entry.get())
+                x1 = int(x1_entry.get()) if x1_entry.get() else None
+                y1 = int(y1_entry.get()) if y1_entry.get() else None
+                x2 = int(x2_entry.get()) if x2_entry.get() else None
+                y2 = int(y2_entry.get()) if y2_entry.get() else None
+                
+                # Llamar a calibrate_camera con los valores ingresados
+                self.calibrate_camera(
+                    square_size=square_size,
+                    physical_width_mm=physical_width_mm,
+                    physical_height_mm=physical_height_mm,
+                    x1=x1,
+                    y1=y1,
+                    x2=x2,
+                    y2=y2
+                )
+                
+                calibration_window.destroy()  # Cerrar la ventana después de iniciar la calibración
+            except ValueError:
+                print("Por favor, ingrese valores numéricos válidos.")
+
+        # Botón para iniciar la calibración
+        start_button = ctk.CTkButton(calibration_window, text="Iniciar Calibración", command=start_calibration)
+        start_button.pack(pady=20)
+        
     def load_icon(self, path, hover=False):
         # Obtener la ruta base correcta dependiendo de si el script está empaquetado por PyInstaller o no
         base_path = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
@@ -392,16 +531,10 @@ class View(ctk.CTk):
     def stop_process(self):
         pass
 
-    def calibrate_camera(self):
-        # Lógica para calibración de cámara
-        pass
+
 
     def calibrate_ml_model(self):
         # Lógica para calibración de modelo ML
-        pass
-
-    def calibrate_camera_type(self):
-        # Lógica para calibración de tipo de cámara
         pass
 
     def configure_conveyor(self):
@@ -416,38 +549,46 @@ class View(ctk.CTk):
         self.quit()
 
     def iniciar_clasificacion(self):
-        if self.isOpen != None:
-            print ("entramos a la")
+        if self.isOpen is  None:
+            print("Entramos a la clasificación")
 
             if self.df_filtrado is None or self.df_filtrado.empty:
-                # Clasificamos
-                img = self.processing_service.capture_image()
+                
+                # Definimos la función de captura en segundo plano
+                def capture_image_in_background():
+                    # Clasificamos en segundo plano
+                    img = self.processing_service.capture_image()
+                    
+                    # Verificar si la imagen fue capturada correctamente
+                    if img is None:
+                        print("Error: No se pudo capturar la imagen.")
+                        self.root.after(500, self.iniciar_clasificacion)  # Asegurarse de que invoque el método correcto
+                        return
 
-                # Verificar si la imagen fue capturada correctamente
-                if img is None:
-                    print("Error: No se pudo capturar la imagen.")
-                    self.root.after(500, self.iniciar_clasificacion)  # Asegurarse de que invoque el método correcto
-                    return
+                    try:
+                        img_undistorted = self.processing_service.undistorted_image(img)
+                        
+                        # Continuamos con la lógica después de capturar y procesar la imagen
+                        def detection_callback(df_filtrado, img_resultado, residue_list):
+                            # Actualiza la UI cuando el hilo de detección termine
+                            self.df_filtrado = df_filtrado
+                            self.image_resultado = img_resultado
+                            self.residue_list = residue_list
+                            self.update_articles_table()  # Actualiza la tabla con los datos detectados
+                            self.update_image(self.image_resultado)  # Actualiza la imagen en la UI
 
-                try:
-                    img_undistorted = self.processing_service.undistorted_image(img)
-                except Exception as e:
-                    print(f"Error al procesar la imagen: {e}")
-                    self.root.after(500, self.iniciar_clasificacion)  # Asegurarse de que invoque el método correcto
-                    return
+                        # Ejecuta el procesamiento en segundo plano
+                                                # Definir el ROI usando las coordenadas disponibles en la clase
+                        roi = (self.x1, self.y1, self.x2, self.y2)
+                        self.processing_service.detected_objects_in_background(img_undistorted, 0.2, detection_callback,self.mmx,self.mmy,roi)
+                        
+                    except Exception as e:
+                        print(f"Error al procesar la imagen: {e}")
+                        self.root.after(500, self.iniciar_clasificacion)  # Asegurarse de que invoque el método correcto
+                        return
 
-            def detection_callback(df_filtrado, img_resultado, residue_list):
-                        # Actualiza la UI cuando el hilo de detección termine
-                self.df_filtrado = df_filtrado
-                self.image_resultado = img_resultado
-                self.residue_list = residue_list
-                self.update_articles_table()  # Actualiza la tabla con los datos detectados
-                self.update_image(self.image_resultado)  # Actualiza la imagen en la UI
-
-                # Ejecuta el procesamiento en segundo plano
-                img_undistorted = self.processing_service.undistorted_image(img)
-                self.processing_service.detected_objects_in_background(img_undistorted, 0.2, detection_callback)
-                      
+                # Inicia la captura en segundo plano
+                self.root.after(0, capture_image_in_background)
 
             # Verificamos la disponibilidad y procedemos a enviar los datos si está disponible
             self.verificar_disponibilidad()
@@ -455,7 +596,8 @@ class View(ctk.CTk):
             # Volver a ejecutar este ciclo después de 500 ms para no bloquear la interfaz
             self.root.after(500, self.iniciar_clasificacion)
         else:
-            print ("No puede iniciar sin conectarse al robot")
+            print("No puede iniciar sin conectarse al robot")
+
 
         
     def clasificacion(self):
@@ -463,24 +605,9 @@ class View(ctk.CTk):
         Método principal de clasificación.
         """
         if not self.calibracion:
-            self.mtx, self.dist = self.processing_service.calibrate(
-                dirpath="./calibracion",
-                prefix="tablero-ajedrez",
-                image_format="jpg",
-                square_size=30,
-                width=7,
-                height=7
-            )
-        self.calibracion = True
+            print("No puede iniciar sin antes calibrar la camara")
 
-        # Generamos el rectángulo
-        self.transport_service.generate_square(100, 100, 100, 100)
-        x_center, y_center = self.transport_service.calculate_center()
 
-        # Seteamos el centro y el offset
-        self.x_center = x_center
-        self.y_center = y_center
-        self.offset = self.transport_service.get_offset()
 
         # Iniciar la clasificación de manera continua
         self.iniciar_clasificacion()  # Asegurarse de ejecutar el método correctamente
@@ -499,21 +626,22 @@ class View(ctk.CTk):
         self.communication_service.send_and_receive("DISPONIBILIDAD", "BUFFER_VACIO", change_disponibilidad)
 
     def enviar_datos_clasificados(self):
-        
+        """
+        Envía los datos clasificados al dispositivo si está disponible.
+        """
         if self.isDisponible and self.df_filtrado is not None:
 
             def saveArticle(response):
-
                 if response == "OK":
-                    #self.processing_service.save_residue_list(self.residue_list)
+                    # Confirmar que las unidades son en milímetros
+                    print("Enviando datos en milímetros:")
+                    for x, y, z, _ in self.coordenadas_generator(self.df_filtrado):
+                        print(f"x: {x} mm, y: {y} mm, z: {z} mm")
+                    
                     resultJSON = self.generar_informacion(self.df_filtrado)
                     print("Resultado de clasificación:", resultJSON)
                     self.update_image(self.image_resultado)
-                    #self.reports.append(resultJSON)  # Agregar el resultado a los reports
-                    #self.update_articles_table()
-
                 else:
-
                     print("Fallo la conexión:", response)
 
             def confirm_end(response):
@@ -541,20 +669,79 @@ class View(ctk.CTk):
             # Enviar mensaje de finalización
             self.communication_service.send_and_receive("FIN", "OK", confirm_end)
 
+
     def coordenadas_generator(self, df_filtrado, z=50):
         for _, row in df_filtrado.iterrows():
-            x = round(((row['xmin'] + row['xmax']) / 2), 2)
-            y = round(((row['ymin'] + row['ymax']) / 2), 2)
+            # Convertir coordenadas de píxeles a milímetros
+            x_mm, y_mm = self.transport_service.convert_pixels_to_mm(
+                (row['xmin'] + row['xmax']) / 2,
+                (row['ymin'] + row['ymax']) / 2,self.mmx,self.mmy
+            )
             clase = int(row["class"])
-            yield x, y, z, clase
+            yield round(x_mm, 2), round(y_mm, 2), z, clase
+
 
     def tomar_foto(self):
         img = self.processing_service.capture_image()
         self.update_image(img)
 
-    def calibrate(self):
-        self.mtx, self.dist = self.processing_service.calibrate(dirpath="./calibracion", prefix="tablero-ajedrez", image_format="jpg", square_size=30, width=7, height=7)
+    def calibrate_camera(self, square_size, physical_width_mm=200, physical_height_mm=200,x1=None,y1=None,x2=None,y2=None):
+        """
+        Calibra la cámara con parámetros personalizados.
+        
+        :param square_size: Tamaño del cuadrado en la imagen de calibración.
+        :param physical_width_mm: Ancho físico en milímetros para la calibración del espacio.
+        :param physical_height_mm: Altura física en milímetros para la calibración del espacio.
+        """
+        # Calibrar el espacio físico para asegurar que todo esté en milímetros
+        print("Iniciando calibración por distorsión")
+        self.mtx, self.dist = self.processing_service.calibrate(
+            dirpath="./calibracion",
+            prefix="tablero-ajedrez",
+            image_format="jpg",
+            square_size=square_size,
+            width=7,
+            height=7
+        )
+        
+        print(f"Calibración por distorsión completada: mtx={self.mtx}, dist={self.dist}")
+
+        print("Iniciando calibración del rectángulo")
+        x1, x2, y1, y2 = self.transport_service.generate_square(x1, y1, x2, y2)  # Definiendo coordenadas del cuadrado
+        print(f"Coordenadas del rectángulo generadas: x1={x1}, x2={x2}, y1={y1}, y2={y2}")
+
+        pixels_per_mm_x, pixels_per_mm_y = self.transport_service.calibrate_to_physical_space(
+            physical_width_mm=physical_width_mm,
+            physical_height_mm=physical_height_mm
+        )
+        print(f"Calibración de espacio físico completada: pixels_per_mm_x={pixels_per_mm_x}, pixels_per_mm_y={pixels_per_mm_y}")
+        
+        print("Iniciando calibración del punto central")
+        x_center, y_center = self.transport_service.calculate_center(x1, x2, y1, y2)
+        print(f"Punto central calculado: x_center={x_center}, y_center={y_center}")
+
+        # Seteamos el centro y el offset
+        self.x_center = x_center
+        self.y_center = y_center
+
+        print("Iniciando calibración del offset")
+        offset = self.transport_service.get_offset(x1, x2, pixels_per_mm_x)
+        print(f"Offset calculado: offset={offset}")
+        
+        # Asignar valores a las propiedades del objeto
         self.calibracion = True
+        self.x1 = x1
+        self.x2 = x2
+        self.y1 = y1
+        self.y2 = y2
+        self.mmx = pixels_per_mm_x
+        self.mmy = pixels_per_mm_y
+        self.offset = offset
+        
+        print("Calibración terminada con éxito")
+
+
+        
 
     def undistort_image(self, img):
         return self.processing_service.undistorted_image(img)

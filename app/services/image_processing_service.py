@@ -1,5 +1,6 @@
 from datetime import datetime
 import threading
+import time
 from app.dbModels.ResidueDto import ResidueDTO
 from app.repositories.residue_repository import ResidueRepository
 import cv2
@@ -7,41 +8,51 @@ import numpy as np
 import glob
 from app.abstracts.IProcessing import ProcessingInterface
 from app.services.IA_model_service import MLModelService
+from app.abstracts.ITransport import TransportInterface  # Importación del servicio de transporte
 from picamera2 import Picamera2
 
 class ImageProcessingService(ProcessingInterface):
 
-    def __init__(self, residue_repository: ResidueRepository, use_model: MLModelService):
+    def __init__(self, residue_repository: ResidueRepository, use_model: MLModelService, transport_service: TransportInterface):
         self.mtx = None
         self.dist = None
         self.residue_repository = residue_repository
         self.use_model = use_model
-        
+        self.transport_service = transport_service  # Servicio de transporte para conversiones
         self.detection_thread = None  # Variable para el hilo de detección
 
-    def detected_objects(self, img_undistorted, confianza_minima=0.2):
+    def detected_objects(self, img_undistorted, confianza_minima=0.2, relation_x=0, relation_y=0, roi=None):
         try:
             print("Procesando imagen...")
-            df_filtrado, img_resultado = self.use_model.run_model(img_undistorted, confianza_minima)
+            df_filtrado, img_resultado = self.use_model.run_model(img_undistorted, confianza_minima,roi)
             print("Imagen procesada.", df_filtrado)
 
             if df_filtrado is not None:
                 residue_list = []
                 for _, row in df_filtrado.iterrows():
                     print(f"Procesando fila: {row}")
+
+                    # Convertir las coordenadas de píxeles a milímetros usando relaciones definidas
+                    x_min_mm = row['xmin'] * relation_x
+                    y_min_mm = row['ymin'] * relation_y
+                    x_max_mm = row['xmax'] * relation_x
+                    y_max_mm = row['ymax'] * relation_y
+
+                    # Crear el ResidueDTO con coordenadas convertidas
                     residue_dto = ResidueDTO(
                         nombre=row['class_name'],
                         categoria=row['class'],
                         confianza=row['confidence'],
-                        x_min=row['xmin'],
-                        y_min=row['ymin'],
-                        x_max=row['xmax'],
-                        y_max=row['ymax'],
+                        x_min=x_min_mm,
+                        y_min=y_min_mm,
+                        x_max=x_max_mm,
+                        y_max=y_max_mm,
                         fecha_deteccion=datetime.now(),
                         imagen_referencia="default_image"
                     )
                     print("ResidueDTO", residue_dto)
                     residue_list.append(residue_dto)
+                
                 print("ResidueList", residue_list)
                 return df_filtrado, img_resultado, residue_list
             else:
@@ -52,14 +63,14 @@ class ImageProcessingService(ProcessingInterface):
             print(f"Error durante la detección: {e}")
             return None, None, []
 
-    def detected_objects_in_background(self, img_undistorted, confianza_minima=0.2, callback=None):
+    def detected_objects_in_background(self, img_undistorted, confianza_minima=0.2, callback=None, relation_x=0,relation_y=0,roi=None):
         """
         Ejecuta detected_objects en un hilo separado para no bloquear la interfaz.
         El `callback` se llamará con los resultados cuando la detección termine.
         """
 
         def run_detection():
-            df_filtrado, img_resultado, residue_list = self.detected_objects(img_undistorted, confianza_minima)
+            df_filtrado, img_resultado, residue_list = self.detected_objects(img_undistorted, confianza_minima,roi)
 
             # Aquí usamos el método after para actualizar la UI en el hilo principal
             if callback:
@@ -69,7 +80,6 @@ class ImageProcessingService(ProcessingInterface):
         # Crear y arrancar el hilo
         self.detection_thread = threading.Thread(target=run_detection)
         self.detection_thread.start()
-
 
     def wait_for_detection(self):
         """ Espera a que el hilo de detección termine, si existe. """
@@ -104,58 +114,10 @@ class ImageProcessingService(ProcessingInterface):
         newcameramtx, roi = cv2.getOptimalNewCameraMatrix(self.mtx, self.dist, (w, h), 1, (w, h))
         img_undistorted = cv2.undistort(img, self.mtx, self.dist, None, newcameramtx)
         return img_undistorted
-    """ 
-    def detected_objects(self, img_undistorted, confianza_minima=0.2):
-        try:
-            print("Procesando imagen...")
-            df_filtrado, img_resultado = self.use_model.run_model(img_undistorted, confianza_minima)
-            print("Imagen procesada.", df_filtrado)
-
-            if df_filtrado is not None:
-     
-                print(df_filtrado)
-
-                residue_list = []
-                for _, row in df_filtrado.iterrows():
-                    print(f"Procesando fila: {row}")
-                    residue_dto = ResidueDTO(
-                        nombre=row['class_name'],  
-                        categoria=row['class'],  
-                        confianza=row['confidence'],
-                        x_min=row['xmin'],
-                        y_min=row['ymin'],
-                        x_max=row['xmax'],
-                        y_max=row['ymax'],
-                        fecha_deteccion=datetime.now(),
-                        imagen_referencia="default_image"
-                    )
-                    print("ResidueDTO",residue_dto)
-                    residue_list.append(residue_dto)
-                print("ResidueList",residue_list)
-                return df_filtrado, img_resultado, residue_list
-            else:
-                print("No hay detecciones.")
-                return None, None, []
-
-        except Exception as e:
-            print(f"Error durante la detección: {e}")
-            return None, None, [] """
         
     def save_residue_list(self, residue_list):
-        print(f"residuos recolectados en bdd", residue_list)
-        """   for residue_dto in residue_list:
-            print(f"residuo particular en bdd ", residue_dto)
-            self.residue_repository.add_residue(
-                nombre=residue_dto.nombre,
-                categoria=residue_dto.categoria,
-                confianza=residue_dto.confianza,
-                x_min=residue_dto.x_min,
-                y_min=residue_dto.y_min,
-                x_max=residue_dto.x_max,
-                y_max=residue_dto.y_max,
-                fecha_deteccion=residue_dto.fecha_deteccion,
-                imagen_referencia=residue_dto.imagen_referencia
-            ) """
+        print(f"Residuos recolectados en BDD:", residue_list)
+        # Implementar la lógica de guardado en la base de datos si es necesario
 
     def capture_image(self):
         picam2 = Picamera2()

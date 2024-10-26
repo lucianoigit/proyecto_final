@@ -27,8 +27,9 @@ def main():
         ser = serial_service.getStatus()
         use_model = MLModelService(model_path='./yolov5s.pt')
         reports_service = ReportsService(residue_repository)
-        image_service = ImageProcessingService(residue_repository, use_model)
+
         transport_service = TransportService()
+        image_service = ImageProcessingService(residue_repository, use_model,transport_service)
         
         app = View(serial_service, image_service, reports_service,transport_service,ser)
         app.mainloop()

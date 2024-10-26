@@ -18,7 +18,15 @@ class MLModelService(MLModelInterface):
             print(f"Error al cargar el modelo: {e}")
             return None
 
-    def run_model(self, img_path_or_img, confianza_minima=0.2):
+    def run_model(self, img_path_or_img, confianza_minima=0.2, roi=None):
+        """
+        Ejecuta el modelo de clasificación en una región específica de la imagen.
+        
+        :param img_path_or_img: Ruta de la imagen o imagen en formato numpy.
+        :param confianza_minima: Nivel mínimo de confianza para considerar una detección.
+        :param roi: Región de interés en formato (x_min, y_min, x_max, y_max). Si es None, se usará toda la imagen.
+        :return: DataFrame con detecciones filtradas y la imagen procesada.
+        """
         try:
             # Verificar si la entrada es una ruta de archivo o una imagen
             if isinstance(img_path_or_img, str):
@@ -33,7 +41,12 @@ class MLModelService(MLModelInterface):
                 img = img_path_or_img
                 img_path = None
 
-            # Ejecutar el modelo
+            # Si se especifica una región de interés, recortar la imagen
+            if roi:
+                x_min, y_min, x_max, y_max = roi
+                img = img[y_min:y_max, x_min:x_max]
+
+            # Ejecutar el modelo en la imagen (o la región recortada)
             results = self.model(img)
             if not results:
                 print("No se detectaron objetos.")
@@ -47,6 +60,12 @@ class MLModelService(MLModelInterface):
             # Filtrar por confianza mínima
             df_filtrado = df[df['confidence'] >= confianza_minima]
 
+            # Ajustar las coordenadas de las detecciones si se recortó la imagen
+            if roi:
+                x_min, y_min, _, _ = roi
+                df_filtrado[['xmin', 'xmax']] += x_min
+                df_filtrado[['ymin', 'ymax']] += y_min
+
             # Convertir el índice de clase a nombre de clase
             df_filtrado['class_name'] = df_filtrado['class'].apply(lambda x: names[int(x)])
 
@@ -54,6 +73,7 @@ class MLModelService(MLModelInterface):
         except Exception as e:
             print(f"Error al ejecutar el modelo: {e}")
             return None, None
+
 
     def show_result(self, df_filtrado, img):
         if df_filtrado is not None and not df_filtrado.empty:

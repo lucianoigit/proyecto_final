@@ -7,7 +7,7 @@ class MLModelInterface(ABC):
         pass
 
     @abstractmethod
-    def run_model(self, message):
+    def run_model(self, message,roi):
         pass
 
     @abstractmethod
