@@ -340,12 +340,14 @@ class View(ctk.CTk):
         self.stop_button.grid_remove()
         self.start_button.grid()
 
-
     def calibrate_camera_type(self):
-        # Crear una ventana emergente para ingresar parámetros
-        calibration_window = ctk.CTkToplevel(self)
-        calibration_window.title("Configuración de Calibración")
-        calibration_window.geometry("400x500")
+        # Crear un marco que actuará como un popup en la ventana principal
+        popup_frame = ctk.CTkFrame(self, width=420, height=520, fg_color="white", corner_radius=10)
+        popup_frame.place(relx=0.5, rely=0.5, anchor="center")  # Centrar el popup en la ventana principal
+
+        # Crear un marco desplazable dentro del popup
+        scrollable_frame = ctk.CTkScrollableFrame(popup_frame, width=400, height=500)
+        scrollable_frame.pack(pady=10, padx=10, fill="both", expand=True)
 
         # Variables para almacenar las coordenadas del rectángulo
         self.points = []  # Lista para almacenar los puntos seleccionados
@@ -405,45 +407,45 @@ class View(ctk.CTk):
                 x2_entry.insert(0, str(x2))
                 y2_entry.insert(0, str(y2))
 
-        # Campos de entrada para parámetros de calibración
-        square_size_label = ctk.CTkLabel(calibration_window, text="Tamaño del cuadrado:")
+        # Campos de entrada para parámetros de calibración dentro del scrollable frame
+        square_size_label = ctk.CTkLabel(scrollable_frame, text="Tamaño del cuadrado:")
         square_size_label.pack(pady=10)
-        square_size_entry = ctk.CTkEntry(calibration_window)
+        square_size_entry = ctk.CTkEntry(scrollable_frame)
         square_size_entry.pack(pady=5)
 
-        width_label = ctk.CTkLabel(calibration_window, text="Ancho físico (mm):")
+        width_label = ctk.CTkLabel(scrollable_frame, text="Ancho físico (mm):")
         width_label.pack(pady=10)
-        width_entry = ctk.CTkEntry(calibration_window)
+        width_entry = ctk.CTkEntry(scrollable_frame)
         width_entry.pack(pady=5)
 
-        height_label = ctk.CTkLabel(calibration_window, text="Altura física (mm):")
+        height_label = ctk.CTkLabel(scrollable_frame, text="Altura física (mm):")
         height_label.pack(pady=10)
-        height_entry = ctk.CTkEntry(calibration_window)
+        height_entry = ctk.CTkEntry(scrollable_frame)
         height_entry.pack(pady=5)
 
         # Campos de entrada para las coordenadas del rectángulo
-        x1_label = ctk.CTkLabel(calibration_window, text="Coordenada X1:")
+        x1_label = ctk.CTkLabel(scrollable_frame, text="Coordenada X1:")
         x1_label.pack(pady=10)
-        x1_entry = ctk.CTkEntry(calibration_window)
+        x1_entry = ctk.CTkEntry(scrollable_frame)
         x1_entry.pack(pady=5)
 
-        y1_label = ctk.CTkLabel(calibration_window, text="Coordenada Y1:")
+        y1_label = ctk.CTkLabel(scrollable_frame, text="Coordenada Y1:")
         y1_label.pack(pady=10)
-        y1_entry = ctk.CTkEntry(calibration_window)
+        y1_entry = ctk.CTkEntry(scrollable_frame)
         y1_entry.pack(pady=5)
 
-        x2_label = ctk.CTkLabel(calibration_window, text="Coordenada X2:")
+        x2_label = ctk.CTkLabel(scrollable_frame, text="Coordenada X2:")
         x2_label.pack(pady=10)
-        x2_entry = ctk.CTkEntry(calibration_window)
+        x2_entry = ctk.CTkEntry(scrollable_frame)
         x2_entry.pack(pady=5)
 
-        y2_label = ctk.CTkLabel(calibration_window, text="Coordenada Y2:")
+        y2_label = ctk.CTkLabel(scrollable_frame, text="Coordenada Y2:")
         y2_label.pack(pady=10)
-        y2_entry = ctk.CTkEntry(calibration_window)
+        y2_entry = ctk.CTkEntry(scrollable_frame)
         y2_entry.pack(pady=5)
 
         # Botón para abrir la cámara y seleccionar los puntos
-        select_points_button = ctk.CTkButton(calibration_window, text="Seleccionar Puntos en la Cámara", command=open_camera_and_select_points)
+        select_points_button = ctk.CTkButton(scrollable_frame, text="Seleccionar Puntos en la Cámara", command=open_camera_and_select_points)
         select_points_button.pack(pady=20)
 
         # Función para iniciar la calibración con los valores proporcionados
@@ -468,13 +470,18 @@ class View(ctk.CTk):
                     y2=y2
                 )
                 
-                calibration_window.destroy()  # Cerrar la ventana después de iniciar la calibración
+                popup_frame.destroy()  # Cerrar el popup después de iniciar la calibración
             except ValueError:
                 print("Por favor, ingrese valores numéricos válidos.")
 
         # Botón para iniciar la calibración
-        start_button = ctk.CTkButton(calibration_window, text="Iniciar Calibración", command=start_calibration)
+        start_button = ctk.CTkButton(scrollable_frame, text="Iniciar Calibración", command=start_calibration)
         start_button.pack(pady=20)
+
+        # Botón para cerrar el popup sin hacer nada
+        close_button = ctk.CTkButton(scrollable_frame, text="Cerrar", command=popup_frame.destroy)
+        close_button.pack(pady=10)
+
         
     def load_icon(self, path, hover=False):
         # Obtener la ruta base correcta dependiendo de si el script está empaquetado por PyInstaller o no
