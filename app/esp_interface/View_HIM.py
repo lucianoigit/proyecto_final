@@ -349,14 +349,14 @@ class View(ctk.CTk):
         scrollable_frame = ctk.CTkScrollableFrame(calibration_window, width=400, height=500)
         scrollable_frame.pack(fill="both", expand=True, padx=10, pady=10)
 
-        # Variables para almacenar las coordenadas seleccionadas
+        # Variables para almacenar las coordenadas del rectángulo
         self.points = []  # Lista para almacenar los puntos seleccionados
 
         # Función para abrir la cámara y capturar los clics usando Picamera2
         def open_camera_and_select_points():
             # Inicializar Picamera2
             picam2 = Picamera2()
-            picam2.preview_configuration.main.size = (800, 480)  # Configurar el tamaño de la ventana de previsualización
+            picam2.preview_configuration.main.size = (640, 480)  # Configurar el tamaño de la ventana de previsualización
             picam2.preview_configuration.main.format = "RGB888"
             picam2.configure("preview")
 
@@ -365,51 +365,54 @@ class View(ctk.CTk):
 
             def click_event(event, x, y, flags, param):
                 if event == cv2.EVENT_LBUTTONDOWN:
-                    # Agregar el punto seleccionado a la lista
-                    self.points.append((x, y))
-                    # Dibujar un círculo en el punto seleccionado
-                    cv2.circle(frame, (x, y), 5, (0, 255, 0), -1)
-                    # Actualizar la ventana con el punto marcado
-                    cv2.imshow("Seleccione puntos", frame)
+                    # Permitir solo hasta 4 puntos
+                    if len(self.points) < 4:
+                        # Agregar el punto seleccionado a la lista
+                        self.points.append((x, y))
+                        # Dibujar un círculo en el punto seleccionado
+                        cv2.circle(frame, (x, y), 5, (0, 255, 0), -1)
+                        # Actualizar la ventana con el punto marcado
+                        cv2.imshow("Seleccione cuatro puntos", frame)
 
-                    # Permitir que se seleccionen más puntos sin límite fijo
-                    if len(self.points) >= 2:
-                        update_coordinates_fields()
-
-            def update_coordinates_fields():
-                # Si hay al menos 2 puntos seleccionados, actualizar los campos de coordenadas
-                if len(self.points) >= 2:
-                    x1, y1 = self.points[0]
-                    x2, y2 = self.points[-1]  # Usar el último punto seleccionado
-
-                    # Asignar las coordenadas seleccionadas a los campos de entrada
-                    x1_entry.delete(0, ctk.END)
-                    y1_entry.delete(0, ctk.END)
-                    x2_entry.delete(0, ctk.END)
-                    y2_entry.delete(0, ctk.END)
-
-                    x1_entry.insert(0, str(x1))
-                    y1_entry.insert(0, str(y1))
-                    x2_entry.insert(0, str(x2))
-                    y2_entry.insert(0, str(y2))
+                    # Si se seleccionaron 4 puntos, cerrar la ventana
+                    if len(self.points) == 4:
+                        cv2.destroyWindow("Seleccione cuatro puntos")
 
             while True:
                 # Capturar el frame desde Picamera2
                 frame = picam2.capture_array()
 
                 # Mostrar la imagen en la ventana
-                cv2.imshow("Seleccione puntos", frame)
+                cv2.imshow("Seleccione cuatro puntos", frame)
 
                 # Configurar el evento de clic
-                cv2.setMouseCallback("Seleccione puntos", click_event)
+                cv2.setMouseCallback("Seleccione cuatro puntos", click_event)
 
-                # Esperar a que el usuario cierre la ventana o presione 'q'
-                if cv2.waitKey(1) & 0xFF == ord('q'):
+                # Esperar a que el usuario cierre la ventana o seleccione cuatro puntos
+                if cv2.waitKey(1) & 0xFF == ord('q') or len(self.points) == 4:
                     break
 
             # Detener la cámara y cerrar la ventana
             picam2.stop()
             cv2.destroyAllWindows()
+
+            # Validar que se hayan seleccionado exactamente 4 puntos
+            if len(self.points) == 4:
+                # Asignar las coordenadas seleccionadas a los campos de entrada
+                (x1, y1), (x2, y2), (x3, y3), (x4, y4) = self.points
+                x1_entry.delete(0, ctk.END)
+                y1_entry.delete(0, ctk.END)
+                x2_entry.delete(0, ctk.END)
+                y2_entry.delete(0, ctk.END)
+
+                # Ingresar valores de las coordenadas a los campos de entrada
+                x1_entry.insert(0, str(x1))
+                y1_entry.insert(0, str(y1))
+                x2_entry.insert(0, str(x2))
+                y2_entry.insert(0, str(y2))
+
+            else:
+                print("Por favor, selecciona exactamente 4 puntos.")
 
         # Campos de entrada para parámetros de calibración dentro del scrollable frame
         square_size_label = ctk.CTkLabel(scrollable_frame, text="Tamaño del cuadrado:")
@@ -483,7 +486,7 @@ class View(ctk.CTk):
         start_button.pack(pady=20)
 
 
-            
+        
     def load_icon(self, path, hover=False):
         # Obtener la ruta base correcta dependiendo de si el script está empaquetado por PyInstaller o no
         base_path = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
