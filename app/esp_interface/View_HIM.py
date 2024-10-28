@@ -402,17 +402,32 @@ class View(ctk.CTk):
         # Ocultar el botón de detener y mostrar el de inicio nuevamente
         self.stop_button.grid_remove()
         self.start_button.grid()
-    # Función para calcular el centroide
-    def calcular_centroid(self, puntos):
-        x_coords = [p[0] for p in puntos]
-        y_coords = [p[1] for p in puntos]
-        return (int(sum(x_coords) / len(puntos)), int(sum(y_coords) / len(puntos)))
+      def calibrate_camera_type(self):
+        # Ventana emergente para la configuración de la calibración
+        calibration_window = ctk.CTkToplevel(self)
+        calibration_window.title("Configuración de Calibración")
+        calibration_window.geometry("400x300")
 
-    # Función para ordenar los puntos en sentido antihorario
-    def ordenar_puntos(self, puntos):
-        centroid = self.calcular_centroid(puntos)
-        puntos_ordenados = sorted(puntos, key=lambda p: np.arctan2(p[1] - centroid[1], p[0] - centroid[0]))
-        return puntos_ordenados
+        # Entradas de ancho y alto en milímetros
+        width_label = ctk.CTkLabel(calibration_window, text="Ancho (mm):")
+        width_label.pack(pady=10)
+        width_entry = ctk.CTkEntry(calibration_window)
+        width_entry.pack(pady=5)
+
+        height_label = ctk.CTkLabel(calibration_window, text="Alto (mm):")
+        height_label.pack(pady=10)
+        height_entry = ctk.CTkEntry(calibration_window)
+        height_entry.pack(pady=5)
+
+        # Botón para seleccionar puntos en la cámara
+        select_points_button = ctk.CTkButton(calibration_window, text="Seleccionar Puntos en Cámara",
+                                             command=self.open_camera_and_select_points)
+        select_points_button.pack(pady=10)
+
+        # Botón para iniciar la calibración con los valores ingresados
+        start_button = ctk.CTkButton(calibration_window, text="Iniciar Calibración", 
+                                     command=lambda: self.start_calibration(width_entry, height_entry))
+        start_button.pack(pady=10)
 
     def open_camera_and_select_points(self):
         self.points.clear()  # Reiniciar la lista de puntos
@@ -449,19 +464,36 @@ class View(ctk.CTk):
         self.picam2.stop()
         cv2.destroyAllWindows()
 
-    def start_calibration(self, square_size_entry):
+    def start_calibration(self, width_entry, height_entry):
+        # Validar y obtener el ancho y alto ingresados
         if len(self.points) == 4:
             try:
-                square_size = int(square_size_entry.get())
+                width = int(width_entry.get())
+                height = int(height_entry.get())
+                if width <= 0 or height <= 0:
+                    raise ValueError("Dimensiones deben ser mayores que cero.")
                 # Usamos los puntos seleccionados para la calibración
                 x1, y1 = self.points[0]
                 x2, y2 = self.points[2]
-                # Llamada a calibrate_camera con los puntos seleccionados y tamaño del cuadrado
-                self.calibrate_camera(square_size, x1=x1, y1=y1, x2=x2, y2=y2)
+                # Llamada a calibrate_camera con los puntos y dimensiones
+                self.calibrate_camera(width, height, x1=x1, y1=y1, x2=x2, y2=y2)
             except ValueError:
-                print("Por favor, ingrese un tamaño de cuadrado válido.")
+                print("Por favor, ingrese un ancho y alto válidos en milímetros.")
         else:
             print("Por favor, seleccione exactamente 4 puntos.")
+
+    # Función para calcular el centroide
+    def calcular_centroid(self, puntos):
+        x_coords = [p[0] for p in puntos]
+        y_coords = [p[1] for p in puntos]
+        return (int(sum(x_coords) / len(puntos)), int(sum(y_coords) / len(puntos)))
+
+    # Función para ordenar los puntos en sentido antihorario
+    def ordenar_puntos(self, puntos):
+        centroid = self.calcular_centroid(puntos)
+        puntos_ordenados = sorted(puntos, key=lambda p: np.arctan2(p[1] - centroid[1], p[0] - centroid[0]))
+        return puntos_ordenados
+
         
     def load_icon(self, path, hover=False):
         # Obtener la ruta base correcta dependiendo de si el script está empaquetado por PyInstaller o no
