@@ -402,6 +402,7 @@ class View(ctk.CTk):
         # Ocultar el botón de detener y mostrar el de inicio nuevamente
         self.stop_button.grid_remove()
         self.start_button.grid()
+
     def calibrate_camera_type(self):
         calibration_window = ctk.CTkToplevel(self)
         calibration_window.title("Configuración de Calibración")
@@ -414,7 +415,7 @@ class View(ctk.CTk):
 
         def open_camera_and_select_points():
             self.points.clear()
-            self.picam2.stop()
+            self.picam2.stop()  # Asegurarse de detener la cámara antes de configurarla
             self.picam2.configure(self.picam2.create_preview_configuration(main={"size": (800, 480), "format": "RGB888"}))
             self.picam2.start()
 
@@ -458,7 +459,30 @@ class View(ctk.CTk):
             centroid = (sum([p[0] for p in puntos]) / len(puntos), sum([p[1] for p in puntos]))
             return sorted(puntos, key=lambda p: np.arctan2(p[1] - centroid[1], p[0] - centroid[0]))
 
-        # Configuración en cuadrícula para etiquetas y entradas
+        def start_calibration():
+            try:
+                square_size = int(square_size_entry.get())
+                physical_width_mm = int(width_entry.get())
+                physical_height_mm = int(height_entry.get())
+                x1 = int(x1_entry.get()) if x1_entry.get() else None
+                y1 = int(y1_entry.get()) if y1_entry.get() else None
+                x2 = int(x2_entry.get()) if x2_entry.get() else None
+                y2 = int(y2_entry.get()) if y2_entry.get() else None
+
+                self.calibrate_camera(
+                    square_size=square_size,
+                    physical_width_mm=physical_width_mm,
+                    physical_height_mm=physical_height_mm,
+                    x1=x1,
+                    y1=y1,
+                    x2=x2,
+                    y2=y2
+                )
+                calibration_window.destroy()
+            except ValueError:
+                print("Por favor, ingrese valores numéricos válidos.")
+
+        # Configuración de los campos de entrada y el botón para abrir la cámara en un diseño de cuadrícula
         labels = ["Tamaño del cuadrado:", "Ancho físico (mm):", "Altura física (mm):", "Coordenada X1:", "Coordenada Y1:", "Coordenada X2:", "Coordenada Y2:"]
         entries = []
         for i, label_text in enumerate(labels):
@@ -470,17 +494,17 @@ class View(ctk.CTk):
 
         square_size_entry, width_entry, height_entry, x1_entry, y1_entry, x2_entry, y2_entry = entries
 
-        # Botón de selección de puntos
+        # Botón para abrir la cámara y seleccionar los puntos
         select_points_button = ctk.CTkButton(scrollable_frame, text="Seleccionar Puntos en la Cámara", command=open_camera_and_select_points)
         select_points_button.grid(row=len(labels), column=0, columnspan=2, padx=10, pady=10, sticky="ew")
 
-        # Botón de inicio de calibración
-        start_button = ctk.CTkButton(scrollable_frame, text="Aplicar Calibración", command=self.start_calibration)
+        # Botón para iniciar la calibración
+        start_button = ctk.CTkButton(scrollable_frame, text="Aplicar Calibración", command=start_calibration)
         start_button.grid(row=len(labels) + 1, column=0, columnspan=2, padx=10, pady=10, sticky="ew")
 
         scrollable_frame.grid_columnconfigure(1, weight=1)
 
-            
+        
     def load_icon(self, path, hover=False):
         # Obtener la ruta base correcta dependiendo de si el script está empaquetado por PyInstaller o no
         base_path = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
