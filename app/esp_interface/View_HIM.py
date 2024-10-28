@@ -488,7 +488,7 @@ class View(ctk.CTk):
         select_points_button.pack(pady=20)
 
         # Botón para iniciar la calibración
-        start_button = ctk.CTkButton(scrollable_frame, text="Iniciar Calibración", command=start_calibration)
+        start_button = ctk.CTkButton(scrollable_frame, text="Iniciar Calibración", command=self.start_calibration)
         start_button.pack(pady=20)
 
 
