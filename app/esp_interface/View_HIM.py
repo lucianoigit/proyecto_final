@@ -414,35 +414,30 @@ class View(ctk.CTk):
 
         def open_camera_and_select_points():
             self.points.clear()
-            self.picam2.stop()  # Asegurarse de que esté detenida antes de configurarla
+            self.picam2.stop()
             self.picam2.configure(self.picam2.create_preview_configuration(main={"size": (800, 480), "format": "RGB888"}))
             self.picam2.start()
-            
+
             cv2.namedWindow("Seleccione cuatro puntos")
             cv2.setMouseCallback("Seleccione cuatro puntos", click_event)
 
-            # Actualizar la imagen en un bucle controlado
             while True:
                 frame = self.picam2.capture_array()
                 for point in self.points:
                     cv2.circle(frame, point, 5, (255, 0, 0), -1)
 
-                # Dibuja el polígono si hay cuatro puntos seleccionados
                 if len(self.points) == 4:
                     ordered_points = ordenar_puntos(self.points)
                     cv2.polylines(frame, [np.array(ordered_points)], isClosed=True, color=(0, 255, 0), thickness=2)
 
                 cv2.imshow("Seleccione cuatro puntos", frame)
 
-                # Salir cuando se presiona 'q' o hay cuatro puntos
                 if cv2.waitKey(1) & 0xFF == ord('q') or len(self.points) == 4:
                     break
 
-            # Detener cámara y cerrar ventana
             self.picam2.stop()
             cv2.destroyAllWindows()
 
-            # Asignar coordenadas seleccionadas a las entradas
             if len(self.points) >= 2:
                 (x1, y1), (x2, y2) = self.points[:2]
                 x1_entry.delete(0, ctk.END)
@@ -460,39 +455,32 @@ class View(ctk.CTk):
                 print(f"Punto seleccionado: {x, y}")
 
         def ordenar_puntos(puntos):
-            centroid = (sum([p[0] for p in puntos]) / len(puntos), sum([p[1] for p in puntos]) / len(puntos))
+            centroid = (sum([p[0] for p in puntos]) / len(puntos), sum([p[1] for p in puntos]))
             return sorted(puntos, key=lambda p: np.arctan2(p[1] - centroid[1], p[0] - centroid[0]))
 
-        # Configuración de los campos de entrada y el botón para abrir la cámara
-        square_size_label = ctk.CTkLabel(scrollable_frame, text="Tamaño del cuadrado:")
-        square_size_label.pack(pady=10)
-        square_size_entry = ctk.CTkEntry(scrollable_frame)
-        square_size_entry.pack(pady=5)
+        # Configuración en cuadrícula para etiquetas y entradas
+        labels = ["Tamaño del cuadrado:", "Ancho físico (mm):", "Altura física (mm):", "Coordenada X1:", "Coordenada Y1:", "Coordenada X2:", "Coordenada Y2:"]
+        entries = []
+        for i, label_text in enumerate(labels):
+            label = ctk.CTkLabel(scrollable_frame, text=label_text)
+            label.grid(row=i, column=0, padx=5, pady=5, sticky="w")
+            entry = ctk.CTkEntry(scrollable_frame)
+            entry.grid(row=i, column=1, padx=5, pady=5, sticky="ew")
+            entries.append(entry)
 
-        width_label = ctk.CTkLabel(scrollable_frame, text="Ancho físico (mm):")
-        width_label.pack(pady=10)
-        width_entry = ctk.CTkEntry(scrollable_frame)
-        width_entry.pack(pady=5)
+        square_size_entry, width_entry, height_entry, x1_entry, y1_entry, x2_entry, y2_entry = entries
 
-        height_label = ctk.CTkLabel(scrollable_frame, text="Altura física (mm):")
-        height_label.pack(pady=10)
-        height_entry = ctk.CTkEntry(scrollable_frame)
-        height_entry.pack(pady=5)
-
-        x1_entry, y1_entry, x2_entry, y2_entry = (ctk.CTkEntry(scrollable_frame) for _ in range(4))
-        for entry, text in zip([x1_entry, y1_entry, x2_entry, y2_entry], ["X1", "Y1", "X2", "Y2"]):
-            ctk.CTkLabel(scrollable_frame, text=f"Coordenada {text}:").pack(pady=10)
-            entry.pack(pady=5)
-
+        # Botón de selección de puntos
         select_points_button = ctk.CTkButton(scrollable_frame, text="Seleccionar Puntos en la Cámara", command=open_camera_and_select_points)
-        select_points_button.pack(pady=20)
+        select_points_button.grid(row=len(labels), column=0, columnspan=2, padx=10, pady=10, sticky="ew")
 
-        # Botón para iniciar la calibración
-        start_button = ctk.CTkButton(scrollable_frame, text="Iniciar Calibración", command=self.start_calibration)
-        start_button.pack(pady=20)
+        # Botón de inicio de calibración
+        start_button = ctk.CTkButton(scrollable_frame, text="Aplicar Calibración", command=self.start_calibration)
+        start_button.grid(row=len(labels) + 1, column=0, columnspan=2, padx=10, pady=10, sticky="ew")
 
+        scrollable_frame.grid_columnconfigure(1, weight=1)
 
-        
+            
     def load_icon(self, path, hover=False):
         # Obtener la ruta base correcta dependiendo de si el script está empaquetado por PyInstaller o no
         base_path = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
