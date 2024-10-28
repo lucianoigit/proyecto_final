@@ -402,76 +402,86 @@ class View(ctk.CTk):
         # Ocultar el botón de detener y mostrar el de inicio nuevamente
         self.stop_button.grid_remove()
         self.start_button.grid()
+        
 
+    def ordenar_puntos(self, puntos):
+        # Calcula el centroide y ordena los puntos en sentido antihorario
+        centroid = (sum([p[0] for p in puntos]) / len(puntos), sum([p[1] for p in puntos]) / len(puntos))
+        return sorted(puntos, key=lambda p: np.arctan2(p[1] - centroid[1], p[0] - centroid[0]))
+    
     def calibrate_camera_type(self):
-        # Crear una ventana emergente para ingresar parámetros
+        # Crear una ventana emergente para ingresar parámetros de calibración
         calibration_window = ctk.CTkToplevel(self)
         calibration_window.title("Configuración de Calibración")
-        calibration_window.geometry("800x480")  # Ajustar el tamaño si es necesario
+        calibration_window.geometry("800x480")
 
         # Crear un marco desplazable dentro de la ventana emergente
         scrollable_frame = ctk.CTkScrollableFrame(calibration_window, width=400, height=500)
         scrollable_frame.pack(fill="both", expand=True, padx=10, pady=10)
 
-        # Variables para almacenar las coordenadas del rectángulo
-        self.points = []  # Lista para almacenar los puntos seleccionados
+        # Lista para almacenar los puntos seleccionados
+        self.points = []
 
-        # Función para abrir la cámara y capturar los clics usando Picamera2
+        # Función para abrir la cámara y seleccionar puntos
         def open_camera_and_select_points():
-            # Inicializar Picamera2
-            picam2 = Picamera2()
-            picam2.preview_configuration.main.size = (800, 480)  # Configurar el tamaño de la ventana de previsualización
-            picam2.preview_configuration.main.format = "RGB888"
-            picam2.configure("preview")
-
-            # Iniciar la cámara
-            picam2.start()
+            # Configurar y empezar la cámara en modo de previsualización
+            self.picam2.configure(self.picam2.create_preview_configuration(main={"size": (640, 480), "format": "RGB888"}))
+            self.picam2.start()
 
             def click_event(event, x, y, flags, param):
                 if event == cv2.EVENT_LBUTTONDOWN:
                     # Agregar el punto seleccionado a la lista
                     self.points.append((x, y))
-                    # Dibujar un círculo en el punto seleccionado
+                    print(f"Punto seleccionado: {(x, y)}")
+
+                    # Dibujar el punto en el frame y mostrar la ventana actualizada
                     cv2.circle(frame, (x, y), 5, (0, 255, 0), -1)
-                    # Actualizar la ventana con el punto marcado
                     cv2.imshow("Seleccione cuatro puntos", frame)
 
-                    # Si se seleccionaron 4 puntos, cerrar la ventana
+                    # Cerrar la ventana si se han seleccionado 4 puntos
                     if len(self.points) == 4:
                         cv2.destroyWindow("Seleccione cuatro puntos")
 
             while True:
-                # Capturar el frame desde Picamera2
-                frame = picam2.capture_array()
+                # Capturar el frame desde la cámara
+                frame = self.picam2.capture_array()
 
-                # Mostrar la imagen en la ventana
+                # Dibujar puntos seleccionados en el frame actual
+                for point in self.points:
+                    cv2.circle(frame, point, 5, (255, 0, 0), -1)
+
+                # Dibujar el cuadrado si ya se han seleccionado 4 puntos
+                if len(self.points) == 4:
+                    ordered_points = self.ordenar_puntos(self.points)
+                    cv2.polylines(frame, [np.array(ordered_points)], isClosed=True, color=(0, 255, 0), thickness=2)
+
+                # Mostrar el frame en una ventana
                 cv2.imshow("Seleccione cuatro puntos", frame)
-
-                # Configurar el evento de clic
                 cv2.setMouseCallback("Seleccione cuatro puntos", click_event)
 
-                # Esperar a que el usuario cierre la ventana o seleccione cuatro puntos
+                # Salir si se presiona 'q' o si se seleccionan cuatro puntos
                 if cv2.waitKey(1) & 0xFF == ord('q') or len(self.points) == 4:
                     break
 
-            # Detener la cámara y cerrar la ventana
-            picam2.stop()
+            # Detener la cámara y cerrar todas las ventanas de OpenCV
+            self.picam2.stop()
             cv2.destroyAllWindows()
 
-            # Asignar las coordenadas seleccionadas a los campos de entrada
-            if len(self.points) >= 2:
-                (x1, y1), (x2, y2) = self.points[:2]
+            # Asignar los puntos seleccionados a los campos de entrada
+            if len(self.points) == 4:
+                ordered_points = self.ordenar_puntos(self.points)
                 x1_entry.delete(0, ctk.END)
                 y1_entry.delete(0, ctk.END)
                 x2_entry.delete(0, ctk.END)
                 y2_entry.delete(0, ctk.END)
-                
-                x1_entry.insert(0, str(x1))
-                y1_entry.insert(0, str(y1))
-                x2_entry.insert(0, str(x2))
-                y2_entry.insert(0, str(y2))
+                x1_entry.insert(0, str(ordered_points[0][0]))
+                y1_entry.insert(0, str(ordered_points[0][1]))
+                x2_entry.insert(0, str(ordered_points[2][0]))
+                y2_entry.insert(0, str(ordered_points[2][1]))
+            else:
+                print("Por favor, selecciona exactamente 4 puntos.")
 
-        # Campos de entrada para parámetros de calibración dentro del scrollable frame
+        # Campos de entrada y etiquetas para los parámetros de calibración
         square_size_label = ctk.CTkLabel(scrollable_frame, text="Tamaño del cuadrado:")
         square_size_label.pack(pady=10)
         square_size_entry = ctk.CTkEntry(scrollable_frame)
@@ -487,7 +497,7 @@ class View(ctk.CTk):
         height_entry = ctk.CTkEntry(scrollable_frame)
         height_entry.pack(pady=5)
 
-        # Campos de entrada para las coordenadas del rectángulo
+        # Coordenadas del rectángulo seleccionadas en la cámara
         x1_label = ctk.CTkLabel(scrollable_frame, text="Coordenada X1:")
         x1_label.pack(pady=10)
         x1_entry = ctk.CTkEntry(scrollable_frame)
@@ -508,7 +518,7 @@ class View(ctk.CTk):
         y2_entry = ctk.CTkEntry(scrollable_frame)
         y2_entry.pack(pady=5)
 
-        # Botón para abrir la cámara y seleccionar los puntos
+        # Botón para seleccionar puntos en la cámara
         select_points_button = ctk.CTkButton(scrollable_frame, text="Seleccionar Puntos en la Cámara", command=open_camera_and_select_points)
         select_points_button.pack(pady=20)
 
@@ -522,8 +532,8 @@ class View(ctk.CTk):
                 y1 = int(y1_entry.get()) if y1_entry.get() else None
                 x2 = int(x2_entry.get()) if x2_entry.get() else None
                 y2 = int(y2_entry.get()) if y2_entry.get() else None
-                
-                # Llamar a calibrate_camera con los valores ingresados
+
+                # Llamar a la función de calibración con los valores obtenidos
                 self.calibrate_camera(
                     square_size=square_size,
                     physical_width_mm=physical_width_mm,
@@ -533,14 +543,14 @@ class View(ctk.CTk):
                     x2=x2,
                     y2=y2
                 )
-                
-                calibration_window.destroy()  # Cerrar la ventana después de iniciar la calibración
+                calibration_window.destroy()  # Cerrar la ventana de calibración
             except ValueError:
                 print("Por favor, ingrese valores numéricos válidos.")
 
         # Botón para iniciar la calibración
         start_button = ctk.CTkButton(scrollable_frame, text="Iniciar Calibración", command=start_calibration)
         start_button.pack(pady=20)
+
 
         
     def load_icon(self, path, hover=False):
