@@ -354,10 +354,9 @@ class View(ctk.CTk):
         # Variables para almacenar las coordenadas del rectángulo
         self.points = []  # Lista para almacenar los puntos seleccionados
 
-        # Función para abrir la cámara y capturar los clics usando Picamera2
+        # Función para abrir la cámara y capturar los clics usando la instancia inyectada de Picamera2
         def open_camera_and_select_points():
-            # Inicializar Picamera2
-           
+            # Configurar la cámara ya inyectada en self.picam2
             self.picam2.preview_configuration.main.size = (640, 480)  # Configurar el tamaño de la ventana de previsualización
             self.picam2.preview_configuration.main.format = "RGB888"
             self.picam2.configure("preview")
