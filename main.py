@@ -17,12 +17,9 @@ def main():
     SERIAL_PORT = 'COM4'
     BAUD_RATE = 115200
 
-    # Inicializa la cámara
+    # Inicializa la cámara sin configurarla todavía
     picam2 = Picamera2()
-    """ picam2.configure(picam2.create_still_configuration(main={"size": (640, 480), "format": "RGB888"})) """
-    picam2.configure(picam2.create_preview_configuration(main={"size": (640, 480), "format": "RGB888"})) 
-    picam2.start()
-
+    
     with db.session() as session:
         residue_repository = ResidueRepository(session)
         serial_service = SerialService(SERIAL_PORT, BAUD_RATE)

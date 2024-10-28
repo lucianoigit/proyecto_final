@@ -402,7 +402,6 @@ class View(ctk.CTk):
         # Ocultar el botón de detener y mostrar el de inicio nuevamente
         self.stop_button.grid_remove()
         self.start_button.grid()
-   
     def calibrate_camera_type(self):
         # Crear ventana emergente para ingresar parámetros de calibración
         calibration_window = ctk.CTkToplevel(self)
@@ -464,12 +463,10 @@ class View(ctk.CTk):
         return x1_entry, y1_entry, x2_entry, y2_entry
 
     def open_camera_and_select_points(self, x1_entry, y1_entry, x2_entry, y2_entry):
-        # Configurar cámara
-        self.picam2.stop()
-        self.picam2.preview_configuration.main.size = (640, 480)
-        self.picam2.preview_configuration.main.format = "RGB888"
-        self.picam2.configure("preview")
-        self.picam2.start()
+        # Configura la cámara solo si no está ya en uso
+        if not self.picam2.is_streaming:
+            self.picam2.configure(self.picam2.create_preview_configuration(main={"size": (640, 480), "format": "RGB888"}))
+            self.picam2.start()
 
         def click_event(event, x, y, flags, param):
             if event == cv2.EVENT_LBUTTONDOWN and len(self.points) < 4:
@@ -512,7 +509,7 @@ class View(ctk.CTk):
             print("Por favor, selecciona exactamente 4 puntos.")
 
     def ordenar_puntos(self, puntos):
-        centroid = (sum([p[0] for p in puntos]) / len(puntos), sum([p[1] for p in puntos]) / len(puntos))
+        centroid = (sum([p[0] for p in puntos]) / len(puntos), sum([p[1] for p in puntos]))
         return sorted(puntos, key=lambda p: np.arctan2(p[1] - centroid[1], p[0] - centroid[0]))
 
     def start_calibration(self, square_size_entry, width_entry, height_entry, x1_entry, y1_entry, x2_entry, y2_entry):

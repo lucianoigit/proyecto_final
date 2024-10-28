@@ -21,12 +21,11 @@ class ImageProcessingService(ProcessingInterface):
         self.transport_service = transport_service
         self.picam2 = picamera  # Inyección de la cámara
 
-    def close_camera(self):
-        if self.picam2 is not None:
-            self.picam2.stop()
-            print("Cámara detenida.")
-
     def capture_image(self):
+        if not self.picam2.is_streaming:  # Solo configura si no está en uso
+            self.picam2.configure(self.picam2.create_preview_configuration(main={"size": (640, 480), "format": "RGB888"}))
+            self.picam2.start()
+        
         try:
             img_rgb = self.picam2.capture_array()
             img_bgr = cv2.cvtColor(img_rgb, cv2.COLOR_RGB2BGR)
@@ -34,6 +33,11 @@ class ImageProcessingService(ProcessingInterface):
         except Exception as e:
             print(f"Error capturando la imagen: {e}")
             return None
+
+    def close_camera(self):
+        if self.picam2.is_streaming:
+            self.picam2.stop()
+            print("Cámara detenida.")
 
     def undistorted_image(self, img):
         """Aplica la corrección de distorsión en la imagen y verifica el formato."""
