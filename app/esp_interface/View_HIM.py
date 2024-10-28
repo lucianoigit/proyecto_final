@@ -402,7 +402,7 @@ class View(ctk.CTk):
         # Ocultar el botón de detener y mostrar el de inicio nuevamente
         self.stop_button.grid_remove()
         self.start_button.grid()
-      def calibrate_camera_type(self):
+    def calibrate_camera_type(self):
         # Ventana emergente para la configuración de la calibración
         calibration_window = ctk.CTkToplevel(self)
         calibration_window.title("Configuración de Calibración")
