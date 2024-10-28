@@ -4,7 +4,7 @@ import time
 import json
 import os
 import cv2
-
+from picamera2 import Picamera2
 from matplotlib import pyplot as plt
 from app.abstracts.ITransport import TransportInterface
 from app.abstracts.ICommunication import CommunicationInterface
@@ -356,13 +356,13 @@ class View(ctk.CTk):
         # Función para abrir la cámara y capturar los clics usando Picamera2
         def open_camera_and_select_points():
             # Inicializar Picamera2
-            """             picam2 = Picamera2()
+            picam2 = Picamera2()
             picam2.preview_configuration.main.size = (640, 480)  # Configurar el tamaño de la ventana de previsualización
             picam2.preview_configuration.main.format = "RGB888"
             picam2.configure("preview")
 
             # Iniciar la cámara
-            picam2.start() """
+            picam2.start()
 
             def click_event(event, x, y, flags, param):
                 if event == cv2.EVENT_LBUTTONDOWN:
