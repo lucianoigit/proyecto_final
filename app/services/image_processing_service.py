@@ -22,9 +22,9 @@ class ImageProcessingService(ProcessingInterface):
         self.picam2 = picamera  # Inyección de la cámara
 
     def capture_image(self):
-        if not self.picam2.is_streaming:  # Solo configura si no está en uso
-            self.picam2.configure(self.picam2.create_preview_configuration(main={"size": (640, 480), "format": "RGB888"}))
-            self.picam2.start()
+       
+        self.picam2.configure(self.picam2.create_preview_configuration(main={"size": (640, 480), "format": "RGB888"}))
+        self.picam2.start()
         
         try:
             img_rgb = self.picam2.capture_array()

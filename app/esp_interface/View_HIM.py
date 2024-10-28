@@ -464,9 +464,9 @@ class View(ctk.CTk):
 
     def open_camera_and_select_points(self, x1_entry, y1_entry, x2_entry, y2_entry):
         # Configura la cámara solo si no está ya en uso
-        if not self.picam2.is_streaming:
-            self.picam2.configure(self.picam2.create_preview_configuration(main={"size": (640, 480), "format": "RGB888"}))
-            self.picam2.start()
+        
+        self.picam2.configure(self.picam2.create_preview_configuration(main={"size": (640, 480), "format": "RGB888"}))
+        self.picam2.start()
 
         def click_event(event, x, y, flags, param):
             if event == cv2.EVENT_LBUTTONDOWN and len(self.points) < 4:
