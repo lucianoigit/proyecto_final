@@ -22,11 +22,12 @@ class ImageProcessingService(ProcessingInterface):
         self.detection_thread = None  # Variable para el hilo de detección
 
 
-        # Iniciar una única instancia de Picamera2
+        # Inicializar una única instancia de Picamera2 y configurar en RGB
         self.picam2 = Picamera2()
-        self.picam2.configure(self.picam2.create_still_configuration())
+        config = self.picam2.create_still_configuration(main={"size": (640, 480), "format": "RGB888"})
+        self.picam2.configure(config)
         self.picam2.start()
-        print("Cámara iniciada.")
+        print("Cámara iniciada y configurada en RGB.")
 
     def close_camera(self):
         """Detiene y libera la cámara."""
@@ -35,13 +36,15 @@ class ImageProcessingService(ProcessingInterface):
             print("Cámara detenida.")
 
     def capture_image(self):
-        """Captura una imagen usando la cámara inicializada."""
+        """Captura una imagen en formato BGR usando la cámara inicializada."""
         try:
-            return self.picam2.capture_array()
+            img_rgb = self.picam2.capture_array()
+            # Convertir de RGB a BGR para el procesamiento con OpenCV
+            img_bgr = cv2.cvtColor(img_rgb, cv2.COLOR_RGB2BGR)
+            return img_bgr
         except Exception as e:
             print(f"Error capturando la imagen: {e}")
             return None
-
 
     def detected_objects(self, img_undistorted, confianza_minima=0.2, relation_x=0, relation_y=0, roi=None):
         try:
