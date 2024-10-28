@@ -402,27 +402,17 @@ class View(ctk.CTk):
         # Ocultar el botón de detener y mostrar el de inicio nuevamente
         self.stop_button.grid_remove()
         self.start_button.grid()
+    # Función para calcular el centroide
+    def calcular_centroid(self, puntos):
+        x_coords = [p[0] for p in puntos]
+        y_coords = [p[1] for p in puntos]
+        return (int(sum(x_coords) / len(puntos)), int(sum(y_coords) / len(puntos)))
 
-    def calibrate_camera_type(self):
-        calibration_window = ctk.CTkToplevel(self)
-        calibration_window.title("Configuración de Calibración")
-        calibration_window.geometry("400x300")
-
-        # Entradas de datos de calibración
-        square_size_label = ctk.CTkLabel(calibration_window, text="Tamaño del cuadrado:")
-        square_size_label.pack(pady=10)
-        square_size_entry = ctk.CTkEntry(calibration_window)
-        square_size_entry.pack(pady=5)
-
-        # Botón para abrir la cámara y seleccionar puntos
-        select_points_button = ctk.CTkButton(calibration_window, text="Seleccionar Puntos en Cámara",
-                                             command=lambda: self.open_camera_and_select_points())
-        select_points_button.pack(pady=10)
-
-        # Botón para iniciar calibración con puntos seleccionados
-        start_button = ctk.CTkButton(calibration_window, text="Iniciar Calibración", 
-                                     command=lambda: self.start_calibration(square_size_entry))
-        start_button.pack(pady=10)
+    # Función para ordenar los puntos en sentido antihorario
+    def ordenar_puntos(self, puntos):
+        centroid = self.calcular_centroid(puntos)
+        puntos_ordenados = sorted(puntos, key=lambda p: np.arctan2(p[1] - centroid[1], p[0] - centroid[0]))
+        return puntos_ordenados
 
     def open_camera_and_select_points(self):
         self.points.clear()  # Reiniciar la lista de puntos
@@ -430,9 +420,12 @@ class View(ctk.CTk):
         def click_event(event, x, y, flags, param):
             if event == cv2.EVENT_LBUTTONDOWN and len(self.points) < 4:
                 self.points.append((x, y))
+                print(f"Punto seleccionado: {(x, y)}")
                 cv2.circle(frame, (x, y), 5, (0, 255, 0), -1)
                 cv2.imshow("Seleccione cuatro puntos", frame)
                 if len(self.points) == 4:
+                    # Ordenamos los puntos en sentido antihorario
+                    self.points = self.ordenar_puntos(self.points)
                     cv2.destroyWindow("Seleccione cuatro puntos")
 
         self.picam2.configure(self.picam2.create_preview_configuration(main={"size": (640, 480), "format": "RGB888"}))
@@ -460,19 +453,15 @@ class View(ctk.CTk):
         if len(self.points) == 4:
             try:
                 square_size = int(square_size_entry.get())
+                # Usamos los puntos seleccionados para la calibración
                 x1, y1 = self.points[0]
                 x2, y2 = self.points[2]
+                # Llamada a calibrate_camera con los puntos seleccionados y tamaño del cuadrado
                 self.calibrate_camera(square_size, x1=x1, y1=y1, x2=x2, y2=y2)
             except ValueError:
                 print("Por favor, ingrese un tamaño de cuadrado válido.")
         else:
             print("Por favor, seleccione exactamente 4 puntos.")
-
-    def ordenar_puntos(self, puntos):
-        centroid = (sum([p[0] for p in puntos]) / len(puntos), sum([p[1] for p in puntos]) / len(puntos))
-        return sorted(puntos, key=lambda p: np.arctan2(p[1] - centroid[1], p[0] - centroid[0]))
-
-
         
     def load_icon(self, path, hover=False):
         # Obtener la ruta base correcta dependiendo de si el script está empaquetado por PyInstaller o no
