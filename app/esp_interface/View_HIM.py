@@ -15,7 +15,7 @@ import sys
 from app.services.reports_service import ReportsService
 
 class View(ctk.CTk):
-    def __init__(self, communication_service: CommunicationInterface, processing_service: ProcessingInterface, reports_service: ReportsService,transport_service:TransportInterface,ser):
+    def __init__(self, communication_service: CommunicationInterface, processing_service: ProcessingInterface, reports_service: ReportsService,transport_service:TransportInterface,ser,picamera:Picamera2):
         super().__init__()
         self.title("Delta Robot")
         self.geometry("800x480")
@@ -26,6 +26,7 @@ class View(ctk.CTk):
         self.reports_service = reports_service
         self.transport_service = transport_service
         self.mtx = None
+        self.picam2 = picamera  # Almacenamos la cámara para uso futuro
         self.dist = None
         self.calibracion = False
         self.reports = []
@@ -356,13 +357,13 @@ class View(ctk.CTk):
         # Función para abrir la cámara y capturar los clics usando Picamera2
         def open_camera_and_select_points():
             # Inicializar Picamera2
-            picam2 = Picamera2()
-            picam2.preview_configuration.main.size = (640, 480)  # Configurar el tamaño de la ventana de previsualización
-            picam2.preview_configuration.main.format = "RGB888"
-            picam2.configure("preview")
+           
+            self.picam2.preview_configuration.main.size = (640, 480)  # Configurar el tamaño de la ventana de previsualización
+            self.picam2.preview_configuration.main.format = "RGB888"
+            self.picam2.configure("preview")
 
             # Iniciar la cámara
-            picam2.start()
+            self.picam2.start()
 
             def click_event(event, x, y, flags, param):
                 if event == cv2.EVENT_LBUTTONDOWN:
@@ -381,7 +382,7 @@ class View(ctk.CTk):
 
             while True:
                 # Capturar el frame desde Picamera2
-                frame = picam2.capture_array()
+                frame = self.picam2.capture_array()
 
                 # Mostrar la imagen en la ventana
                 cv2.imshow("Seleccione cuatro puntos", frame)
@@ -394,7 +395,7 @@ class View(ctk.CTk):
                     break
 
             # Detener la cámara y cerrar la ventana
-            picam2.stop()
+            self.picam2.stop()
             cv2.destroyAllWindows()
 
             # Validar que se hayan seleccionado exactamente 4 puntos

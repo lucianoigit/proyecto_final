@@ -11,39 +11,25 @@ from app.services.IA_model_service import MLModelService
 from app.abstracts.ITransport import TransportInterface  # Importación del servicio de transporte
 from picamera2 import Picamera2
 
-class ImageProcessingService(ProcessingInterface):
 
-    def __init__(self, residue_repository: ResidueRepository, use_model: MLModelService, transport_service: TransportInterface):
+class ImageProcessingService(ProcessingInterface):
+    def __init__(self, residue_repository: ResidueRepository, use_model: MLModelService, transport_service: TransportInterface, picamera: Picamera2):
         self.mtx = None
         self.dist = None
         self.residue_repository = residue_repository
         self.use_model = use_model
-        self.transport_service = transport_service  # Servicio de transporte para conversiones
-        self.detection_thread = None  # Variable para el hilo de detección
-
-
-        # Inicializar una única instancia de Picamera2 y configurar en RGB
-        self.picam2 = Picamera2()
-        config = self.picam2.create_still_configuration(main={"size": (640, 480), "format": "RGB888"})
-        self.picam2.configure(config)
-        self.picam2.start()
-        print("Cámara iniciada y configurada en RGB.")
+        self.transport_service = transport_service
+        self.picam2 = picamera  # Inyección de la cámara
 
     def close_camera(self):
-        """Detiene y libera la cámara."""
         if self.picam2 is not None:
             self.picam2.stop()
             print("Cámara detenida.")
 
     def capture_image(self):
-        """Captura una imagen en formato RGB usando la cámara inicializada."""
         try:
             img_rgb = self.picam2.capture_array()
-            print(f"Captura de imagen exitosa: {img_rgb.shape}, dtype: {img_rgb.dtype}")
-
-            # Convertir de RGB a BGR para el procesamiento con OpenCV
             img_bgr = cv2.cvtColor(img_rgb, cv2.COLOR_RGB2BGR)
-            print(f"Imagen convertida a BGR: {img_bgr.shape}, dtype: {img_bgr.dtype}")
             return img_bgr
         except Exception as e:
             print(f"Error capturando la imagen: {e}")
