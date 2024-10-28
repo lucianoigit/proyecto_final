@@ -21,6 +21,28 @@ class ImageProcessingService(ProcessingInterface):
         self.transport_service = transport_service  # Servicio de transporte para conversiones
         self.detection_thread = None  # Variable para el hilo de detección
 
+
+        # Iniciar una única instancia de Picamera2
+        self.picam2 = Picamera2()
+        self.picam2.configure(self.picam2.create_still_configuration())
+        self.picam2.start()
+        print("Cámara iniciada.")
+
+    def close_camera(self):
+        """Detiene y libera la cámara."""
+        if self.picam2 is not None:
+            self.picam2.stop()
+            print("Cámara detenida.")
+
+    def capture_image(self):
+        """Captura una imagen usando la cámara inicializada."""
+        try:
+            return self.picam2.capture_array()
+        except Exception as e:
+            print(f"Error capturando la imagen: {e}")
+            return None
+
+
     def detected_objects(self, img_undistorted, confianza_minima=0.2, relation_x=0, relation_y=0, roi=None):
         try:
             print("Procesando imagen...")
@@ -118,13 +140,3 @@ class ImageProcessingService(ProcessingInterface):
     def save_residue_list(self, residue_list):
         print(f"Residuos recolectados en BDD:", residue_list)
         # Implementar la lógica de guardado en la base de datos si es necesario
-
-    def capture_image(self):
-            picam2 = Picamera2()
-    """        picam2.configure(picam2.create_still_configuration())
-        picam2.start()
-        time.sleep(2)  
-        foto = picam2.capture_array()
-        picam2.stop()
-        return foto
-    """
