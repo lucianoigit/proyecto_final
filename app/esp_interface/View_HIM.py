@@ -159,14 +159,6 @@ class View(ctk.CTk):
 
 
 
-        # Botón de inicio de stream de cámara
-        start_section_button = ctk.CTkButton(nav_bar, command=self.start_camera_stream,
-                                             text="", image=self.load_icon("icons/start.png"), 
-                                             width=150, height=50, fg_color=self.bg_color,
-                                             border_color=self.btn_color, border_width=2,
-                                             hover_color=self.img_frame_color)
-        start_section_button.grid(row=1, column=0, padx=10, pady=10)
-
         # Panel principal para el contenido
         main_panel = ctk.CTkFrame(self, fg_color=self.img_frame_color)
         main_panel.grid(row=0, column=1, sticky="nsew", padx=20, pady=20)
@@ -323,49 +315,6 @@ class View(ctk.CTk):
 
         self.show_main_panel()
         #self.receive_data()
-
-    def start_camera_stream(self):
-        """
-        Inicia el stream de la cámara y muestra la imagen en `image_label`.
-        """
-        # Configuración de la cámara
-        self.picam2.preview_configuration.main.size = (640, 480)
-        self.picam2.preview_configuration.main.format = "RGB888"
-        self.picam2.configure("preview")
-        self.picam2.start()
-
-        # Actualizar el stream en `image_label`
-        self.update_camera_stream()
-
-    def update_camera_stream(self):
-        """
-        Captura un frame de la cámara, dibuja el cuadrado del área de trabajo y lo muestra en `image_label`.
-        """
-        # Captura el frame actual desde la cámara
-        frame_rgb = self.picam2.capture_array()
-        
-        # Convertir el frame de RGB a BGR para usar con OpenCV
-        frame_bgr = cv2.cvtColor(frame_rgb, cv2.COLOR_RGB2BGR)
-
-        # Dibujar el cuadrado del área de trabajo en el frame
-        if all(v is not None for v in [self.x1, self.y1, self.x2, self.y2]):
-            start_point = (self.x1, self.y1)
-            end_point = (self.x2, self.y2)
-            color = (0, 255, 0)  # Verde
-            thickness = 2  # Grosor del borde del cuadrado
-            cv2.rectangle(frame_bgr, start_point, end_point, color, thickness)
-        
-        # Convertir el frame de nuevo a RGB para mostrar en Tkinter
-        frame_rgb = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2RGB)
-        frame_pil = Image.fromarray(frame_rgb)
-        frame_tk = ImageTk.PhotoImage(frame_pil)
-
-        # Actualizar el label de imagen con el nuevo frame
-        self.image_label.configure(image=frame_tk)
-        self.image_label.image = frame_tk  # Guardar referencia para evitar garbage collection
-
-        # Programar la próxima actualización del frame
-        self.after(30, self.update_camera_stream)  # 30 ms = ~30 fps
 
     def update_articles_table(self):
         # Limpiar filas anteriores
