@@ -36,14 +36,30 @@ class ImageProcessingService(ProcessingInterface):
             print("Cámara detenida.")
 
     def capture_image(self):
-        """Captura una imagen en formato BGR usando la cámara inicializada."""
+        """Captura una imagen en formato RGB usando la cámara inicializada."""
         try:
             img_rgb = self.picam2.capture_array()
+            print(f"Captura de imagen exitosa: {img_rgb.shape}, dtype: {img_rgb.dtype}")
+
             # Convertir de RGB a BGR para el procesamiento con OpenCV
             img_bgr = cv2.cvtColor(img_rgb, cv2.COLOR_RGB2BGR)
+            print(f"Imagen convertida a BGR: {img_bgr.shape}, dtype: {img_bgr.dtype}")
             return img_bgr
         except Exception as e:
             print(f"Error capturando la imagen: {e}")
+            return None
+
+    def undistorted_image(self, img):
+        """Aplica la corrección de distorsión en la imagen y verifica el formato."""
+        try:
+            h, w = img.shape[:2]
+            newcameramtx, roi = cv2.getOptimalNewCameraMatrix(self.mtx, self.dist, (w, h), 1, (w, h))
+            img_undistorted = cv2.undistort(img, self.mtx, self.dist, None, newcameramtx)
+
+            print(f"Imagen corregida sin distorsión: {img_undistorted.shape}, dtype: {img_undistorted.dtype}")
+            return img_undistorted
+        except Exception as e:
+            print(f"Error en undistorted_image: {e}")
             return None
 
     def detected_objects(self, img_undistorted, confianza_minima=0.2, relation_x=0, relation_y=0, roi=None):
@@ -134,12 +150,7 @@ class ImageProcessingService(ProcessingInterface):
         self.mtx, self.dist = mtx, dist
         return mtx, dist
 
-    def undistorted_image(self, img):
-        h, w = img.shape[:2]
-        newcameramtx, roi = cv2.getOptimalNewCameraMatrix(self.mtx, self.dist, (w, h), 1, (w, h))
-        img_undistorted = cv2.undistort(img, self.mtx, self.dist, None, newcameramtx)
-        return img_undistorted
-        
+
     def save_residue_list(self, residue_list):
         print(f"Residuos recolectados en BDD:", residue_list)
         # Implementar la lógica de guardado en la base de datos si es necesario
