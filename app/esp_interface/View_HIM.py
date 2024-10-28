@@ -356,12 +356,15 @@ class View(ctk.CTk):
 
         # Función para abrir la cámara y capturar los clics usando la instancia inyectada de Picamera2
         def open_camera_and_select_points():
-            # Configurar la cámara ya inyectada en self.picam2
+            # Detener la cámara antes de intentar configurarla nuevamente
+            self.picam2.stop()  # Asegurarse de que esté detenida
+
+            # Configurar la cámara con los parámetros necesarios para la previsualización
             self.picam2.preview_configuration.main.size = (640, 480)  # Configurar el tamaño de la ventana de previsualización
             self.picam2.preview_configuration.main.format = "RGB888"
             self.picam2.configure("preview")
 
-            # Iniciar la cámara
+            # Iniciar la cámara después de configurar
             self.picam2.start()
 
             def click_event(event, x, y, flags, param):
