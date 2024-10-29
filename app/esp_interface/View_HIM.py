@@ -159,16 +159,9 @@ class View(ctk.CTk):
 
 
 
-        # Panel principal para el contenido
-        main_panel = ctk.CTkFrame(self, fg_color=self.img_frame_color)
-        main_panel.grid(row=0, column=1, sticky="nsew", padx=20, pady=20)
-        self.panels["main"] = main_panel
-
-        # Área de imagen clasificada (donde se verá el stream de la cámara)
-        self.image_label = ctk.CTkLabel(main_panel, text="Imagen clasificada aparecerá aquí", anchor="center", 
-                                        fg_color=self.img_frame_color, text_color=self.text_color)
+        # Área de imagen clasificada
+        self.image_label = ctk.CTkLabel(main_panel, text="Imagen clasificada aparecerá aquí", anchor="center", fg_color=self.img_frame_color, text_color=self.text_color)
         self.image_label.grid(row=2, column=0, columnspan=2, padx=10, pady=10, sticky="nsew")
-
 
         # Tabla para mostrar los últimos 5 artículos clasificados
         self.articles_frame = ctk.CTkScrollableFrame(main_panel, fg_color=self.img_frame_color)
