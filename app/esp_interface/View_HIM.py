@@ -348,7 +348,7 @@ class View(ctk.CTk):
     def calibrate_camera_type(self):
         calibration_window = ctk.CTkToplevel(self)
         calibration_window.title("Configuración de Calibración")
-        calibration_window.geometry("800x480")
+        calibration_window.geometry("640x480")
 
         scrollable_frame = ctk.CTkScrollableFrame(calibration_window, width=400, height=500)
         scrollable_frame.pack(fill="both", expand=True, padx=10, pady=10)
@@ -358,7 +358,7 @@ class View(ctk.CTk):
         def open_camera_and_select_points():
             self.points.clear()
             self.picam2.stop()  # Asegurarse de detener la cámara antes de configurarla
-            self.picam2.configure(self.picam2.create_preview_configuration(main={"size": (800, 480), "format": "RGB888"}))
+            self.picam2.configure(self.picam2.create_preview_configuration(main={"size": (640, 480), "format": "RGB888"}))
             self.picam2.start()
 
             cv2.namedWindow("Seleccione cuatro puntos")

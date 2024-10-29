@@ -22,7 +22,13 @@ class ImageProcessingService(ProcessingInterface):
         self.picam2 = picamera  # Inyección de la cámara
 
     def capture_image(self):
-       
+        # Detener la cámara en caso de que esté activa
+        try:
+            self.picam2.stop()
+        except Exception:
+            pass  # Ignorar si la cámara ya está detenida
+
+        # Configurar y comenzar la captura
         self.picam2.configure(self.picam2.create_preview_configuration(main={"size": (640, 480), "format": "RGB888"}))
         self.picam2.start()
         
