@@ -112,7 +112,8 @@ class ImageProcessingService(ProcessingInterface):
             # Aquí usamos el método after para actualizar la UI en el hilo principal
             if callback:
                 # Si necesitas pasar los datos de vuelta al hilo principal para actualizar la interfaz
-                self.root.after(0, lambda: callback(df_filtrado, img_resultado, residue_list))
+                
+                callback(df_filtrado, img_resultado, residue_list)
 
         # Crear y arrancar el hilo
         self.detection_thread = threading.Thread(target=run_detection)
