@@ -520,57 +520,52 @@ class View(ctk.CTk):
         self.quit()
 
     def iniciar_clasificacion(self):
-        if self.isOpen is  None:
-            print("Entramos a la clasificación")
-
+        if not self.isProcessing:
+            self.isProcessing = True
             if self.df_filtrado is None or self.df_filtrado.empty:
-                
-                # Definimos la función de captura en segundo plano
+                print("Entramos a la clasificación")
+
+                # Función para capturar imágenes en segundo plano
                 def capture_image_in_background():
-                    # Clasificamos en segundo plano
                     img = self.processing_service.capture_image()
-                    
+
                     # Verificar si la imagen fue capturada correctamente
                     if img is None:
                         print("Error: No se pudo capturar la imagen.")
-                        self.root.after(500, self.iniciar_clasificacion)  # Asegurarse de que invoque el método correcto
+                        self.root.after(500, self.reset_procesamiento)  # Reiniciar el flujo
                         return
 
                     try:
                         img_undistorted = self.processing_service.undistorted_image(img)
-                        
-                        # Continuamos con la lógica después de capturar y procesar la imagen
+
+                        # Callback para detección
                         def detection_callback(df_filtrado, img_resultado, residue_list):
-                            # Actualiza la UI cuando el hilo de detección termine
                             self.df_filtrado = df_filtrado
                             self.image_resultado = img_resultado
                             self.residue_list = residue_list
-                            self.update_articles_table()  # Actualiza la tabla con los datos detectados
-                            self.update_image(self.image_resultado)  # Actualiza la imagen en la UI
+                            self.update_articles_table()
+                            self.update_image(self.image_resultado)
+                            self.isProcessing = False  # Permitir ciclo de verificación de disponibilidad
+                            self.verificar_disponibilidad()  # Iniciar verificación de disponibilidad
 
-                        # Ejecuta el procesamiento en segundo plano
-                                                # Definir el ROI usando las coordenadas disponibles en la clase
+                        # Procesamiento en segundo plano
                         roi = (self.x1, self.y1, self.x2, self.y2)
-                        self.processing_service.detected_objects_in_background(img_undistorted, 0.2, detection_callback,self.mmx,self.mmy,roi)
-                        
+                        self.processing_service.detected_objects_in_background(
+                            img_undistorted, 0.2, detection_callback, self.mmx, self.mmy, roi
+                        )
+
                     except Exception as e:
                         print(f"Error al procesar la imagen: {e}")
-                        self.root.after(500, self.iniciar_clasificacion)  # Asegurarse de que invoque el método correcto
-                        return
+                        self.root.after(500, self.reset_procesamiento)
 
-                # Inicia la captura en segundo plano
+                # Captura de imagen en segundo plano
                 self.root.after(0, capture_image_in_background)
+            else:
+                print("El buffer de datos ya está lleno. Verificando disponibilidad para enviar...")
 
-            # Verificamos la disponibilidad y procedemos a enviar los datos si está disponible
-            self.verificar_disponibilidad()
-
-            # Volver a ejecutar este ciclo después de 500 ms para no bloquear la interfaz
-            self.root.after(500, self.iniciar_clasificacion)
         else:
-            print("No puede iniciar sin conectarse al robot")
-
-
-        
+            print("Clasificando ...")
+            
     def clasificacion(self):
         """
         Método principal de clasificación.
@@ -587,45 +582,35 @@ class View(ctk.CTk):
         def change_disponibilidad(command):
             if command == "OK":
                 self.isDisponible = True
-
                 self.enviar_datos_clasificados()
             else:
                 self.isDisponible = False
                 print("Dispositivo no disponible, esperando...")
 
-        # Enviar el mensaje para verificar disponibilidad
+            # Continuar el ciclo hasta que esté disponible
+            if not self.isDisponible:
+                self.root.after(1000, self.verificar_disponibilidad)
+
+        # Enviar mensaje de disponibilidad
         self.communication_service.send_and_receive("DISPONIBILIDAD", "BUFFER_VACIO", change_disponibilidad)
 
     def enviar_datos_clasificados(self):
-        """
-        Envía los datos clasificados al dispositivo si está disponible.
-        """
         if self.isDisponible and self.df_filtrado is not None:
-
             def saveArticle(response):
                 if response == "OK":
-                    # Confirmar que las unidades son en milímetros
-                    print("Enviando datos en milímetros:")
-                    for x, y, z, _ in self.coordenadas_generator(self.df_filtrado):
-                        print(f"x: {x} mm, y: {y} mm, z: {z} mm")
-                    
-                    resultJSON = self.generar_informacion(self.df_filtrado)
-                    print("Resultado de clasificación:", resultJSON)
-                    self.update_image(self.image_resultado)
+                    print("Datos enviados exitosamente")
                 else:
-                    print("Fallo la conexión:", response)
+                    print("Error en el envío:", response)
 
             def confirm_end(response):
                 if response == "OK":
-                    # Limpiar los datos
-                    self.isDisponible = False
                     self.df_filtrado = None
                     self.image_resultado = None
                     self.residue_list = None
+                    self.isDisponible = False  # Reiniciar el ciclo
                 else:
-                    print("Fallo la confirmación de fin:", response)
+                    print("Error en confirmación de fin:", response)
 
-            # Enviar los comandos de los objetos clasificados
             first_command = True
             c = self.offset
 
@@ -637,10 +622,14 @@ class View(ctk.CTk):
                     first_command = False
                     c = 0
 
-            # Enviar mensaje de finalización
+            # Confirmar finalización
             self.communication_service.send_and_receive("FIN", "OK", confirm_end)
 
-
+    def reset_procesamiento(self):
+        self.isProcessing = False
+        self.df_filtrado = None
+        self.image_resultado = None
+        self.residue_list = None
     def coordenadas_generator(self, df_filtrado, z=50):
         for _, row in df_filtrado.iterrows():
             # Convertir coordenadas de píxeles a milímetros
