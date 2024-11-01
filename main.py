@@ -14,7 +14,8 @@ def main():
     db = Database(DATABASE_URL)
     db.create_database()
 
-    SERIAL_PORT = 'COM4'
+    # Configuración para Raspberry Pi con el puerto serial adecuado
+    SERIAL_PORT = '/dev/ttyUSB0'  # o '/dev/ttyAMA0' según la configuración del dispositivo
     BAUD_RATE = 115200
 
     # Inicializa la cámara sin configurarla todavía
@@ -23,19 +24,26 @@ def main():
     with db.session() as session:
         residue_repository = ResidueRepository(session)
         serial_service = SerialService(SERIAL_PORT, BAUD_RATE)
+        
+        # Intentamos inicializar la comunicación serial
         serial_service.initialize_communication()
         ser = serial_service.getStatus()
+
+        # Configuración del modelo y otros servicios
         use_model = MLModelService(model_path='./yolov5s.pt')
         reports_service = ReportsService(residue_repository)
-
         transport_service = TransportService()
+
+        # Inicia el servicio de procesamiento de imágenes
         image_service = ImageProcessingService(residue_repository, use_model, transport_service, picamera=picam2)
         
+        # Inicializa la aplicación principal
         app = View(serial_service, image_service, reports_service, transport_service, ser, picamera=picam2)
         app.mainloop()
         
+        # Asegurar que los recursos se liberen correctamente
         picam2.stop()  # Detenemos la cámara al salir
-        del serial_service  
+        serial_service.close()  # Cerramos el servicio serial
 
 if __name__ == "__main__":
     main()
