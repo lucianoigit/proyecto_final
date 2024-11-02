@@ -523,38 +523,6 @@ class View(ctk.CTk):
     def close_application(self):
         self.quit()
         
-    def enviar_datos_clasificados(self):
-        if self.isDisponible and self.df_filtrado is not None:
-            print("Iniciando envío de datos clasificados.")
-
-            def saveArticle(response):
-                if response == "OK":
-                    print("Artículo enviado exitosamente.")
-                else:
-                    print("Error en el envío del artículo:", response)
-
-            def confirm_end(response):
-                if response == "OK":
-                    print("Confirmación de SEGUI recibida. Esperando START para siguiente ciclo...")
-                    self.esperar_inicio()
-                else:
-                    print("Error en confirmación de fin:", response)
-
-            first_command = True
-            c = self.offset
-
-            for x, y, z, clase in self.coordenadas_generator(self.df_filtrado):
-                command = f"{x},{y},{z},{c},{clase}"
-                print(f"Enviando comando de datos: {command}")
-                self.communication_service.send_and_receive(command, "OK", saveArticle)
-
-                if first_command:
-                    first_command = False
-                    c = 0
-
-            print("Enviando mensaje de finalización (FIN).")
-            self.communication_service.send_and_receive("FIN", "SEGUI", confirm_end)
-
     def iniciar_clasificacion(self):
         if not self.isProcessing:
             print("### Iniciando proceso de clasificación ###")
@@ -575,7 +543,6 @@ class View(ctk.CTk):
                         print("Imagen capturada y corregida para distorsión.")
 
                         def detection_callback(df_filtrado, img_resultado, residue_list):
-                            # Almacenar resultados de la clasificación
                             self.df_filtrado = df_filtrado
                             self.image_resultado = img_resultado
                             self.residue_list = residue_list
@@ -584,7 +551,6 @@ class View(ctk.CTk):
                             self.update_image(self.image_resultado)
                             self.isProcessing = False
 
-                            # Enviar datos en el primer ciclo sin esperar START
                             if self.first_run:
                                 print("Primer ciclo de clasificación: enviando datos sin esperar START.")
                                 self.first_run = False
@@ -610,6 +576,39 @@ class View(ctk.CTk):
         else:
             print("Ya se está clasificando, esperando a que el proceso actual termine.")
 
+    def enviar_datos_clasificados(self):
+        if self.isDisponible and self.df_filtrado is not None:
+            print("Iniciando envío de datos clasificados.")
+
+            def saveArticle(response):
+                if response == "OK":
+                    print("Artículo enviado exitosamente.")
+                else:
+                    print("Error en el envío del artículo:", response)
+
+            def confirm_end(response):
+                if response == "OK":
+                    print("Confirmación de SEGUI recibida. Preparando para nuevo ciclo de clasificación.")
+                    self.reset_procesamiento()  # Restablece para iniciar una nueva clasificación
+                    self.esperar_inicio()
+                else:
+                    print("Error en confirmación de fin:", response)
+
+            first_command = True
+            c = self.offset
+
+            for x, y, z, clase in self.coordenadas_generator(self.df_filtrado):
+                command = f"{x},{y},{z},{c},{clase}"
+                print(f"Enviando comando de datos: {command}")
+                self.communication_service.send_and_receive(command, "OK", saveArticle)
+
+                if first_command:
+                    first_command = False
+                    c = 0
+
+            print("Enviando mensaje de finalización (FIN).")
+            self.communication_service.send_and_receive("FIN", "SEGUI", confirm_end)
+
     def esperar_inicio(self):
         """
         Espera el mensaje 'START' para iniciar el envío de datos almacenados en memoria en los ciclos posteriores.
@@ -617,7 +616,7 @@ class View(ctk.CTk):
         def on_start_received(response):
             if response == "OK":
                 print("Mensaje START recibido. Comenzando envío de datos clasificados desde memoria.")
-                self.verificar_disponibilidad()
+                self.iniciar_clasificacion()  # Captura nueva imagen y clasifica
             else:
                 print("Esperando mensaje START...")
                 self.root.after(1000, self.esperar_inicio)
@@ -648,7 +647,7 @@ class View(ctk.CTk):
         self.df_filtrado = None
         self.image_resultado = None
         self.residue_list = None
-        
+
     def coordenadas_generator(self, df_filtrado, z=50):
         print("Generando coordenadas para datos clasificados.")
         for _, row in df_filtrado.iterrows():
