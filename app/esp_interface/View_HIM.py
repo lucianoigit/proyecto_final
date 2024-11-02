@@ -537,13 +537,20 @@ class View(ctk.CTk):
                         img_undistorted = self.processing_service.undistorted_image(img)
 
                         def detection_callback(df_filtrado, img_resultado, residue_list):
+                            # Almacenar los resultados de la clasificación en memoria
                             self.df_filtrado = df_filtrado
                             self.image_resultado = img_resultado
                             self.residue_list = residue_list
                             self.update_articles_table()
                             self.update_image(self.image_resultado)
                             self.isProcessing = False
-                            self.verificar_disponibilidad()
+
+                            # Si es el primer ciclo, comienza el envío inmediato
+                            if not self.isDisponible:
+                                self.verificar_disponibilidad()  # Primer ciclo: enviar directamente
+                            else:
+                                print("Clasificación completada y almacenada. Esperando `START` para enviar...")
+                                self.esperar_inicio()  # Ciclos posteriores: esperar `START`
 
                         roi = (self.x1, self.y1, self.x2, self.y2)
                         self.processing_service.detected_objects_in_background(
@@ -577,6 +584,7 @@ class View(ctk.CTk):
 
     def enviar_datos_clasificados(self):
         if self.isDisponible and self.df_filtrado is not None:
+            
             def saveArticle(response):
                 if response == "OK":
                     print("Datos enviados exitosamente")
@@ -585,7 +593,7 @@ class View(ctk.CTk):
 
             def confirm_end(response):
                 if response == "OK":
-                    print("Esperando SEGUI para reiniciar proceso.")
+                    print("CONFIRMACION DE RECEPCION DE OBJETOS RECIBIDA")
                     self.esperar_segui()
                 else:
                     print("Error en confirmación de fin:", response)
@@ -601,16 +609,17 @@ class View(ctk.CTk):
                     first_command = False
                     c = 0
 
-            self.communication_service.send_and_receive("FIN", "OK", confirm_end)
+            # Al terminar de enviar los datos, envía `FIN` y espera `SEGUI`
+            self.communication_service.send_and_receive("FIN", "SEGUI", confirm_end)
 
     def esperar_segui(self):
         """
-        Espera el mensaje 'SEGUI' antes de iniciar la espera de 'START' para una nueva clasificación.
+        Espera el mensaje 'SEGUI' antes de iniciar una nueva clasificación.
         """
         def on_segui_received(response):
             if response == "OK":
-                print("Mensaje SEGUI recibido, esperando START...")
-                self.esperar_inicio()
+                print("Mensaje SEGUI recibido, iniciando nueva clasificación...")
+                self.iniciar_clasificacion()  # Inicia nueva clasificación y espera `START`
             else:
                 print("Esperando mensaje SEGUI...")
                 self.root.after(1000, self.esperar_segui)
@@ -619,12 +628,12 @@ class View(ctk.CTk):
 
     def esperar_inicio(self):
         """
-        Espera el mensaje 'START' para comenzar una nueva clasificación.
+        Espera el mensaje 'START' para comenzar el envío de datos clasificados.
         """
         def on_start_received(response):
             if response == "OK":
-                print("Mensaje START recibido, iniciando nueva clasificación...")
-                self.iniciar_clasificacion()
+                print("Mensaje START recibido, enviando datos clasificados...")
+                self.verificar_disponibilidad()  # Verifica disponibilidad para enviar datos
             else:
                 print("Esperando mensaje START...")
                 self.root.after(1000, self.esperar_inicio)
@@ -636,7 +645,6 @@ class View(ctk.CTk):
         self.df_filtrado = None
         self.image_resultado = None
         self.residue_list = None
-        self.df_filtrado = None
 
     def coordenadas_generator(self, df_filtrado, z=50):
         for _, row in df_filtrado.iterrows():
@@ -646,7 +654,6 @@ class View(ctk.CTk):
             )
             clase = int(row["class"])
             yield round(x_mm, 2), round(y_mm, 2), z, clase
-
 
     def clasificacion(self):
         """
