@@ -585,18 +585,31 @@ class View(ctk.CTk):
                 self.isDisponible = True
                 self.enviar_datos_clasificados()
             elif command == "SEGUI":
-                print("Mensaje SEGUI recibido, reiniciando clasificación...")
-                self.iniciar_clasificacion()
+                print("Mensaje SEGUI recibido, reiniciando clasificación sin enviar datos...")
+                self.isProcessing = False
+                self.esperar_inicio()
             else:
                 self.isDisponible = False
                 print("Dispositivo no disponible, esperando...")
 
-            # Continuar el ciclo hasta que esté disponible
             if not self.isDisponible:
                 self.root.after(1000, self.verificar_disponibilidad)
 
-        # Enviar mensaje de disponibilidad
         self.communication_service.send_and_receive("DISPONIBILIDAD", "BUFFER_VACIO", change_disponibilidad)
+
+    def esperar_inicio(self):
+        """
+        Espera el mensaje 'START' para comenzar una nueva clasificación.
+        """
+        def on_start_received(response):
+            if response == "START":
+                print("Mensaje START recibido, iniciando nueva clasificación...")
+                self.iniciar_clasificacion()
+            else:
+                print("Esperando mensaje START...")
+                self.root.after(1000, self.esperar_inicio)
+
+        self.communication_service.send_and_receive("SEGUI", "START", on_start_received)
 
     def enviar_datos_clasificados(self):
         if self.isDisponible and self.df_filtrado is not None:
@@ -604,8 +617,9 @@ class View(ctk.CTk):
                 if response == "OK":
                     print("Datos enviados exitosamente")
                 elif response == "SEGUI":
-                    print("Mensaje SEGUI recibido, reiniciando clasificación sin enviar datos")
-                    self.iniciar_clasificacion()
+                    print("Mensaje SEGUI recibido, esperando 'START' para reiniciar clasificación")
+                    self.isDisponible = False
+                    self.esperar_inicio()
                 else:
                     print("Error en el envío:", response)
 
@@ -614,10 +628,12 @@ class View(ctk.CTk):
                     self.df_filtrado = None
                     self.image_resultado = None
                     self.residue_list = None
-                    self.isDisponible = False  # Reiniciar el ciclo
+                    self.isDisponible = False
+                    self.esperar_inicio()  # Esperar START para iniciar una nueva clasificación
                 elif response == "SEGUI":
-                    print("Mensaje SEGUI recibido, reiniciando clasificación...")
-                    self.iniciar_clasificacion()
+                    print("Mensaje SEGUI recibido después de FIN, esperando START...")
+                    self.isDisponible = False
+                    self.esperar_inicio()
 
             first_command = True
             c = self.offset
