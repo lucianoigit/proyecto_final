@@ -579,23 +579,14 @@ class View(ctk.CTk):
 
         # Iniciar la clasificación de manera continua
         self.iniciar_clasificacion()  # Asegurarse de ejecutar el método correctamente
-
     def verificar_disponibilidad(self):
         def change_disponibilidad(command):
-            if command == "SEGUI":
-                print("Recibido SEGUI: Reiniciando clasificación y esperando START.")
-                self.iniciar_clasificacion()  # Reiniciar clasificación sin enviar
-
-            elif command == "START":
-                print("Recibido START: Iniciando envío de datos.")
+            if command == "OK":
                 self.isDisponible = True
                 self.enviar_datos_clasificados()
-
-            elif command == "OK":
-                print("Dispositivo listo para enviar datos.")
-                self.isDisponible = True
-                self.enviar_datos_clasificados()
-                
+            elif command == "SEGUI":
+                print("Mensaje SEGUI recibido, reiniciando clasificación...")
+                self.iniciar_clasificacion()
             else:
                 self.isDisponible = False
                 print("Dispositivo no disponible, esperando...")
@@ -612,6 +603,9 @@ class View(ctk.CTk):
             def saveArticle(response):
                 if response == "OK":
                     print("Datos enviados exitosamente")
+                elif response == "SEGUI":
+                    print("Mensaje SEGUI recibido, reiniciando clasificación sin enviar datos")
+                    self.iniciar_clasificacion()
                 else:
                     print("Error en el envío:", response)
 
@@ -622,10 +616,8 @@ class View(ctk.CTk):
                     self.residue_list = None
                     self.isDisponible = False  # Reiniciar el ciclo
                 elif response == "SEGUI":
-                    print("Recibido SEGUI: Preparado para nueva clasificación.")
-                    self.iniciar_clasificacion()  # Reiniciar clasificación sin enviar
-                else:
-                    print("Error en confirmación de fin:", response)
+                    print("Mensaje SEGUI recibido, reiniciando clasificación...")
+                    self.iniciar_clasificacion()
 
             first_command = True
             c = self.offset
