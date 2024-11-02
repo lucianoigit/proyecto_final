@@ -521,38 +521,31 @@ class View(ctk.CTk):
         self.quit()
         
     def iniciar_clasificacion(self):
-        
         if not self.isProcessing:
-            
             self.isProcessing = True
-            
             if self.df_filtrado is None or self.df_filtrado.empty:
                 print("Entramos a la clasificación")
 
-                # Función para capturar imágenes en segundo plano
                 def capture_image_in_background():
                     img = self.processing_service.capture_image()
 
-                    # Verificar si la imagen fue capturada correctamente
                     if img is None:
                         print("Error: No se pudo capturar la imagen.")
-                        self.root.after(500, self.reset_procesamiento)  # Reiniciar el flujo
+                        self.root.after(500, self.reset_procesamiento)  
                         return
 
                     try:
                         img_undistorted = self.processing_service.undistorted_image(img)
 
-                        # Callback para detección
                         def detection_callback(df_filtrado, img_resultado, residue_list):
                             self.df_filtrado = df_filtrado
                             self.image_resultado = img_resultado
                             self.residue_list = residue_list
                             self.update_articles_table()
                             self.update_image(self.image_resultado)
-                            self.isProcessing = False  # Permitir ciclo de verificación de disponibilidad
-                            self.verificar_disponibilidad()  # Iniciar verificación de disponibilidad
+                            self.isProcessing = False  
+                            self.verificar_disponibilidad()  
 
-                        # Procesamiento en segundo plano
                         roi = (self.x1, self.y1, self.x2, self.y2)
                         self.processing_service.detected_objects_in_background(
                             img_undistorted, 0.2, detection_callback, self.mmx, self.mmy, roi
@@ -562,7 +555,6 @@ class View(ctk.CTk):
                         print(f"Error al procesar la imagen: {e}")
                         self.root.after(500, self.reset_procesamiento)
 
-                # Captura de imagen en segundo plano
                 self.root.after(0, capture_image_in_background)
             else:
                 print("El buffer de datos ya está lleno. Verificando disponibilidad para enviar...")
@@ -570,24 +562,11 @@ class View(ctk.CTk):
         else:
             print("Clasificando ...")
 
-    def clasificacion(self):
-        """
-        Método principal de clasificación.
-        """
-        if not self.calibracion:
-            print("No puede iniciar sin antes calibrar la camara")
-
-        # Iniciar la clasificación de manera continua
-        self.iniciar_clasificacion()  # Asegurarse de ejecutar el método correctamente
     def verificar_disponibilidad(self):
         def change_disponibilidad(command):
             if command == "OK":
                 self.isDisponible = True
                 self.enviar_datos_clasificados()
-            elif command == "SEGUI":
-                print("Mensaje SEGUI recibido, reiniciando clasificación sin enviar datos...")
-                self.isProcessing = False
-                self.esperar_inicio()
             else:
                 self.isDisponible = False
                 print("Dispositivo no disponible, esperando...")
@@ -596,20 +575,6 @@ class View(ctk.CTk):
                 self.root.after(1000, self.verificar_disponibilidad)
 
         self.communication_service.send_and_receive("DISPONIBILIDAD", "BUFFER_VACIO", change_disponibilidad)
-
-    def esperar_inicio(self):
-        """
-        Espera el mensaje 'START' para comenzar una nueva clasificación.
-        """
-        def on_start_received(response):
-            if response == "START":
-                print("Mensaje START recibido, iniciando nueva clasificación...")
-                self.iniciar_clasificacion()
-            else:
-                print("Esperando mensaje START...")
-                self.root.after(1000, self.esperar_inicio)
-
-        self.communication_service.send_and_receive("SEGUI", "START", on_start_received)
 
     def enviar_datos_clasificados(self):
         if self.isDisponible and self.df_filtrado is not None:
@@ -629,7 +594,7 @@ class View(ctk.CTk):
                     self.image_resultado = None
                     self.residue_list = None
                     self.isDisponible = False
-                    self.esperar_inicio()  # Esperar START para iniciar una nueva clasificación
+                    self.esperar_inicio()  
                 elif response == "SEGUI":
                     print("Mensaje SEGUI recibido después de FIN, esperando START...")
                     self.isDisponible = False
@@ -646,8 +611,21 @@ class View(ctk.CTk):
                     first_command = False
                     c = 0
 
-            # Confirmar finalización
             self.communication_service.send_and_receive("FIN", "OK", confirm_end)
+            
+    def esperar_inicio(self):
+        """
+        Espera el mensaje 'START' para comenzar una nueva clasificación.
+        """
+        def on_start_received(response):
+            if response == "START":
+                print("Mensaje START recibido, iniciando nueva clasificación...")
+                self.iniciar_clasificacion()
+            else:
+                print("Esperando mensaje START...")
+                self.root.after(1000, self.esperar_inicio)
+
+        self.communication_service.send_and_receive("SEGUI", "START", on_start_received)
 
     def reset_procesamiento(self):
         self.isProcessing = False
@@ -657,7 +635,6 @@ class View(ctk.CTk):
 
     def coordenadas_generator(self, df_filtrado, z=50):
         for _, row in df_filtrado.iterrows():
-            # Convertir coordenadas de píxeles a milímetros
             x_mm, y_mm = self.transport_service.convert_pixels_to_mm(
                 (row['xmin'] + row['xmax']) / 2,
                 (row['ymin'] + row['ymax']) / 2, self.mmx, self.mmy
@@ -665,6 +642,17 @@ class View(ctk.CTk):
             clase = int(row["class"])
             yield round(x_mm, 2), round(y_mm, 2), z, clase
 
+
+    def clasificacion(self):
+        """
+        Método principal de clasificación.
+        """
+        if not self.calibracion:
+            print("No puede iniciar sin antes calibrar la camara")
+
+        # Iniciar la clasificación de manera continua
+        self.iniciar_clasificacion()  # Asegurarse de ejecutar el método correctamente
+  
     def tomar_foto(self):
         img = self.processing_service.capture_image()
         self.update_image(img)
