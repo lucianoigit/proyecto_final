@@ -106,7 +106,7 @@ class ImageProcessingService(ProcessingInterface):
             print(f"Error durante la detección: {e}")
             return None, None, []
 
-    def detected_objects_in_background(self, img_undistorted, confianza_minima=0.2, callback=None, relation_x=0,relation_y=0,roi=None):
+    def detected_objects_in_background(self, img_undistorted, confianza_minima=0.2, callback=None, relation_x=0.00000,relation_y=0.0000,roi=None):
         """
         Ejecuta detected_objects en un hilo separado para no bloquear la interfaz.
         El `callback` se llamará con los resultados cuando la detección termine.

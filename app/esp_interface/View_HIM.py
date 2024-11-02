@@ -587,6 +587,7 @@ class View(ctk.CTk):
             def confirm_end(response):
                 if response == "OK":
                     print("Mensaje SEGUI recibido, esperando START...")
+                    self.reset_procesamiento()
                     self.esperar_inicio()
 
                 else:
@@ -624,6 +625,7 @@ class View(ctk.CTk):
         self.df_filtrado = None
         self.image_resultado = None
         self.residue_list = None
+        self.df_filtrado= None
 
     def coordenadas_generator(self, df_filtrado, z=50):
         for _, row in df_filtrado.iterrows():
