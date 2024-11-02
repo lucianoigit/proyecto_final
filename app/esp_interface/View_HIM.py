@@ -710,7 +710,7 @@ class View(ctk.CTk):
         return self.processing_service.undistorted_image(img)
 
     def detectar_objetos(self, img_undistorted, confianza_minima=0.2, tamano_entrada=(416, 416)):
-        return self.processing_service.detected_objects(img_undistorted, confianza_minima, tamano_entrada)
+        return self.processing_service.detected_objects(img_undistorted, confianza_minima, tamano_entrada,self.mmx,self.mmy)
 
     def generar_informacion(self, df_filtrado):
         return json.dumps(df_filtrado.to_dict(orient='records'))
