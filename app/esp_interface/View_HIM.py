@@ -580,18 +580,15 @@ class View(ctk.CTk):
             def saveArticle(response):
                 if response == "OK":
                     print("Datos enviados exitosamente")
-                elif response == "SEGUI":
-                    print("Esperando mensaje START para reiniciar clasificación")
-                    self.esperar_inicio()
+ 
                 else:
                     print("Error en el envío:", response)
 
             def confirm_end(response):
-                if response == "SEGUI":
+                if response == "OK":
                     print("Mensaje SEGUI recibido, esperando START...")
                     self.esperar_inicio()
-                elif response == "OK":
-                    print("Confirmación de fin exitosa.")
+
                 else:
                     print("Error en confirmación de fin:", response)
 
@@ -613,7 +610,7 @@ class View(ctk.CTk):
         Espera el mensaje 'START' para comenzar una nueva clasificación.
         """
         def on_start_received(response):
-            if response == "START":
+            if response == "OK":
                 print("Mensaje START recibido, iniciando nueva clasificación...")
                 self.iniciar_clasificacion()
             else:
