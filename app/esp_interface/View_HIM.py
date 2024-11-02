@@ -50,6 +50,7 @@ class View(ctk.CTk):
         self.mmy = None 
         self.square_size = 50 
         self.points = []
+        self.isProcessing = False
         
 
         # Paleta de colores aplicada
