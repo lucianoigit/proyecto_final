@@ -557,7 +557,7 @@ class View(ctk.CTk):
                                 self.verificar_disponibilidad()
                             else:
                                 print("Ciclo posterior a primer ciclo: esperando disponibilidad.")
-                                self.esperar_inicio()
+                                self.esperar_start()
 
                         roi = (self.x1, self.y1, self.x2, self.y2)
                         print(f"Configuración de ROI: {roi}")
@@ -590,7 +590,8 @@ class View(ctk.CTk):
                 if response == "OK":
                     print("Confirmación de SEGUI recibida. Preparando para nuevo ciclo de clasificación.")
                     self.reset_procesamiento()  # Restablece para iniciar una nueva clasificación
-                    self.esperar_inicio()
+                    self.iniciar_clasificacion()  # Captura nueva imagen y clasifica
+                    
                 else:
                     print("Error en confirmación de fin:", response)
 
@@ -609,17 +610,19 @@ class View(ctk.CTk):
             print("Enviando mensaje de finalización (FIN).")
             self.communication_service.send_and_receive("FIN", "SEGUI", confirm_end)
 
-    def esperar_inicio(self):
+    def esperar_start(self):
         """
         Espera el mensaje 'START' para iniciar el envío de datos almacenados en memoria en los ciclos posteriores.
         """
+        
         def on_start_received(response):
             if response == "OK":
                 print("Mensaje START recibido. Comenzando envío de datos clasificados desde memoria.")
-                self.iniciar_clasificacion()  # Captura nueva imagen y clasifica
+                self.verificar_disponibilidad()
+                
             else:
                 print("Esperando mensaje START...")
-                self.root.after(1000, self.esperar_inicio)
+                self.root.after(1000, self.esperar_start)
 
         print("Esperando mensaje START para comenzar el envío.")
         self.communication_service.send_and_receive("", "START", on_start_received)
