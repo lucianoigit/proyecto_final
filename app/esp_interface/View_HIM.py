@@ -519,10 +519,13 @@ class View(ctk.CTk):
 
     def close_application(self):
         self.quit()
-
+        
     def iniciar_clasificacion(self):
+        
         if not self.isProcessing:
+            
             self.isProcessing = True
+            
             if self.df_filtrado is None or self.df_filtrado.empty:
                 print("Entramos a la clasificación")
 
@@ -566,7 +569,7 @@ class View(ctk.CTk):
 
         else:
             print("Clasificando ...")
-            
+
     def clasificacion(self):
         """
         Método principal de clasificación.
@@ -574,16 +577,25 @@ class View(ctk.CTk):
         if not self.calibracion:
             print("No puede iniciar sin antes calibrar la camara")
 
-
-
         # Iniciar la clasificación de manera continua
         self.iniciar_clasificacion()  # Asegurarse de ejecutar el método correctamente
 
     def verificar_disponibilidad(self):
         def change_disponibilidad(command):
-            if command == "OK":
+            if command == "SEGUI":
+                print("Recibido SEGUI: Reiniciando clasificación y esperando START.")
+                self.iniciar_clasificacion()  # Reiniciar clasificación sin enviar
+
+            elif command == "START":
+                print("Recibido START: Iniciando envío de datos.")
                 self.isDisponible = True
                 self.enviar_datos_clasificados()
+
+            elif command == "OK":
+                print("Dispositivo listo para enviar datos.")
+                self.isDisponible = True
+                self.enviar_datos_clasificados()
+                
             else:
                 self.isDisponible = False
                 print("Dispositivo no disponible, esperando...")
@@ -609,6 +621,9 @@ class View(ctk.CTk):
                     self.image_resultado = None
                     self.residue_list = None
                     self.isDisponible = False  # Reiniciar el ciclo
+                elif response == "SEGUI":
+                    print("Recibido SEGUI: Preparado para nueva clasificación.")
+                    self.iniciar_clasificacion()  # Reiniciar clasificación sin enviar
                 else:
                     print("Error en confirmación de fin:", response)
 
@@ -631,16 +646,16 @@ class View(ctk.CTk):
         self.df_filtrado = None
         self.image_resultado = None
         self.residue_list = None
+
     def coordenadas_generator(self, df_filtrado, z=50):
         for _, row in df_filtrado.iterrows():
             # Convertir coordenadas de píxeles a milímetros
             x_mm, y_mm = self.transport_service.convert_pixels_to_mm(
                 (row['xmin'] + row['xmax']) / 2,
-                (row['ymin'] + row['ymax']) / 2,self.mmx,self.mmy
+                (row['ymin'] + row['ymax']) / 2, self.mmx, self.mmy
             )
             clase = int(row["class"])
             yield round(x_mm, 2), round(y_mm, 2), z, clase
-
 
     def tomar_foto(self):
         img = self.processing_service.capture_image()
