@@ -580,16 +580,13 @@ class View(ctk.CTk):
             def saveArticle(response):
                 if response == "OK":
                     print("Datos enviados exitosamente")
- 
                 else:
                     print("Error en el envío:", response)
 
             def confirm_end(response):
                 if response == "OK":
-                    print("Mensaje SEGUI recibido, esperando START...")
-                    self.reset_procesamiento()
-                    self.esperar_inicio()
-
+                    print("Esperando SEGUI para reiniciar proceso.")
+                    self.esperar_segui()
                 else:
                     print("Error en confirmación de fin:", response)
 
@@ -604,7 +601,21 @@ class View(ctk.CTk):
                     first_command = False
                     c = 0
 
-            self.communication_service.send_and_receive("FIN", "SEGUI", confirm_end)
+            self.communication_service.send_and_receive("FIN", "OK", confirm_end)
+
+    def esperar_segui(self):
+        """
+        Espera el mensaje 'SEGUI' antes de iniciar la espera de 'START' para una nueva clasificación.
+        """
+        def on_segui_received(response):
+            if response == "OK":
+                print("Mensaje SEGUI recibido, esperando START...")
+                self.esperar_inicio()
+            else:
+                print("Esperando mensaje SEGUI...")
+                self.root.after(1000, self.esperar_segui)
+
+        self.communication_service.send_and_receive("", "SEGUI", on_segui_received)
 
     def esperar_inicio(self):
         """
@@ -625,7 +636,7 @@ class View(ctk.CTk):
         self.df_filtrado = None
         self.image_resultado = None
         self.residue_list = None
-        self.df_filtrado= None
+        self.df_filtrado = None
 
     def coordenadas_generator(self, df_filtrado, z=50):
         for _, row in df_filtrado.iterrows():
