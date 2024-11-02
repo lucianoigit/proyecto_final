@@ -54,6 +54,7 @@ class MLModelService(MLModelInterface):
 
             # Obtener las detecciones
             detections = results[0].boxes.data.cpu().numpy()  # Obtener detecciones del primer resultado
+            print ("detectados", detections)
             names = self.model.names  # Obtener los nombres de las clases desde el modelo
             df = pd.DataFrame(detections, columns=['xmin', 'ymin', 'xmax', 'ymax', 'confidence', 'class'])
 

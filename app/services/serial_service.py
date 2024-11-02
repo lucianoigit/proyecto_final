@@ -34,31 +34,29 @@ class SerialService:
         else:
             print("El puerto serial no está disponible para enviar mensajes.")
 
-    def send_and_receive(self, message, expected_response, callback, timeout=10):
+    def send_and_receive(self, message, expected_response, callback):
         """
         Envía un mensaje por el puerto serial y espera por una respuesta específica.
-        La espera se hace de forma síncrona con un timeout.
+        La espera es indefinida hasta recibir la respuesta esperada.
         """
         self.send_message(message)
-        start_time = time.time()
+        print(f"Esperando respuesta para el mensaje: {message}")
 
-        while time.time() - start_time < timeout:  # Esperar respuesta por el tiempo definido
+        while True:  # Bucle infinito hasta recibir la respuesta esperada
             try:
-                response = self.message_queue.get(timeout=timeout - (time.time() - start_time))  # Intenta obtener un mensaje de la cola
+                # Bloquea indefinidamente hasta que haya un mensaje en la cola
+                response = self.message_queue.get()  
                 print(f"expected_response: {expected_response}")
                 print(f"response: {response}")
 
                 if expected_response.strip() == response.strip():
                     callback("OK")
                     return  # Finalizamos si encontramos la respuesta esperada
-            except queue.Empty:
-                print("No se recibió respuesta en el tiempo esperado.")
-                callback("Timeout")
+            except Exception as e:
+                print(f"Error al recibir respuesta: {e}")
+                callback("Error")
                 return
 
-        # Si el tiempo de espera expira
-        print("Tiempo de espera agotado sin respuesta válida.")
-        callback("Timeout")
 
     def receive_data(self):
         """
