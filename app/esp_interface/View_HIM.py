@@ -532,8 +532,7 @@ class View(ctk.CTk):
 
             def confirm_end(response):
                 if response == "OK":
-                    print("Confirmación de SEGUI recibida. Iniciando nueva clasificación y esperando START...")
-                    self.iniciar_clasificacion()
+                    print("Confirmación de SEGUI recibida. Esperando START para siguiente ciclo...")
                     self.esperar_inicio()
                 else:
                     print("Error en confirmación de fin:", response)
@@ -582,6 +581,15 @@ class View(ctk.CTk):
                             self.update_image(self.image_resultado)
                             self.isProcessing = False
 
+                            # Enviar datos en el primer ciclo sin esperar START
+                            if self.first_run:
+                                print("Primer ciclo de clasificación: enviando datos sin esperar START.")
+                                self.first_run = False
+                                self.verificar_disponibilidad()
+                            else:
+                                print("Ciclo posterior a primer ciclo: esperando disponibilidad.")
+                                self.esperar_inicio()
+
                         roi = (self.x1, self.y1, self.x2, self.y2)
                         print(f"Configuración de ROI: {roi}")
                         self.processing_service.detected_objects_in_background(
@@ -601,7 +609,7 @@ class View(ctk.CTk):
 
     def esperar_inicio(self):
         """
-        Espera el mensaje 'START' para iniciar el envío de datos almacenados en memoria.
+        Espera el mensaje 'START' para iniciar el envío de datos almacenados en memoria en los ciclos posteriores.
         """
         def on_start_received(response):
             if response == "OK":
@@ -637,17 +645,6 @@ class View(ctk.CTk):
         self.df_filtrado = None
         self.image_resultado = None
         self.residue_list = None
-
-    def coordenadas_generator(self, df_filtrado, z=50):
-        print("Generando coordenadas para datos clasificados.")
-        for _, row in df_filtrado.iterrows():
-            x_mm, y_mm = self.transport_service.convert_pixels_to_mm(
-                (row['xmin'] + row['xmax']) / 2,
-                (row['ymin'] + row['ymax']) / 2, self.mmx, self.mmy
-            )
-            clase = int(row["class"])
-            print(f"Coordenada generada: x={x_mm}, y={y_mm}, z={z}, clase={clase}")
-            yield round(x_mm, 2), round(y_mm, 2), z, clase
 
     def clasificacion(self):
         """
