@@ -520,6 +520,39 @@ class View(ctk.CTk):
     def close_application(self):
         self.quit()
         
+    def enviar_datos_clasificados(self):
+        if self.isDisponible and self.df_filtrado is not None:
+            print("Iniciando envío de datos clasificados.")
+
+            def saveArticle(response):
+                if response == "OK":
+                    print("Artículo enviado exitosamente.")
+                else:
+                    print("Error en el envío del artículo:", response)
+
+            def confirm_end(response):
+                if response == "OK":
+                    print("Confirmación de SEGUI recibida. Iniciando nueva clasificación y esperando START...")
+                    self.iniciar_clasificacion()
+                    self.esperar_inicio()
+                else:
+                    print("Error en confirmación de fin:", response)
+
+            first_command = True
+            c = self.offset
+
+            for x, y, z, clase in self.coordenadas_generator(self.df_filtrado):
+                command = f"{x},{y},{z},{c},{clase}"
+                print(f"Enviando comando de datos: {command}")
+                self.communication_service.send_and_receive(command, "OK", saveArticle)
+
+                if first_command:
+                    first_command = False
+                    c = 0
+
+            print("Enviando mensaje de finalización (FIN).")
+            self.communication_service.send_and_receive("FIN", "SEGUI", confirm_end)
+
     def iniciar_clasificacion(self):
         if not self.isProcessing:
             print("### Iniciando proceso de clasificación ###")
@@ -549,14 +582,6 @@ class View(ctk.CTk):
                             self.update_image(self.image_resultado)
                             self.isProcessing = False
 
-                            # Verificar disponibilidad solo en primer ciclo
-                            if not self.isDisponible:
-                                print("Primer ciclo: Enviando datos clasificados.")
-                                self.verificar_disponibilidad()
-                            else:
-                                print("Ciclo posterior: Esperando mensaje START para enviar.")
-                                self.esperar_inicio()
-
                         roi = (self.x1, self.y1, self.x2, self.y2)
                         print(f"Configuración de ROI: {roi}")
                         self.processing_service.detected_objects_in_background(
@@ -573,6 +598,21 @@ class View(ctk.CTk):
 
         else:
             print("Ya se está clasificando, esperando a que el proceso actual termine.")
+
+    def esperar_inicio(self):
+        """
+        Espera el mensaje 'START' para iniciar el envío de datos almacenados en memoria.
+        """
+        def on_start_received(response):
+            if response == "OK":
+                print("Mensaje START recibido. Comenzando envío de datos clasificados desde memoria.")
+                self.verificar_disponibilidad()
+            else:
+                print("Esperando mensaje START...")
+                self.root.after(1000, self.esperar_inicio)
+
+        print("Esperando mensaje START para comenzar el envío.")
+        self.communication_service.send_and_receive("", "START", on_start_received)
 
     def verificar_disponibilidad(self):
         def change_disponibilidad(command):
@@ -591,77 +631,6 @@ class View(ctk.CTk):
         print("Enviando mensaje de disponibilidad.")
         self.communication_service.send_and_receive("DISPONIBILIDAD", "BUFFER_VACIO", change_disponibilidad)
 
-    def enviar_datos_clasificados(self):
-        if self.isDisponible and self.df_filtrado is not None:
-            print("Iniciando envío de datos clasificados.")
-
-            def saveArticle(response):
-                if response == "OK":
-                    print("Artículo enviado exitosamente.")
-                else:
-                    print("Error en el envío del artículo:", response)
-
-            def confirm_end(response):
-                if response == "OK":
-                    print("Confirmación de recepción completa. Esperando SEGUI...")
-                    self.esperar_segui()
-                else:
-                    print("Error en confirmación de fin:", response)
-
-            first_command = True
-            c = self.offset
-
-            for x, y, z, clase in self.coordenadas_generator(self.df_filtrado):
-                command = f"{x},{y},{z},{c},{clase}"
-                print(f"Enviando comando de datos: {command}")
-                self.communication_service.send_and_receive(command, "OK", saveArticle)
-
-                if first_command:
-                    first_command = False
-                    c = 0
-
-            print("Enviando mensaje de finalización (FIN).")
-            self.communication_service.send_and_receive("FIN", "SEGUI", confirm_end)
-
-    def esperar_segui(self):
-        """
-        Espera el mensaje 'SEGUI' antes de iniciar una nueva clasificación.
-        """
-        def on_segui_received(response):
-            if response == "OK":
-                print("Mensaje SEGUI recibido. Preparando nueva clasificación.")
-                self.iniciar_clasificacion()
-                self.esperar_inicio()
-            else:
-                print("Esperando mensaje SEGUI...")
-                self.root.after(1000, self.esperar_segui)
-
-        print("Esperando respuesta SEGUI después de enviar FIN.")
-        self.communication_service.send_and_receive("", "SEGUI", on_segui_received)
-
-    def esperar_inicio(self):
-        """
-        Vigila el puerto serial esperando el mensaje 'START' para iniciar el envío de datos.
-        """
-        def on_start_received(response):
-            if response == "OK":
-                print("Mensaje START recibido. Comenzando envío de datos clasificados.")
-                self.verificar_disponibilidad()
-            else:
-                print("Esperando mensaje START...")
-                self.root.after(1000, self.esperar_inicio)
-
-        if self.communication_service.message_queue.qsize() > 0:
-            message = self.communication_service.message_queue.get()
-            if message == "START":
-                on_start_received("OK")
-            else:
-                print("Mensaje inesperado recibido, esperando mensaje START.")
-                self.root.after(1000, self.esperar_inicio)
-        else:
-            print("No hay mensajes en la cola, esperando mensaje START.")
-            self.root.after(1000, self.esperar_inicio)
-
     def reset_procesamiento(self):
         print("Reiniciando procesamiento. Limpiando datos de clasificación.")
         self.isProcessing = False
@@ -679,7 +648,6 @@ class View(ctk.CTk):
             clase = int(row["class"])
             print(f"Coordenada generada: x={x_mm}, y={y_mm}, z={z}, clase={clase}")
             yield round(x_mm, 2), round(y_mm, 2), z, clase
-
 
     def clasificacion(self):
         """
