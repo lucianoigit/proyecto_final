@@ -61,19 +61,25 @@ class ImageProcessingService(ProcessingInterface):
     def detected_objects(self, img_undistorted, confianza_minima=0.2, relation_x=0, relation_y=0, roi=None):
         try:
             print("Procesando imagen...")
-            df_filtrado, img_resultado = self.use_model.run_model(img_undistorted, confianza_minima,roi)
-            print("Imagen procesada.", df_filtrado)
+            print("Tipo de relation_x:", type(relation_x), "| Valor de relation_x:", relation_x)
+            print("Tipo de relation_y:", type(relation_y), "| Valor de relation_y:", relation_y)
+            print("Confianza mínima:", confianza_minima)
+            print("ROI:", roi)
+
+            df_filtrado, img_resultado = self.use_model.run_model(img_undistorted, confianza_minima, roi)
+            print("Imagen procesada. DataFrame resultante:", df_filtrado)
 
             if df_filtrado is not None:
                 residue_list = []
                 for _, row in df_filtrado.iterrows():
                     print(f"Procesando fila: {row}")
-
+                    
                     # Convertir las coordenadas de píxeles a milímetros usando relaciones definidas
                     x_min_mm = row['xmin'] * relation_x
                     y_min_mm = row['ymin'] * relation_y
                     x_max_mm = row['xmax'] * relation_x
                     y_max_mm = row['ymax'] * relation_y
+                    print(f"x_min_mm: {x_min_mm}, y_min_mm: {y_min_mm}, x_max_mm: {x_max_mm}, y_max_mm: {y_max_mm}")
 
                     # Crear el ResidueDTO con coordenadas convertidas
                     residue_dto = ResidueDTO(
@@ -87,10 +93,10 @@ class ImageProcessingService(ProcessingInterface):
                         fecha_deteccion=datetime.now(),
                         imagen_referencia="default_image"
                     )
-                    print("ResidueDTO", residue_dto)
+                    print("ResidueDTO creado:", residue_dto)
                     residue_list.append(residue_dto)
                 
-                print("ResidueList", residue_list)
+                print("Lista de residuos detectados:", residue_list)
                 return df_filtrado, img_resultado, residue_list
             else:
                 print("No hay detecciones.")
