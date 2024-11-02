@@ -342,6 +342,8 @@ class View(ctk.CTk):
     def on_stop_button_clicked(self):
         # Lógica para detener el proceso
         self.stop_process()
+        self.reset_procesamiento()
+        self.first_run = True
 
         # Ocultar el botón de detener y mostrar el de inicio nuevamente
         self.stop_button.grid_remove()
