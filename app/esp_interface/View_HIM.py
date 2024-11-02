@@ -528,10 +528,9 @@ class View(ctk.CTk):
 
                 def capture_image_in_background():
                     img = self.processing_service.capture_image()
-
                     if img is None:
                         print("Error: No se pudo capturar la imagen.")
-                        self.root.after(500, self.reset_procesamiento)  
+                        self.root.after(500, self.reset_procesamiento)
                         return
 
                     try:
@@ -543,8 +542,8 @@ class View(ctk.CTk):
                             self.residue_list = residue_list
                             self.update_articles_table()
                             self.update_image(self.image_resultado)
-                            self.isProcessing = False  
-                            self.verificar_disponibilidad()  
+                            self.isProcessing = False
+                            self.verificar_disponibilidad()
 
                         roi = (self.x1, self.y1, self.x2, self.y2)
                         self.processing_service.detected_objects_in_background(
@@ -582,23 +581,19 @@ class View(ctk.CTk):
                 if response == "OK":
                     print("Datos enviados exitosamente")
                 elif response == "SEGUI":
-                    print("Mensaje SEGUI recibido, esperando 'START' para reiniciar clasificación")
-                    self.isDisponible = False
+                    print("Esperando mensaje START para reiniciar clasificación")
                     self.esperar_inicio()
                 else:
                     print("Error en el envío:", response)
 
             def confirm_end(response):
-                if response == "OK":
-                    self.df_filtrado = None
-                    self.image_resultado = None
-                    self.residue_list = None
-                    self.isDisponible = False
-                    self.esperar_inicio()  
-                elif response == "SEGUI":
-                    print("Mensaje SEGUI recibido después de FIN, esperando START...")
-                    self.isDisponible = False
+                if response == "SEGUI":
+                    print("Mensaje SEGUI recibido, esperando START...")
                     self.esperar_inicio()
+                elif response == "OK":
+                    print("Confirmación de fin exitosa.")
+                else:
+                    print("Error en confirmación de fin:", response)
 
             first_command = True
             c = self.offset
@@ -611,8 +606,8 @@ class View(ctk.CTk):
                     first_command = False
                     c = 0
 
-            self.communication_service.send_and_receive("FIN", "OK", confirm_end)
-            
+            self.communication_service.send_and_receive("FIN", "SEGUI", confirm_end)
+
     def esperar_inicio(self):
         """
         Espera el mensaje 'START' para comenzar una nueva clasificación.
@@ -625,7 +620,7 @@ class View(ctk.CTk):
                 print("Esperando mensaje START...")
                 self.root.after(1000, self.esperar_inicio)
 
-        self.communication_service.send_and_receive("SEGUI", "START", on_start_received)
+        self.communication_service.send_and_receive("", "START", on_start_received)
 
     def reset_procesamiento(self):
         self.isProcessing = False
