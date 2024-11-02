@@ -648,6 +648,17 @@ class View(ctk.CTk):
         self.df_filtrado = None
         self.image_resultado = None
         self.residue_list = None
+        
+    def coordenadas_generator(self, df_filtrado, z=50):
+        print("Generando coordenadas para datos clasificados.")
+        for _, row in df_filtrado.iterrows():
+            x_mm, y_mm = self.transport_service.convert_pixels_to_mm(
+                (row['xmin'] + row['xmax']) / 2,
+                (row['ymin'] + row['ymax']) / 2, self.mmx, self.mmy
+            )
+            clase = int(row["class"])
+            print(f"Coordenada generada: x={x_mm}, y={y_mm}, z={z}, clase={clase}")
+            yield round(x_mm, 2), round(y_mm, 2), z, clase
 
     def clasificacion(self):
         """
