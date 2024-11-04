@@ -601,23 +601,21 @@ class View(ctk.CTk):
         else:
             print("Ya se está clasificando, esperando a que el proceso actual termine.")
 
-    def calculate_roi_from_points(points):
+    def calculate_roi_from_points(self, x1, y1, x2, y2, x3, y3, x4, y4):
         """
-        Calcula un rectángulo ROI basado en los cuatro puntos dados.
-        
-        :param points: Lista de cuatro puntos en forma [(x1, y1), (x2, y2), (x3, y3), (x4, y4)]
-        :return: ROI en formato (x_min, y_min, x_max, y_max)
+        Calcula el rectángulo mínimo que contiene los cuatro puntos seleccionados.
+        :param x1, y1: Coordenadas del primer punto.
+        :param x2, y2: Coordenadas del segundo punto.
+        :param x3, y3: Coordenadas del tercer punto.
+        :param x4, y4: Coordenadas del cuarto punto.
+        :return: Tupla que define el ROI en formato (x_min, y_min, x_max, y_max).
         """
-        x_coordinates = [point[0] for point in points]
-        y_coordinates = [point[1] for point in points]
-        
-        x_min = min(x_coordinates)
-        x_max = max(x_coordinates)
-        y_min = min(y_coordinates)
-        y_max = max(y_coordinates)
-        
-        print(f"ROI Calculado: x_min={x_min}, y_min={y_min}, x_max={x_max}, y_max={y_max}")
-        return x_min, y_min, x_max, y_max
+        # Determinar los valores mínimos y máximos de x e y
+        x_values = [x1, x2, x3, x4]
+        y_values = [y1, y2, y3, y4]
+        x_min, x_max = min(x_values), max(x_values)
+        y_min, y_max = min(y_values), max(y_values)
+        return (x_min, y_min, x_max, y_max)
 
     def enviar_datos_clasificados(self):
         if self.isDisponible and self.df_filtrado is not None:
@@ -776,7 +774,7 @@ class View(ctk.CTk):
         self.offset = offset
         
         print("Calibración de ROI basada en los puntos seleccionados.")
-        self.roi = self.calculate_roi_from_points([(self.x1, self.y1), (self.x2, self.y2), (self.x3, self.y3), (self.x4, self.y4)])
+        self.roi = self.calculate_roi_from_points(x1, y1, x2, y2, x3, y3, x4, y4)
         print(f"Configuración de ROI: {self.roi}")
         
         print("Calibración completada con éxito")
