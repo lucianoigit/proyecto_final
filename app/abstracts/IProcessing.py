@@ -10,7 +10,7 @@ class ProcessingInterface(ABC):
         pass
 
     @abstractmethod
-    def detected_objects_in_background(self, img_undistorted, confianza_minima=0.2, callback=None,relation_x=0,relation_y=0):
+    def detected_objects_in_background(self, img_undistorted, confianza_minima=0.2, callback=None,relation_x=0.00000,relation_y=0.00000):
         pass
     @abstractmethod
     def detected_objects(self, img_undistorted, confianza_minima=0.2, tamano_entrada=(416, 416),relation_x=0,relation_y=0):
