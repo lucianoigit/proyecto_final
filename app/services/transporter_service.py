@@ -52,10 +52,10 @@ class TransportService(TransportInterface):
         """
         Convierte coordenadas en píxeles a milímetros usando la calibración.
         """
-        if self.pixels_per_mm_x is None or self.pixels_per_mm_y is None:
+        if pixels_per_mm_x is None or pixels_per_mm_y is None:
             raise ValueError("Debes calibrar antes de convertir.")
-        x_mm = x_pixels / self.pixels_per_mm_x
-        y_mm = y_pixels / self.pixels_per_mm_y
+        x_mm = x_pixels / pixels_per_mm_x
+        y_mm = y_pixels / pixels_per_mm_y
         return x_mm, y_mm
 
     def get_offset(self,x1,x2,pixels_per_mm_x):
