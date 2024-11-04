@@ -113,7 +113,7 @@ class ImageProcessingService(ProcessingInterface):
         """
 
         def run_detection():
-            df_filtrado, img_resultado, residue_list = self.detected_objects(img_undistorted, confianza_minima,roi)
+            df_filtrado, img_resultado, residue_list = self.detected_objects(img_undistorted, confianza_minima,roi,relation_x,relation_y)
 
             # Aquí usamos el método after para actualizar la UI en el hilo principal
             if callback:
