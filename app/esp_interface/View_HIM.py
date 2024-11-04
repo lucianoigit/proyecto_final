@@ -708,8 +708,8 @@ class View(ctk.CTk):
         Genera la coordenada para un único dato clasificado.
         """
         x_mm, y_mm = self.transport_service.convert_pixels_to_mm(
-            (row['xmin'] + row['xmax']) / 2,
-            (row['ymin'] + row['ymax']) / 2, self.mmx, self.mmy
+            (row['xmin'] + row['xmax']) / 2 -self.x_center,
+            (row['ymin'] + row['ymax']) / 2 -self.y_center, self.mmx, self.mmy
         )
         clase = int(row["class"])
         print(f"Coordenada única generada: x={x_mm}, y={y_mm}, z={z}, clase={clase}")
