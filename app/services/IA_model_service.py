@@ -41,10 +41,14 @@ class MLModelService(MLModelInterface):
                 img = img_path_or_img
                 img_path = None
 
-            # Si se especifica una región de interés, recortar la imagen
             if roi:
                 x_min, y_min, x_max, y_max = roi
-                img = img[y_min:y_max, x_min:x_max]  
+                print(f"ROI definido: x_min={x_min}, y_min={y_min}, x_max={x_max}, y_max={y_max}")
+                
+                # Verificar que las coordenadas estén dentro de la imagen
+                if x_min < 0 or y_min < 0 or x_max > img.shape[1] or y_max > img.shape[0]:
+                    print("Error: Las coordenadas del ROI están fuera del rango de la imagen.")
+                    return None, None 
 
             # Ejecutar el modelo en la imagen (o la región recortada)
             results = self.model(img)
