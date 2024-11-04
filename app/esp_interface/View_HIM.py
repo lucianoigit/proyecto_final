@@ -597,17 +597,26 @@ class View(ctk.CTk):
                 else:
                     print("Error en confirmación de fin:", response)
 
-            first_command = True
-            c = self.offset
-
-            for x, y, z, clase in self.coordenadas_generator(self.df_filtrado):
-                command = f"{x},{y},{z},{c},{clase}"
-                print(f"Enviando comando de datos: {command}")
+            if len(self.df_filtrado) == 1:
+                # Procesar y enviar el único elemento
+                row = self.df_filtrado.iloc[0]
+                x, y, z, clase = self.coordenada_unica(row)
+                command = f"{x},{y},{z},{self.offset},{clase}"
+                print(f"Enviando comando de único dato: {command}")
                 self.communication_service.send_and_receive(command, "OK", saveArticle)
+            else:
+                # Procesar y enviar múltiples elementos
+                first_command = True
+                c = self.offset
 
-                if first_command:
-                    first_command = False
-                    c = 0
+                for x, y, z, clase in self.coordenadas_generator(self.df_filtrado):
+                    command = f"{x},{y},{z},{c},{clase}"
+                    print(f"Enviando comando de datos: {command}")
+                    self.communication_service.send_and_receive(command, "OK", saveArticle)
+
+                    if first_command:
+                        first_command = False
+                        c = 0
 
             print("Enviando mensaje de finalización (FIN).")
             self.communication_service.send_and_receive("FIN", "SEGUI", confirm_end)
