@@ -5,7 +5,7 @@ class TransportInterface(ABC):
     def generate_square(self, x1,y1,x2,y2):
         pass
     @abstractmethod
-    def calibrate_to_physical_space(physical_width_mm, physical_height_mm):
+    def calibrate_to_physical_space(self,physical_width_mm, physical_height_mm,x2,x1,y4,y1):
         pass
 
     @abstractmethod
@@ -17,7 +17,7 @@ class TransportInterface(ABC):
         pass
     
     @abstractmethod
-    def calculate_center(self,x,y):
+    def calculate_center(self,x1,x2,y1,y4):
         pass
     
     @abstractmethod

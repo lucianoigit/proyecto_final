@@ -44,8 +44,12 @@ class View(ctk.CTk):
         self.residue_list = None
         self.x1=None
         self.x2=None
+        self.x3 = None
+        self.x4 = None
         self.y1=None
         self.y2=None
+        self.y3=None
+        self.y4= None
         self.mmx = 0.0000
         self.mmy = 0.0000 
         self.square_size = 50 
@@ -357,11 +361,20 @@ class View(ctk.CTk):
         scrollable_frame = ctk.CTkScrollableFrame(calibration_window, width=400, height=500)
         scrollable_frame.pack(fill="both", expand=True, padx=10, pady=10)
 
+        instruction_label = ctk.CTkLabel(scrollable_frame, text=(
+            "Por favor, seleccione los puntos en el siguiente orden:\n"
+            "1. Esquina superior izquierda (x1, y1)\n"
+            "2. Esquina superior derecha (x2, y2)\n"
+            "3. Esquina inferior derecha (x3, y3)\n"
+            "4. Esquina inferior izquierda (x4, y4)"
+        ))
+        instruction_label.grid(row=0, column=0, columnspan=2, padx=10, pady=(10, 20), sticky="ew")
+
         self.points = []
 
         def open_camera_and_select_points():
             self.points.clear()
-            self.picam2.stop()  # Asegurarse de detener la cámara antes de configurarla
+            self.picam2.stop()
             self.picam2.configure(self.picam2.create_preview_configuration(main={"size": (640, 480), "format": "RGB888"}))
             self.picam2.start()
 
@@ -385,16 +398,24 @@ class View(ctk.CTk):
             self.picam2.stop()
             cv2.destroyAllWindows()
 
-            if len(self.points) >= 2:
-                (x1, y1), (x2, y2) = self.points[:2]
+            if len(self.points) == 4:
+                (x1, y1), (x2, y2), (x3, y3), (x4, y4) = self.points
                 x1_entry.delete(0, ctk.END)
                 y1_entry.delete(0, ctk.END)
                 x2_entry.delete(0, ctk.END)
                 y2_entry.delete(0, ctk.END)
+                x3_entry.delete(0, ctk.END)
+                y3_entry.delete(0, ctk.END)
+                x4_entry.delete(0, ctk.END)
+                y4_entry.delete(0, ctk.END)
                 x1_entry.insert(0, str(x1))
                 y1_entry.insert(0, str(y1))
                 x2_entry.insert(0, str(x2))
                 y2_entry.insert(0, str(y2))
+                x3_entry.insert(0, str(x3))
+                y3_entry.insert(0, str(y3))
+                x4_entry.insert(0, str(x4))
+                y4_entry.insert(0, str(y4))
 
         def click_event(event, x, y, flags, param):
             if event == cv2.EVENT_LBUTTONDOWN and len(self.points) < 4:
@@ -410,45 +431,44 @@ class View(ctk.CTk):
                 square_size = int(square_size_entry.get())
                 physical_width_mm = int(width_entry.get())
                 physical_height_mm = int(height_entry.get())
-                x1 = int(x1_entry.get()) if x1_entry.get() else None
-                y1 = int(y1_entry.get()) if y1_entry.get() else None
-                x2 = int(x2_entry.get()) if x2_entry.get() else None
-                y2 = int(y2_entry.get()) if y2_entry.get() else None
+                x1 = int(x1_entry.get())
+                y1 = int(y1_entry.get())
+                x2 = int(x2_entry.get())
+                y2 = int(y2_entry.get())
+                x3 = int(x3_entry.get())
+                y3 = int(y3_entry.get())
+                x4 = int(x4_entry.get())
+                y4 = int(y4_entry.get())
 
-                self.calibrate_camera(
-                    square_size=square_size,
-                    physical_width_mm=physical_width_mm,
-                    physical_height_mm=physical_height_mm,
-                    x1=x1,
-                    y1=y1,
-                    x2=x2,
-                    y2=y2
-                )
+                self.calibrate_camera(square_size, physical_width_mm, physical_height_mm, x1, y1, x2, y2, x3, y3, x4, y4)
                 calibration_window.destroy()
             except ValueError:
                 print("Por favor, ingrese valores numéricos válidos.")
 
-        # Configuración de los campos de entrada y el botón para abrir la cámara en un diseño de cuadrícula
-        labels = ["Tamaño del cuadrado:", "Ancho físico (mm):", "Altura física (mm):", "Coordenada X1:", "Coordenada Y1:", "Coordenada X2:", "Coordenada Y2:"]
+        labels = [
+            "Tamaño del cuadrado:", "Ancho físico (mm):", "Altura física (mm):", 
+            "Coordenada X1:", "Coordenada Y1:", "Coordenada X2:", "Coordenada Y2:", 
+            "Coordenada X3:", "Coordenada Y3:", "Coordenada X4:", "Coordenada Y4:"
+        ]
         entries = []
         for i, label_text in enumerate(labels):
             label = ctk.CTkLabel(scrollable_frame, text=label_text)
-            label.grid(row=i, column=0, padx=5, pady=5, sticky="w")
+            label.grid(row=i + 1, column=0, padx=5, pady=5, sticky="w")
             entry = ctk.CTkEntry(scrollable_frame)
-            entry.grid(row=i, column=1, padx=5, pady=5, sticky="ew")
+            entry.grid(row=i + 1, column=1, padx=5, pady=5, sticky="ew")
             entries.append(entry)
 
-        square_size_entry, width_entry, height_entry, x1_entry, y1_entry, x2_entry, y2_entry = entries
+        (square_size_entry, width_entry, height_entry, x1_entry, y1_entry, x2_entry, y2_entry, 
+        x3_entry, y3_entry, x4_entry, y4_entry) = entries
 
-        # Botón para abrir la cámara y seleccionar los puntos
         select_points_button = ctk.CTkButton(scrollable_frame, text="Seleccionar Puntos en la Cámara", command=open_camera_and_select_points)
-        select_points_button.grid(row=len(labels), column=0, columnspan=2, padx=10, pady=10, sticky="ew")
+        select_points_button.grid(row=len(labels) + 1, column=0, columnspan=2, padx=10, pady=10, sticky="ew")
 
-        # Botón para iniciar la calibración
         start_button = ctk.CTkButton(scrollable_frame, text="Aplicar Calibración", command=start_calibration)
-        start_button.grid(row=len(labels) + 1, column=0, columnspan=2, padx=10, pady=10, sticky="ew")
+        start_button.grid(row=len(labels) + 2, column=0, columnspan=2, padx=10, pady=10, sticky="ew")
 
         scrollable_frame.grid_columnconfigure(1, weight=1)
+
 
         
     def load_icon(self, path, hover=False):
@@ -698,16 +718,8 @@ class View(ctk.CTk):
     def tomar_foto(self):
         img = self.processing_service.capture_image()
         self.update_image(img)
-
-    def calibrate_camera(self, square_size, physical_width_mm=200, physical_height_mm=200,x1=None,y1=None,x2=None,y2=None):
-        """
-        Calibra la cámara con parámetros personalizados.
         
-        :param square_size: Tamaño del cuadrado en la imagen de calibración.
-        :param physical_width_mm: Ancho físico en milímetros para la calibración del espacio.
-        :param physical_height_mm: Altura física en milímetros para la calibración del espacio.
-        """
-        # Calibrar el espacio físico para asegurar que todo esté en milímetros
+    def calibrate_camera(self, square_size, physical_width_mm=200, physical_height_mm=200, x1=None, y1=None, x2=None, y2=None, x3=None, y3=None, x4=None, y4=None):
         print("Iniciando calibración por distorsión")
         self.mtx, self.dist = self.processing_service.calibrate(
             dirpath="./calibracion",
@@ -717,44 +729,32 @@ class View(ctk.CTk):
             width=7,
             height=7
         )
-        
         print(f"Calibración por distorsión completada: mtx={self.mtx}, dist={self.dist}")
 
-        print("Iniciando calibración del rectángulo")
-        x1, x2, y1, y2 = self.transport_service.generate_square(x1, y1, x2, y2)  # Definiendo coordenadas del cuadrado
-        print(f"Coordenadas del rectángulo generadas: x1={x1}, x2={x2}, y1={y1}, y2={y2}")
+        print("Configurando coordenadas de los cuatro puntos del área de calibración.")
+        self.x1, self.y1, self.x2, self.y2, self.x3, self.y3, self.x4, self.y4 = x1, y1, x2, y2, x3, y3, x4, y4
 
         pixels_per_mm_x, pixels_per_mm_y = self.transport_service.calibrate_to_physical_space(
-            physical_width_mm=physical_width_mm,
-            physical_height_mm=physical_height_mm
+            physical_width_mm,
+            physical_height_mm,self.x1,self.x2,self.y1,self.y4
         )
         print(f"Calibración de espacio físico completada: pixels_per_mm_x={pixels_per_mm_x}, pixels_per_mm_y={pixels_per_mm_y}")
-        
-        print("Iniciando calibración del punto central")
-        x_center, y_center = self.transport_service.calculate_center(x1, x2, y1, y2)
+
+        x_center, y_center = self.transport_service.calculate_center(x1, x2, y1, y4)
         print(f"Punto central calculado: x_center={x_center}, y_center={y_center}")
 
-        # Seteamos el centro y el offset
         self.x_center = x_center
         self.y_center = y_center
-
-        print("Iniciando calibración del offset")
         offset = self.transport_service.get_offset(x1, x2, pixels_per_mm_x)
         print(f"Offset calculado: offset={offset}")
-        
+
         self.square_size = square_size 
-        
-        # Asignar valores a las propiedades del objeto
         self.calibracion = True
-        self.x1 = x1
-        self.x2 = x2
-        self.y1 = y1
-        self.y2 = y2
         self.mmx = pixels_per_mm_x
         self.mmy = pixels_per_mm_y
         self.offset = offset
         
-        print("Calibración terminada con éxito")
+        print("Calibración completada con éxito")
 
 
         
