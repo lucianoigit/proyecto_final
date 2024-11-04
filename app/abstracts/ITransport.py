@@ -9,10 +9,6 @@ class TransportInterface(ABC):
         pass
 
     @abstractmethod
-    def scroll(self, command):
-        pass
-
-    @abstractmethod
     def get_offset(self,x1,x2,pixels_per_mm_x):
         pass
     
