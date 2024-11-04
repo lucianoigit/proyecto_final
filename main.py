@@ -28,7 +28,7 @@ def main():
         # Intentamos inicializar la comunicación serial
         serial_service.initialize_communication()
         ser = serial_service.getStatus()
-        serial_service.send_and_receive("LED_ON","Light On",None)
+        serial_service.send_message("LED_ON")
 
         # Configuración del modelo y otros servicios
         use_model = MLModelService(model_path='./yolov5s.pt')
