@@ -46,8 +46,8 @@ class View(ctk.CTk):
         self.x2=None
         self.y1=None
         self.y2=None
-        self.mmx = None
-        self.mmy = None 
+        self.mmx = 0.0000
+        self.mmy = 0.0000 
         self.square_size = 50 
         self.points = []
         self.isProcessing = False
@@ -526,6 +526,8 @@ class View(ctk.CTk):
     def iniciar_clasificacion(self):
         if not self.isProcessing:
             print("### Iniciando proceso de clasificación ###")
+            print("relacion x ", self.mmx)
+            print("relacion y ", self.mmy)
             self.isProcessing = True
             if self.df_filtrado is None or self.df_filtrado.empty:
                 print("Entramos a la clasificación - Primer ciclo o nuevo inicio.")
