@@ -775,11 +775,13 @@ class View(ctk.CTk):
         self.mmy = pixels_per_mm_y
         self.offset = offset
         
-        print("Calibracion de roi")
-        self.roi = self.calculate_roi_from_points(self.points)
-        print(f"Configuración de ROI basada en los puntos seleccionados: {self.roi}")
+        print("Calibración de ROI basada en los puntos seleccionados.")
+        self.roi = self.calculate_roi_from_points([(self.x1, self.y1), (self.x2, self.y2), (self.x3, self.y3), (self.x4, self.y4)])
+        print(f"Configuración de ROI: {self.roi}")
         
         print("Calibración completada con éxito")
+        
+     
 
 
         

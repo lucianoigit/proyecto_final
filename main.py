@@ -24,10 +24,11 @@ def main():
     with db.session() as session:
         residue_repository = ResidueRepository(session)
         serial_service = SerialService(SERIAL_PORT, BAUD_RATE)
-        
+  
         # Intentamos inicializar la comunicación serial
         serial_service.initialize_communication()
         ser = serial_service.getStatus()
+        serial_service.send_and_receive("LED_ON","Light On",None)
 
         # Configuración del modelo y otros servicios
         use_model = MLModelService(model_path='./yolov5s.pt')
