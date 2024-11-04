@@ -42,9 +42,9 @@ class MLModelService(MLModelInterface):
                 img_path = None
 
             # Si se especifica una región de interés, recortar la imagen
-            """             if roi:
+            if roi:
                 x_min, y_min, x_max, y_max = roi
-                img = img[y_min:y_max, x_min:x_max]  """
+                img = img[y_min:y_max, x_min:x_max]  
 
             # Ejecutar el modelo en la imagen (o la región recortada)
             results = self.model(img)

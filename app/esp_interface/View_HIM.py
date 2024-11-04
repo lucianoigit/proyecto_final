@@ -56,6 +56,7 @@ class View(ctk.CTk):
         self.points = []
         self.isProcessing = False
         self.first_run = True
+        self.roi = None
         
 
         # Paleta de colores aplicada
@@ -581,10 +582,12 @@ class View(ctk.CTk):
                                 print("Ciclo posterior a primer ciclo: esperando disponibilidad.")
                                 self.esperar_start()
 
-                        roi = (self.x1, self.y1, self.x2, self.y2)
-                        print(f"Configuración de ROI: {roi}")
+                        # Suponiendo que self.points contiene los cuatro puntos seleccionados
+                        
+
+                        # Pasar el ROI calculado al procesamiento de detección de objetos
                         self.processing_service.detected_objects_in_background(
-                            img_undistorted, 0.2, detection_callback, self.mmx, self.mmy, roi
+                            img_undistorted, 0.2, detection_callback, self.mmx, self.mmy, self.roi
                         )
 
                     except Exception as e:
@@ -597,6 +600,24 @@ class View(ctk.CTk):
 
         else:
             print("Ya se está clasificando, esperando a que el proceso actual termine.")
+
+    def calculate_roi_from_points(points):
+        """
+        Calcula un rectángulo ROI basado en los cuatro puntos dados.
+        
+        :param points: Lista de cuatro puntos en forma [(x1, y1), (x2, y2), (x3, y3), (x4, y4)]
+        :return: ROI en formato (x_min, y_min, x_max, y_max)
+        """
+        x_coordinates = [point[0] for point in points]
+        y_coordinates = [point[1] for point in points]
+        
+        x_min = min(x_coordinates)
+        x_max = max(x_coordinates)
+        y_min = min(y_coordinates)
+        y_max = max(y_coordinates)
+        
+        print(f"ROI Calculado: x_min={x_min}, y_min={y_min}, x_max={x_max}, y_max={y_max}")
+        return x_min, y_min, x_max, y_max
 
     def enviar_datos_clasificados(self):
         if self.isDisponible and self.df_filtrado is not None:
@@ -753,6 +774,10 @@ class View(ctk.CTk):
         self.mmx = pixels_per_mm_x
         self.mmy = pixels_per_mm_y
         self.offset = offset
+        
+        print("Calibracion de roi")
+        self.roi = self.calculate_roi_from_points(self.points)
+        print(f"Configuración de ROI basada en los puntos seleccionados: {self.roi}")
         
         print("Calibración completada con éxito")
 
