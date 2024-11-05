@@ -167,8 +167,10 @@ class View(ctk.CTk):
 
 
         # Área de imagen clasificada
-        self.image_label = ctk.CTkLabel(main_panel, text="Imagen clasificada aparecerá aquí", anchor="center", fg_color=self.img_frame_color, text_color=self.text_color)
+        self.image_label = ctk.CTkLabel(main_panel, text="Imagen clasificada aparecerá aquí", anchor="center",
+                                        fg_color=self.img_frame_color, text_color=self.text_color)
         self.image_label.grid(row=2, column=0, columnspan=2, padx=10, pady=10, sticky="nsew")
+
 
         # Tabla para mostrar los últimos 5 artículos clasificados
         self.articles_frame = ctk.CTkScrollableFrame(main_panel, fg_color=self.img_frame_color)
@@ -571,7 +573,7 @@ class View(ctk.CTk):
                             self.residue_list = residue_list
                             print("Clasificación completada, resultados almacenados en memoria.")
                             self.update_articles_table()
-                            self.update_image(self.image_resultado)
+                            self.update_image(self.image_resultado,df_filtrado)
                             self.isProcessing = False
 
                             if self.first_run:
@@ -736,7 +738,7 @@ class View(ctk.CTk):
   
     def tomar_foto(self):
         img = self.processing_service.capture_image()
-        self.update_image(img)
+     
         
     def calibrate_camera(self, square_size, physical_width_mm=200, physical_height_mm=200, x1=None, y1=None, x2=None, y2=None, x3=None, y3=None, x4=None, y4=None):
         print("Iniciando calibración por distorsión")
@@ -793,11 +795,6 @@ class View(ctk.CTk):
     def generar_informacion(self, df_filtrado):
         return json.dumps(df_filtrado.to_dict(orient='records'))
 
-    def update_image(self, img):
-        img = Image.fromarray(img)  # Asegúrate de que 'img' sea un array de numpy
-        ctk_img = ctk.CTkImage(img, size=(400, 300))  # Ajusta el tamaño de la imagen según sea necesario
-        self.image_label.configure(image=ctk_img)
-        self.image_label.image = ctk_img  # Guardar una referencia para evitar que la imagen sea recolectada por el garbage collector
 
     def update_reports(self):
         for widget in self.reports_scrollable_frame.winfo_children():
@@ -912,12 +909,15 @@ class View(ctk.CTk):
             ax2.set_ylabel('Cantidad de Residuos')
             self.update_figure(self.daily_histogram, fig2)
 
-    def update_figure(self, container, figure):
-        for widget in container.winfo_children():
-            widget.destroy()
-        canvas = FigureCanvasTkAgg(figure, master=container)
-        canvas.draw()
-        canvas.get_tk_widget().pack(fill='none', expand=True)
+    def update_image(self, img, df_filtrado):
+        # Usar el método `show_result` para procesar la imagen con el DataFrame filtrado
+        img = self.show_result(df_filtrado, img)
+
+        # Convertir la imagen procesada para mostrar en el label
+        img_pil = Image.fromarray(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))  # Convertir a RGB
+        ctk_img = ctk.CTkImage(img_pil, size=(400, 300))  # Tamaño ajustado para la interfaz
+        self.image_label.configure(image=ctk_img)
+        self.image_label.image = ctk_img 
 
 
     def start_communication(self):
