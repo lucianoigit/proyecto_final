@@ -180,10 +180,6 @@ class ImageProcessingService(ProcessingInterface):
                 
                 print(f"Objeto detectado: {class_name} con confianza {confidence:.2f} en ({centro_x}, {centro_y})")
 
-            # Mostrar la imagen con todas las detecciones, los rectángulos y los centroides
-            cv2.imshow("Resultados de Detección", img)
-            cv2.waitKey(0)
-            cv2.destroyAllWindows()
             return img
         else:
             print("No hay resultados para mostrar.")
