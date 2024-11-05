@@ -645,7 +645,7 @@ class View(ctk.CTk):
                     
             if len(self.df_filtrado) == 0:
                 
-                command = f"{0},{0},{50},{self.offset},Papel"
+                command = f"{0},{0},{0},{self.offset},Nada"
                 print(f"Enviando comando de único dato: {command}")
                 self.communication_service.send_and_receive(command, "OK", noDetection)        
 
@@ -715,7 +715,7 @@ class View(ctk.CTk):
         self.image_resultado = None
         self.residue_list = None
         
-    def coordenada_unica(self, row, z=50):
+    def coordenada_unica(self, row, z=-600):
         """
         Genera la coordenada para un único dato clasificado.
         """
@@ -727,7 +727,7 @@ class View(ctk.CTk):
         print(f"Coordenada única generada: x={x_mm}, y={y_mm}, z={z}, clase={clase}")
         return round(x_mm, 2), round(y_mm, 2), z, clase
     
-    def coordenadas_generator(self, df_filtrado, z=50):
+    def coordenadas_generator(self, df_filtrado, z=-600):
         print("Generando coordenadas para datos clasificados.")
         for _, row in df_filtrado.iterrows():
             x_mm, y_mm = self.transport_service.convert_pixels_to_mm(
@@ -778,7 +778,7 @@ class View(ctk.CTk):
 
         self.x_center = x_center
         self.y_center = y_center
-        offset = self.transport_service.get_offset(y1, y2, pixels_per_mm_y)
+        offset = self.transport_service.get_offset(y1, y4, pixels_per_mm_y)
         print(f"Offset calculado: offset={offset}")
 
         self.square_size = square_size 
