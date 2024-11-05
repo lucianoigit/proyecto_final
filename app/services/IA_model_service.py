@@ -79,13 +79,5 @@ class MLModelService(MLModelInterface):
             return None, None
 
 
-    def show_result(self, df_filtrado, img):
-        # Procesa la imagen y el DataFrame para agregar rectángulos y etiquetas
-        for _, row in df_filtrado.iterrows():
-            cv2.rectangle(img, (int(row['xmin']), int(row['ymin'])), (int(row['xmax']), int(row['ymax'])), (0, 255, 0), 2)
-            cv2.putText(img, f"{row['class_name']} {row['confidence']:.2f}", 
-                        (int(row['xmin']), int(row['ymin']) - 10), 
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
-        
-        return img  # Devuelve la imagen procesada para su actualización en la UI
+
     

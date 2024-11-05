@@ -911,7 +911,7 @@ class View(ctk.CTk):
 
     def update_image(self, img, df_filtrado):
         # Usar el método `show_result` para procesar la imagen con el DataFrame filtrado
-        img = self.show_result(df_filtrado, img)
+        img = self.processing_service.show_result(df_filtrado, img)
 
         # Convertir la imagen procesada para mostrar en el label
         img_pil = Image.fromarray(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))  # Convertir a RGB
