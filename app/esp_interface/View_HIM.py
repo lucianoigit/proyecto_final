@@ -169,7 +169,7 @@ class View(ctk.CTk):
         self.image_label.grid(row=2, column=0, padx=10, pady=10, sticky="nsew")
 
 
-        # Configurar las columnas de la tabla
+        """         # Configurar las columnas de la tabla
 # Crear la tabla con formato estilo Excel
         headers = ["ID", "Nombre", "Categoría", "Confianza", "Fecha"]
         col_widths = [50, 100, 100, 100, 100]  # Definir los anchos de las columnas
@@ -212,7 +212,7 @@ class View(ctk.CTk):
                 cell.grid(sticky="nsew")  # Expandir el label dentro del frame
 
                 # Inicialmente llenamos la tabla
-        self.update_articles_table()
+        self.update_articles_table() """
 
         # Panel de conectividad
         connectivity_panel = ctk.CTkFrame(self, fg_color="#3e3e3e")
@@ -771,7 +771,7 @@ class View(ctk.CTk):
 
         self.x_center = x_center
         self.y_center = y_center
-        offset = self.transport_service.get_offset(x1, x2, pixels_per_mm_x)
+        offset = self.transport_service.get_offset(y1, y2, pixels_per_mm_y)
         print(f"Offset calculado: offset={offset}")
 
         self.square_size = square_size 
