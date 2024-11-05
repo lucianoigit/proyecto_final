@@ -73,7 +73,7 @@ class MLModelService(MLModelInterface):
 
             # Convertir el índice de clase a nombre de clase
             df_filtrado['class_name'] = df_filtrado['class'].apply(lambda x: names[int(x)])
-
+            self.show_result(df_filtrado,img)
             return df_filtrado, img
         except Exception as e:
             print(f"Error al ejecutar el modelo: {e}")
