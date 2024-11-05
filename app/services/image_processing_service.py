@@ -159,7 +159,7 @@ class ImageProcessingService(ProcessingInterface):
         # Implementar la lógica de guardado en la base de datos si es necesario
     
     def show_result(self, df_filtrado, img):
-        if df_filtrado is not None and not df_filtrado.empty:
+        if df_filtrado is not None and not df_filtrado.empty and img is not None:
             for index, row in df_filtrado.iterrows():
                 # Definir coordenadas del rectángulo
                 x_min, y_min, x_max, y_max = int(row['xmin']), int(row['ymin']), int(row['xmax']), int(row['ymax'])

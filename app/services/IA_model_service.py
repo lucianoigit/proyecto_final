@@ -3,7 +3,6 @@ from ultralytics import YOLO
 from app.abstracts.IMLModel import MLModelInterface
 import pandas as pd
 
-
 class MLModelService(MLModelInterface):
     def __init__(self, model_path: str):
         self.model_path = model_path
@@ -30,27 +29,36 @@ class MLModelService(MLModelInterface):
         try:
             # Verificar si la entrada es una ruta de archivo o una imagen
             if isinstance(img_path_or_img, str):
-                # Leer la imagen desde la ruta del archivo
-                img = cv2.imread(img_path_or_img)
+                img = cv2.imread(img_path_or_img)  # Leer la imagen desde la ruta del archivo
                 if img is None:
-                    print("Error al leer la imagen.")
+                    print("Error: No se pudo leer la imagen desde la ruta proporcionada.")
                     return None, None
-                img_path = img_path_or_img
             else:
-                # Asumir que la entrada es una imagen en formato numpy
-                img = img_path_or_img
-                img_path = None
+                img = img_path_or_img  # Asumir que la entrada es una imagen en formato numpy
+            
+            # Validación para retornar error si la imagen es None
+            if img is None or img.size == 0:
+                print("Error: La imagen proporcionada es 'None' o está vacía.")
+                return None, None
 
+            # Recorte de la imagen si se proporciona un ROI
             if roi:
                 x_min, y_min, x_max, y_max = roi
                 print(f"ROI definido: x_min={x_min}, y_min={y_min}, x_max={x_max}, y_max={y_max}")
                 
-                # Verificar que las coordenadas estén dentro de la imagen
+                # Validación de que las coordenadas estén dentro de los límites de la imagen
                 if x_min < 0 or y_min < 0 or x_max > img.shape[1] or y_max > img.shape[0]:
                     print("Error: Las coordenadas del ROI están fuera del rango de la imagen.")
-                    return None, None 
+                    return None, None
+                
+                # Recortar la imagen
+                img = img[y_min:y_max, x_min:x_max]
+            
+            if img is None or img.size == 0:
+                print("Error: La imagen proporcionada es 'None' o está vacía.")
+                return None, None
 
-            # Ejecutar el modelo en la imagen (o la región recortada)
+            # Ejecutar el modelo en la imagen o en la región recortada
             results = self.model(img)
             if not results:
                 print("No se detectaron objetos.")
@@ -58,7 +66,7 @@ class MLModelService(MLModelInterface):
 
             # Obtener las detecciones
             detections = results[0].boxes.data.cpu().numpy()  # Obtener detecciones del primer resultado
-            print ("detectados", detections)
+            print("Detectados:", detections)
             names = self.model.names  # Obtener los nombres de las clases desde el modelo
             df = pd.DataFrame(detections, columns=['xmin', 'ymin', 'xmax', 'ymax', 'confidence', 'class'])
 
@@ -77,7 +85,3 @@ class MLModelService(MLModelInterface):
         except Exception as e:
             print(f"Error al ejecutar el modelo: {e}")
             return None, None
-
-
-
-    
