@@ -10,6 +10,4 @@ class MLModelInterface(ABC):
     def run_model(self, message,roi):
         pass
 
-    @abstractmethod
-    def show_result(self):
-        pass
+
