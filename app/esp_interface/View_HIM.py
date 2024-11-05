@@ -628,6 +628,11 @@ class View(ctk.CTk):
                     print("Artículo enviado exitosamente.")
                 else:
                     print("Error en el envío del artículo:", response)
+            def noDetection(response):
+                if response == "OK":
+                    print("No se detecno ningun articulo")
+                else:
+                    print("Error en movimiento de cinta:", response)
 
             def confirm_end(response):
                 if response == "OK":
@@ -637,6 +642,12 @@ class View(ctk.CTk):
                     
                 else:
                     print("Error en confirmación de fin:", response)
+                    
+            if len(self.df_filtrado) == 0:
+                
+                command = f"{0},{0},{z},{self.offset},{clase}"
+                print(f"Enviando comando de único dato: {command}")
+                self.communication_service.send_and_receive(command, "OK", noDetection)        
 
             if len(self.df_filtrado) == 1:
                 # Procesar y enviar el único elemento
@@ -645,7 +656,8 @@ class View(ctk.CTk):
                 command = f"{x},{y},{z},{self.offset},{clase}"
                 print(f"Enviando comando de único dato: {command}")
                 self.communication_service.send_and_receive(command, "OK", saveArticle)
-            else:
+                
+            if len(self.df_filtrado) > 1:
                 # Procesar y enviar múltiples elementos
                 first_command = True
                 c = self.offset
@@ -719,8 +731,8 @@ class View(ctk.CTk):
         print("Generando coordenadas para datos clasificados.")
         for _, row in df_filtrado.iterrows():
             x_mm, y_mm = self.transport_service.convert_pixels_to_mm(
-                (row['xmin'] + row['xmax']) / 2,
-                (row['ymin'] + row['ymax']) / 2, self.mmx, self.mmy
+                (row['xmin'] + row['xmax']) / 2-self.x_center,
+                (row['ymin'] + row['ymax']) / 2-self.y_center, self.mmx, self.mmy
             )
             clase = int(row["class"])
             print(f"Coordenada generada: x={x_mm}, y={y_mm}, z={z}, clase={clase}")
