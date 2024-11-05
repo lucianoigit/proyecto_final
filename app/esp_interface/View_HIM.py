@@ -139,8 +139,7 @@ class View(ctk.CTk):
         self.panels["main"] = main_panel
 
         main_panel.grid_columnconfigure(0, weight=1)
-        main_panel.grid_rowconfigure(2, weight=5)  # Mayor peso para la imagen
-        main_panel.grid_rowconfigure(3, weight=1)  # Menor peso para la tabla
+        main_panel.grid_rowconfigure(2, weight=1)  # Todo el espacio para la imagen clasificada
 
         # Crear botón de inicio y detener
         self.start_button = ctk.CTkButton(main_panel, text="", 
@@ -164,14 +163,10 @@ class View(ctk.CTk):
         self.stop_button.grid(row=1, column=0, padx=5, pady=5, sticky="ew")
         self.stop_button.grid_remove()  # Inicialmente ocultamos el botón de detener
 
-        # Área de imagen clasificada
+        # Área de imagen clasificada (sin tabla)
         self.image_label = ctk.CTkLabel(main_panel, text="Imagen clasificada aparecerá aquí", anchor="center",
                                         fg_color=self.img_frame_color, text_color=self.text_color)
-        self.image_label.grid(row=2, column=0, columnspan=2, padx=10, pady=10, sticky="nsew")
-
-        # Tabla para mostrar los últimos 5 artículos clasificados
-        self.articles_frame = ctk.CTkScrollableFrame(main_panel, fg_color=self.img_frame_color)
-        self.articles_frame.grid(row=3, column=0, columnspan=2, padx=10, pady=10, sticky="nsew")
+        self.image_label.grid(row=2, column=0, padx=10, pady=10, sticky="nsew")
 
 
         # Configurar las columnas de la tabla
