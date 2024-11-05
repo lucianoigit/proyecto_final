@@ -22,19 +22,33 @@ class ImageProcessingService(ProcessingInterface):
         self.picam2 = picamera  # Inyección de la cámara
 
     def capture_image(self):
-        # Detener la cámara en caso de que esté activa
+        # Detener la cámara si ya está activa
         try:
             self.picam2.stop()
         except Exception:
             pass  # Ignorar si la cámara ya está detenida
 
-        # Configurar y comenzar la captura
-        self.picam2.configure(self.picam2.create_preview_configuration(main={"size": (640, 480), "format": "RGB888"}))
-        self.picam2.start()
+        # Configurar la cámara y comenzar la captura
+        config = self.picam2.create_preview_configuration(main={"size": (640, 480), "format": "RGB888"})
         
+        # Ajustar exposición y balance de blancos para condiciones de baja iluminación
+        config["controls"] = {
+            "ExposureTime": 1000000,  # Exposición en microsegundos (ajústalo según tus pruebas)
+            "AnalogueGain": 4.0,      # Ganancia analógica para aumentar brillo (ajustable)
+            "AwbMode": "off",         # Desactiva el balance de blancos automático
+            "Brightness": 0.6         # Ajuste adicional de brillo
+        }
+
+        self.picam2.configure(config)
+        self.picam2.start()
+
         try:
             img_rgb = self.picam2.capture_array()
             img_bgr = cv2.cvtColor(img_rgb, cv2.COLOR_RGB2BGR)
+            
+            # Opcional: ajuste adicional de brillo y contraste en la imagen capturada
+            img_bgr = cv2.convertScaleAbs(img_bgr, alpha=1.2, beta=30)  # Aumenta contraste y brillo
+            
             return img_bgr
         except Exception as e:
             print(f"Error capturando la imagen: {e}")
