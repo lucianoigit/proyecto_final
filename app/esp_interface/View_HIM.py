@@ -645,7 +645,7 @@ class View(ctk.CTk):
                     
             if len(self.df_filtrado) == 0:
                 
-                command = f"{0},{0},{z},{self.offset},Papel"
+                command = f"{0},{0},{50},{self.offset},Papel"
                 print(f"Enviando comando de único dato: {command}")
                 self.communication_service.send_and_receive(command, "OK", noDetection)        
 
