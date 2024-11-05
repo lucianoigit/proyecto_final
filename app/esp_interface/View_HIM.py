@@ -139,7 +139,7 @@ class View(ctk.CTk):
         self.panels["main"] = main_panel
 
         main_panel.grid_columnconfigure(0, weight=1)
-        main_panel.grid_rowconfigure(2, weight=1)  # Todo el espacio para la imagen clasificada
+        main_panel.grid_rowconfigure(2, weight=1)
 
         # Crear botón de inicio y detener
         self.start_button = ctk.CTkButton(main_panel, text="", 
@@ -163,15 +163,22 @@ class View(ctk.CTk):
         self.stop_button.grid(row=1, column=0, padx=5, pady=5, sticky="ew")
         self.stop_button.grid_remove()  # Inicialmente ocultamos el botón de detener
 
-        # Área de imagen clasificada (sin tabla)
+
+
+        # Área de imagen clasificada
         self.image_label = ctk.CTkLabel(main_panel, text="Imagen clasificada aparecerá aquí", anchor="center",
                                         fg_color=self.img_frame_color, text_color=self.text_color)
-        self.image_label.grid(row=2, column=0, padx=10, pady=10, sticky="nsew")
+        self.image_label.grid(row=2, column=0, columnspan=2, padx=10, pady=10, sticky="nsew")
 
 
-        """         # Configurar las columnas de la tabla
-# Crear la tabla con formato estilo Excel
-        headers = ["ID", "Nombre", "Categoría", "Confianza", "Fecha"]
+        # Tabla para mostrar los últimos 5 artículos clasificados
+        self.articles_frame = ctk.CTkScrollableFrame(main_panel, fg_color=self.img_frame_color)
+        """   self.articles_frame.grid(row=3, column=0, columnspan=2, padx=10, pady=10, sticky="nsew") """
+
+
+                # Configurar las columnas de la tabla
+        # Crear la tabla con formato estilo Excel
+        """  headers = ["ID", "Nombre", "Categoría", "Confianza", "Fecha"]
         col_widths = [50, 100, 100, 100, 100]  # Definir los anchos de las columnas
         row_height = 30  # Altura fija para las filas
 
@@ -212,7 +219,7 @@ class View(ctk.CTk):
                 cell.grid(sticky="nsew")  # Expandir el label dentro del frame
 
                 # Inicialmente llenamos la tabla
-        self.update_articles_table() """
+        self.update_articles_table()  """
 
         # Panel de conectividad
         connectivity_panel = ctk.CTkFrame(self, fg_color="#3e3e3e")
