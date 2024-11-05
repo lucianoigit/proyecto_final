@@ -159,11 +159,31 @@ class ImageProcessingService(ProcessingInterface):
         # Implementar la lógica de guardado en la base de datos si es necesario
     
     def show_result(self, df_filtrado, img):
-        # Procesa la imagen y el DataFrame para agregar rectángulos y etiquetas
-        for _, row in df_filtrado.iterrows():
-            cv2.rectangle(img, (int(row['xmin']), int(row['ymin'])), (int(row['xmax']), int(row['ymax'])), (0, 255, 0), 2)
-            cv2.putText(img, f"{row['class_name']} {row['confidence']:.2f}", 
-                        (int(row['xmin']), int(row['ymin']) - 10), 
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
-        
-        return img  # Devuelve la imagen procesada para su actualización en la UI
+        if df_filtrado is not None and not df_filtrado.empty:
+            for index, row in df_filtrado.iterrows():
+                # Definir coordenadas del rectángulo
+                x_min, y_min, x_max, y_max = int(row['xmin']), int(row['ymin']), int(row['xmax']), int(row['ymax'])
+                
+                # Dibujar el rectángulo de detección
+                cv2.rectangle(img, (x_min, y_min), (x_max, y_max), (0, 255, 0), 2)
+                
+                # Calcular y dibujar el centroide
+                centro_x = (x_min + x_max) // 2
+                centro_y = (y_min + y_max) // 2
+                cv2.circle(img, (centro_x, centro_y), 5, (255, 0, 0), -1)  # Dibuja el centro en azul
+                
+                # Agregar texto con nombre de la clase y nivel de confianza
+                class_name = row['class_name']
+                confidence = row['confidence']
+                label = f"{class_name} {confidence:.2f}"
+                cv2.putText(img, label, (x_min, y_min - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+                
+                print(f"Objeto detectado: {class_name} con confianza {confidence:.2f} en ({centro_x}, {centro_y})")
+
+            # Mostrar la imagen con todas las detecciones, los rectángulos y los centroides
+            cv2.imshow("Resultados de Detección", img)
+            cv2.waitKey(0)
+            cv2.destroyAllWindows()
+            return img
+        else:
+            print("No hay resultados para mostrar.")
