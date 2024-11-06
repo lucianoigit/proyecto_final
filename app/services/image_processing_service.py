@@ -182,4 +182,5 @@ class ImageProcessingService(ProcessingInterface):
 
             return img
         else:
+            return img
             print("No hay resultados para mostrar.")
