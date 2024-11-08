@@ -378,7 +378,7 @@ class View(ctk.CTk):
         def open_camera_and_select_points():
             self.points.clear()
 
-            cv2.namedWindow("Seleccione cuatro puntos")
+            cv2.namedWindow("Seleccione cuatro puntos",cv2.WINDOW_FULLSCREEN)
             cv2.setMouseCallback("Seleccione cuatro puntos", click_event)
 
             while True:
