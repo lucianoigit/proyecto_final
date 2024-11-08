@@ -23,15 +23,7 @@ class ImageProcessingService(ProcessingInterface):
 
     def capture_image(self):
         # Detener la cámara en caso de que esté activa
-        try:
-            self.picam2.stop()
-        except Exception:
-            pass  # Ignorar si la cámara ya está detenida
 
-        # Configurar y comenzar la captura
-        self.picam2.configure(self.picam2.create_preview_configuration(main={"size": (640, 480), "format": "RGB888"}))
-        self.picam2.start()
-        
         try:
             img_rgb = self.picam2.capture_array()
             img_bgr = cv2.cvtColor(img_rgb, cv2.COLOR_RGB2BGR)
@@ -182,5 +174,7 @@ class ImageProcessingService(ProcessingInterface):
 
             return img
         else:
-            return img
-            print("No hay resultados para mostrar.")
+            if img is not None:
+                print("No hay resultados para mostrar.")
+                return img
+                

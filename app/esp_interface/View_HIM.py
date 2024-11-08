@@ -377,8 +377,6 @@ class View(ctk.CTk):
 
         def open_camera_and_select_points():
             self.points.clear()
-            self.picam2.stop()
-            self.picam2.configure(self.picam2.create_preview_configuration(main={"size": (640, 480), "format": "RGB888"}))
             self.picam2.start()
 
             cv2.namedWindow("Seleccione cuatro puntos")
