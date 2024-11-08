@@ -360,7 +360,7 @@ class View(ctk.CTk):
         calibration_window = ctk.CTkToplevel(self)
         calibration_window.title("Configuración de Calibración")
         calibration_window.geometry("640x480")
-        calibration_window.state("zoomed")
+
 
         scrollable_frame = ctk.CTkScrollableFrame(calibration_window, width=400, height=500)
         scrollable_frame.pack(fill="both", expand=True, padx=10, pady=10)
