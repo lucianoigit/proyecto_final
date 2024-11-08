@@ -359,7 +359,8 @@ class View(ctk.CTk):
     def calibrate_camera_type(self):
         calibration_window = ctk.CTkToplevel(self)
         calibration_window.title("Configuración de Calibración")
-        calibration_window.geometry("640x480")
+        """ calibration_window.geometry("640x480") """
+        calibration_window.state("zoomed")
 
         scrollable_frame = ctk.CTkScrollableFrame(calibration_window, width=400, height=500)
         scrollable_frame.pack(fill="both", expand=True, padx=10, pady=10)
@@ -560,6 +561,7 @@ class View(ctk.CTk):
                     def capture_image_in_background():
                         print("Capturando imagen en segundo plano...")
                         img = self.processing_service.capture_image()
+                        self.communication_service.send_message("EFFECTOR_ON")
                         if img is None:
                             print("Error: No se pudo capturar la imagen. Reiniciando proceso.")
                             self.root.after(500, self.reset_procesamiento)
@@ -567,6 +569,7 @@ class View(ctk.CTk):
 
                         try:
                             img_undistorted = self.processing_service.undistorted_image(img)
+                            self.communication_service.send_message("EFFECTOR_OFF")
                             print("Imagen capturada y corregida para distorsión.")
 
                             def detection_callback(df_filtrado, img_resultado, residue_list):
@@ -577,6 +580,7 @@ class View(ctk.CTk):
                                 self.update_articles_table()
                                 self.update_image(self.image_resultado,df_filtrado)
                                 self.isProcessing = False
+                                self.communication_service.send_message("LED_OFF")
 
                                 if self.first_run:
                                     print("Primer ciclo de clasificación: enviando datos sin esperar START.")
