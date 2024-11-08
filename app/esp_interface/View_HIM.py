@@ -506,6 +506,7 @@ class View(ctk.CTk):
     def show_connectivity_panel(self):
         self.communication_service.initialize_communication()
         self.communication_service.send_message("LED_ON")
+        self.isOpen = self.communication_service.get_status()
 
     def hide_all_panels(self):
         for panel in self.panels.values():
@@ -544,61 +545,64 @@ class View(ctk.CTk):
         self.quit()
         
     def iniciar_clasificacion(self):
-        if not self.isProcessing:
-            print("### Iniciando proceso de clasificación ###")
-            print("relacion x ", self.mmx)
-            print("relacion y ", self.mmy)
-            self.isProcessing = True
-            if self.df_filtrado is None or self.df_filtrado.empty:
-                print("Entramos a la clasificación - Primer ciclo o nuevo inicio.")
+        if not self.isOpen:
+            if not self.isProcessing:
+                print("### Iniciando proceso de clasificación ###")
+                print("relacion x ", self.mmx)
+                print("relacion y ", self.mmy)
+                self.isProcessing = True
+                if self.df_filtrado is None or self.df_filtrado.empty:
+                    print("Entramos a la clasificación - Primer ciclo o nuevo inicio.")
 
-                def capture_image_in_background():
-                    print("Capturando imagen en segundo plano...")
-                    img = self.processing_service.capture_image()
-                    if img is None:
-                        print("Error: No se pudo capturar la imagen. Reiniciando proceso.")
-                        self.root.after(500, self.reset_procesamiento)
-                        return
+                    def capture_image_in_background():
+                        print("Capturando imagen en segundo plano...")
+                        img = self.processing_service.capture_image()
+                        if img is None:
+                            print("Error: No se pudo capturar la imagen. Reiniciando proceso.")
+                            self.root.after(500, self.reset_procesamiento)
+                            return
 
-                    try:
-                        img_undistorted = self.processing_service.undistorted_image(img)
-                        print("Imagen capturada y corregida para distorsión.")
+                        try:
+                            img_undistorted = self.processing_service.undistorted_image(img)
+                            print("Imagen capturada y corregida para distorsión.")
 
-                        def detection_callback(df_filtrado, img_resultado, residue_list):
-                            self.df_filtrado = df_filtrado
-                            self.image_resultado = img_resultado
-                            self.residue_list = residue_list
-                            print("Clasificación completada, resultados almacenados en memoria.")
-                            self.update_articles_table()
-                            self.update_image(self.image_resultado,df_filtrado)
-                            self.isProcessing = False
+                            def detection_callback(df_filtrado, img_resultado, residue_list):
+                                self.df_filtrado = df_filtrado
+                                self.image_resultado = img_resultado
+                                self.residue_list = residue_list
+                                print("Clasificación completada, resultados almacenados en memoria.")
+                                self.update_articles_table()
+                                self.update_image(self.image_resultado,df_filtrado)
+                                self.isProcessing = False
 
-                            if self.first_run:
-                                print("Primer ciclo de clasificación: enviando datos sin esperar START.")
-                                self.first_run = False
-                                self.verificar_disponibilidad()
-                            else:
-                                print("Ciclo posterior a primer ciclo: esperando disponibilidad.")
-                                self.esperar_start()
+                                if self.first_run:
+                                    print("Primer ciclo de clasificación: enviando datos sin esperar START.")
+                                    self.first_run = False
+                                    self.verificar_disponibilidad()
+                                else:
+                                    print("Ciclo posterior a primer ciclo: esperando disponibilidad.")
+                                    self.esperar_start()
 
-                        # Suponiendo que self.points contiene los cuatro puntos seleccionados
-                        
+                            # Suponiendo que self.points contiene los cuatro puntos seleccionados
+                            
 
-                        # Pasar el ROI calculado al procesamiento de detección de objetos
-                        self.processing_service.detected_objects_in_background(
-                            img_undistorted, 0.2, detection_callback, self.mmx, self.mmy, self.roi
-                        )
+                            # Pasar el ROI calculado al procesamiento de detección de objetos
+                            self.processing_service.detected_objects_in_background(
+                                img_undistorted, 0.2, detection_callback, self.mmx, self.mmy, self.roi
+                            )
 
-                    except Exception as e:
-                        print(f"Error al procesar la imagen: {e}")
-                        self.root.after(500, self.reset_procesamiento)
+                        except Exception as e:
+                            print(f"Error al procesar la imagen: {e}")
+                            self.root.after(500, self.reset_procesamiento)
 
-                self.root.after(0, capture_image_in_background)
+                    self.root.after(0, capture_image_in_background)
+                else:
+                    print("Buffer de datos lleno. Verificando disponibilidad para enviar...")
+
             else:
-                print("Buffer de datos lleno. Verificando disponibilidad para enviar...")
-
+                print("Ya se está clasificando, esperando a que el proceso actual termine.")
         else:
-            print("Ya se está clasificando, esperando a que el proceso actual termine.")
+            print("Puerto serial desconectado.")
 
     def calculate_roi_from_points(self, x1, y1, x2, y2, x3, y3, x4, y4):
         """
