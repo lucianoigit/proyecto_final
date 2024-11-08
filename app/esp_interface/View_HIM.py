@@ -504,9 +504,8 @@ class View(ctk.CTk):
         self.update_reports()
 
     def show_connectivity_panel(self):
-        self.hide_all_panels()
-        self.panels["connectivity"].grid()
-        self.panels["connectivity"].tkraise()
+        self.communication_service.initialize_communication()
+        self.communication_service.send_message("LED_ON")
 
     def hide_all_panels(self):
         for panel in self.panels.values():
