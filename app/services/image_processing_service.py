@@ -1,8 +1,6 @@
 from datetime import datetime
 import threading
 import time
-
-import pandas as pd
 from app.dbModels.ResidueDto import ResidueDTO
 from app.repositories.residue_repository import ResidueRepository
 import cv2
@@ -59,12 +57,11 @@ class ImageProcessingService(ProcessingInterface):
             print("Tipo de relation_y:", type(relation_y), "| Valor de relation_y:", relation_y)
             print("Confianza mínima:", confianza_minima)
             print("ROI:", roi)
-            
-            df_filtrado, img_resultado = self.use_model.run_model(img_undistorted, confianza_minima, roi)
-            
-           
-                   # Hardcodear valores para simular detecciones en el DataFrame
 
+            df_filtrado, img_resultado = self.use_model.run_model(img_undistorted, confianza_minima, roi)
+           
+           
+           
             print("Imagen procesada. DataFrame resultante:", df_filtrado)
 
             if df_filtrado is not None:

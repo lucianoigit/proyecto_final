@@ -41,9 +41,6 @@ class MLModelService(MLModelInterface):
                 print("Error: La imagen proporcionada es 'None' o está vacía.")
                 return None, None
 
-            # Reducir el tamaño de la imagen sin cambiar a escala de grises
-            img = cv2.resize(img, (320, 320))  # Cambiar el tamaño de la imagen manteniendo el color
-
             # Recorte de la imagen si se proporciona un ROI
             if roi:
                 x_min, y_min, x_max, y_max = roi
@@ -57,47 +54,9 @@ class MLModelService(MLModelInterface):
                 # Recortar la imagen
                 img = img[y_min:y_max, x_min:x_max]
             
-            # Ejecutar el modelo en la imagen o en la región recortada
-            results = self.model(img)
-            if not results:
-                print("No se detectaron objetos.")
+            if img is None or img.size == 0:
+                print("Error: La imagen proporcionada es 'None' o está vacía.")
                 return None, None
-
-            # Obtener las detecciones
-            detections = results[0].boxes.data.cpu().numpy()  # Obtener detecciones del primer resultado
-            print("Detectados:", detections)
-            names = self.model.names  # Obtener los nombres de las clases desde el modelo
-            df = pd.DataFrame(detections, columns=['xmin', 'ymin', 'xmax', 'ymax', 'confidence', 'class'])
-
-            # Filtrar por confianza mínima
-            df_filtrado = df[df['confidence'] >= confianza_minima]
-
-            # Ajustar las coordenadas de las detecciones si se recortó la imagen
-            if roi:
-                x_min, y_min, _, _ = roi
-                df_filtrado[['xmin', 'xmax']] += x_min
-                df_filtrado[['ymin', 'ymax']] += y_min
-
-            # Convertir el índice de clase a nombre de clase
-            df_filtrado['class_name'] = df_filtrado['class'].apply(lambda x: names[int(x)])
-            return df_filtrado, img
-        except Exception as e:
-            print(f"Error al ejecutar el modelo: {e}")
-            return None, None
-
-
-            # Recorte de la imagen si se proporciona un ROI
-            if roi:
-                x_min, y_min, x_max, y_max = roi
-                print(f"ROI definido: x_min={x_min}, y_min={y_min}, x_max={x_max}, y_max={y_max}")
-                
-                # Validación de que las coordenadas estén dentro de los límites de la imagen
-                if x_min < 0 or y_min < 0 or x_max > img.shape[1] or y_max > img.shape[0]:
-                    print("Error: Las coordenadas del ROI están fuera del rango de la imagen.")
-                    return None, None
-                
-                # Recortar la imagen
-                img = img[y_min:y_max, x_min:x_max]
 
             # Ejecutar el modelo en la imagen o en la región recortada
             results = self.model(img)
