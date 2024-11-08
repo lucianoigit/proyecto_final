@@ -380,7 +380,7 @@ class View(ctk.CTk):
             self.points.clear()
 
             cv2.namedWindow("Seleccione cuatro puntos",cv2.WINDOW_NORMAL)
-            cv2.setWindowProperty("Seleccione cuatro puntos",cv2.WINDOW_FULLSCREEN)
+            cv2.setWindowProperty("Seleccione cuatro puntos",cv2.WND_PROP_AUTOSIZE,cv2.WINDOW_FULLSCREEN)
             cv2.setMouseCallback("Seleccione cuatro puntos", click_event)
 
             while True:
