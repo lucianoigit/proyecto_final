@@ -13,7 +13,7 @@ class CommunicationInterface(ABC):
     def receive_data(self):
         pass
     @abstractmethod
-    def get_status(self):
+    def getStatus(self):
         pass
     @abstractmethod
     def start_reading(self):

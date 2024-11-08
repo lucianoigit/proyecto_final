@@ -505,7 +505,7 @@ class View(ctk.CTk):
     def show_connectivity_panel(self):
         self.communication_service.initialize_communication()
         self.communication_service.send_message("LED_ON")
-        self.isOpen = self.communication_service.get_status()
+        self.isOpen = self.communication_service.getStatus()
 
     def hide_all_panels(self):
         for panel in self.panels.values():
