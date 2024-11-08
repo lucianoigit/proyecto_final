@@ -59,21 +59,12 @@ class ImageProcessingService(ProcessingInterface):
             print("Tipo de relation_y:", type(relation_y), "| Valor de relation_y:", relation_y)
             print("Confianza mínima:", confianza_minima)
             print("ROI:", roi)
-            """ 
+            
             df_filtrado, img_resultado = self.use_model.run_model(img_undistorted, confianza_minima, roi)
-            """
+            
            
                    # Hardcodear valores para simular detecciones en el DataFrame
-            df_filtrado = pd.DataFrame({
-                'xmin': [100, 200],
-                'ymin': [150, 250],
-                'xmax': [200, 300],
-                'ymax': [250, 350],
-                'confidence': [0.9, 0.85],
-                'class': [1, 2],
-                'class_name': ['object_1', 'object_2']
-            })
-            img_resultado = img_undistorted  # Usar la imagen real sin modificar
+
             print("Imagen procesada. DataFrame resultante:", df_filtrado)
 
             if df_filtrado is not None:

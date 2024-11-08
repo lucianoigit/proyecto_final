@@ -41,6 +41,10 @@ class MLModelService(MLModelInterface):
                 print("Error: La imagen proporcionada es 'None' o está vacía.")
                 return None, None
 
+            # Reducir el tamaño de la imagen y convertir a escala de grises
+            img = cv2.resize(img, (320, 320))  # Cambiar el tamaño de la imagen
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)  # Convertir a escala de grises
+
             # Recorte de la imagen si se proporciona un ROI
             if roi:
                 x_min, y_min, x_max, y_max = roi
@@ -53,10 +57,6 @@ class MLModelService(MLModelInterface):
                 
                 # Recortar la imagen
                 img = img[y_min:y_max, x_min:x_max]
-            
-            if img is None or img.size == 0:
-                print("Error: La imagen proporcionada es 'None' o está vacía.")
-                return None, None
 
             # Ejecutar el modelo en la imagen o en la región recortada
             results = self.model(img)
