@@ -380,7 +380,7 @@ class View(ctk.CTk):
             self.points.clear()
 
             cv2.namedWindow("Seleccione cuatro puntos",cv2.WINDOW_NORMAL)
-            cv2.setWindowProperty("Seleccione cuatro puntos", cv2.WND_PROP_FULLSCREEN,cv2.WINDOW_FULLSCREEN)
+            cv2.setWindowProperty("Seleccione cuatro puntos",cv2.WINDOW_FULLSCREEN)
             cv2.setMouseCallback("Seleccione cuatro puntos", click_event)
 
             while True:
@@ -570,7 +570,7 @@ class View(ctk.CTk):
 
                         try:
                             img_undistorted = self.processing_service.undistorted_image(img)
-                            self.communication_service.send_message("EFFECTOR_OFF")
+                            
                             print("Imagen capturada y corregida para distorsión.")
 
                             def detection_callback(df_filtrado, img_resultado, residue_list):
@@ -581,7 +581,7 @@ class View(ctk.CTk):
                                 self.update_articles_table()
                                 self.update_image(self.image_resultado,df_filtrado)
                                 self.isProcessing = False
-                                self.communication_service.send_message("LED_OFF")
+                                self.communication_service.send_message("EFFECTOR_OFF")
 
                                 if self.first_run:
                                     print("Primer ciclo de clasificación: enviando datos sin esperar START.")
