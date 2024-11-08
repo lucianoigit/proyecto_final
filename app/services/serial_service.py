@@ -7,6 +7,7 @@ import queue
 class SerialService:
     def __init__(self, port, baud_rate):
         self.port = port
+        self.isOpen = False
         self.baud_rate = baud_rate
         self.ser = None
         self.read_thread = None
@@ -22,6 +23,7 @@ class SerialService:
             print(f"Puerto serial {self.port} abierto correctamente.")
             if not self.running:
                 self._start_reading()  # Iniciar el hilo de lectura
+                self.isOpen = True
         except serial.SerialException as e:
             print(f"Error al abrir el puerto serial {self.port}: {e}")
 
@@ -104,10 +106,11 @@ class SerialService:
         self._stop_reading()
         if self.ser:
             self.ser.close()
+            self.isOpen = False
             print(f"Puerto serial {self.port} cerrado correctamente.")
             
     def getStatus(self):
-        return self.ser
+        return self.isOpen
 
     def __del__(self):
         self.close()  # Asegurar que se cierra el puerto serial cuando se destruye la instancia

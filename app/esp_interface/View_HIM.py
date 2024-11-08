@@ -36,7 +36,7 @@ class View(ctk.CTk):
         self.x_center =None
         self.y_center = None
         self.offset = None
-        self.ser = ser
+        self.isOpen = False
         self.isDisponible = False
         self.image_resultado =  None
         self.df_filtrado = None
@@ -505,10 +505,11 @@ class View(ctk.CTk):
     def show_connectivity_panel(self):
         self.communication_service.initialize_communication()
         self.communication_service.send_message("LED_ON")
-        ser = self.ser
-        print ("serial status", ser)
+        isOpen = self.communication_service.getStatus()
         
-        self.isOpen = ser
+        print ("serial status", isOpen)
+        
+        self.isOpen = isOpen
 
     def hide_all_panels(self):
         for panel in self.panels.values():
@@ -547,7 +548,7 @@ class View(ctk.CTk):
         self.quit()
         
     def iniciar_clasificacion(self):
-        if self.isOpen is not None:
+        if self.isOpen is True:
             if not self.isProcessing:
                 print("### Iniciando proceso de clasificación ###")
                 print("relacion x ", self.mmx)
