@@ -28,10 +28,7 @@ def main():
     with db.session() as session:
         residue_repository = ResidueRepository(session)
         serial_service = SerialService(SERIAL_PORT, BAUD_RATE)
-  
-        # Intentamos inicializar la comunicación serial
 
-        ser = serial_service.getStatus()
       
 
         # Configuración del modelo y otros servicios
@@ -43,7 +40,7 @@ def main():
         image_service = ImageProcessingService(residue_repository, use_model, transport_service, picamera=picam2)
         
         # Inicializa la aplicación principal
-        app = View(serial_service, image_service, reports_service, transport_service, ser, picamera=picam2)
+        app = View(serial_service, image_service, reports_service, transport_service, None, picamera=picam2)
         app.mainloop()
         
         # Asegurar que los recursos se liberen correctamente

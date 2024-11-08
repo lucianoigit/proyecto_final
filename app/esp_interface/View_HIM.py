@@ -36,7 +36,7 @@ class View(ctk.CTk):
         self.x_center =None
         self.y_center = None
         self.offset = None
-        self.isOpen = ser
+        self.ser = ser
         self.isDisponible = False
         self.image_resultado =  None
         self.df_filtrado = None
@@ -505,7 +505,10 @@ class View(ctk.CTk):
     def show_connectivity_panel(self):
         self.communication_service.initialize_communication()
         self.communication_service.send_message("LED_ON")
-        self.isOpen = self.communication_service.getStatus()
+        ser = self.ser
+        print ("serial status", ser)
+        
+        self.isOpen = ser
 
     def hide_all_panels(self):
         for panel in self.panels.values():
