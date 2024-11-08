@@ -377,7 +377,6 @@ class View(ctk.CTk):
 
         def open_camera_and_select_points():
             self.points.clear()
-            self.picam2.start()
 
             cv2.namedWindow("Seleccione cuatro puntos")
             cv2.setMouseCallback("Seleccione cuatro puntos", click_event)
@@ -396,7 +395,7 @@ class View(ctk.CTk):
                 if cv2.waitKey(1) & 0xFF == ord('q') or len(self.points) == 4:
                     break
 
-            self.picam2.stop()
+
             cv2.destroyAllWindows()
 
             if len(self.points) == 4:

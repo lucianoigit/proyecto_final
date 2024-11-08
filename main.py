@@ -22,7 +22,7 @@ def main():
     picam2 = Picamera2()
            # Configurar y comenzar la captura
     picam2.configure(picam2.create_preview_configuration(main={"size": (640, 480), "format": "RGB888"}))
-
+    picam2.start()
         
     
     with db.session() as session:
