@@ -57,7 +57,8 @@ class MLModelService(MLModelInterface):
             if img is None or img.size == 0:
                 print("Error: La imagen proporcionada es 'None' o está vacía.")
                 return None, None
-
+                        # Redimensionar para optimizar
+            img = cv2.resize(img, (320, 320))
             # Ejecutar el modelo en la imagen o en la región recortada
             results = self.model(img)
             if not results:
