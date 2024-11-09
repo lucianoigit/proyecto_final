@@ -12,7 +12,10 @@ class MLModelService(MLModelInterface):
         try:
             # Cargar el modelo YOLOv5 personalizado
             model = YOLO(self.model_path)
-            return model
+            model.export(format="ncnn")  # creates 'yolo11n_ncnn_model'
+            # Load the exported NCNN model
+            ncnn_model = YOLO("yolo11n_ncnn_model")
+            return ncnn_model
         except Exception as e:
             print(f"Error al cargar el modelo: {e}")
             return None
@@ -58,7 +61,6 @@ class MLModelService(MLModelInterface):
                 print("Error: La imagen proporcionada es 'None' o está vacía.")
                 return None, None
                         # Redimensionar para optimizar
-            img = cv2.resize(img, (320, 320))
             # Ejecutar el modelo en la imagen o en la región recortada
             results = self.model(img)
             if not results:
