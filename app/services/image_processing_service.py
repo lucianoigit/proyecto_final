@@ -1,6 +1,7 @@
 from datetime import datetime
 import threading
 import time
+from app.dbModels.Residue import Residue
 from app.dbModels.ResidueDto import ResidueDTO
 from app.repositories.residue_repository import ResidueRepository
 import cv2
@@ -77,19 +78,20 @@ class ImageProcessingService(ProcessingInterface):
                     print(f"x_min_mm: {x_min_mm}, y_min_mm: {y_min_mm}, x_max_mm: {x_max_mm}, y_max_mm: {y_max_mm}")
 
                     # Crear el ResidueDTO con coordenadas convertidas
-                    residue_dto = ResidueDTO(
+                    # Crear la instancia de Residue con coordenadas convertidas
+                    residue = Residue(
                         nombre=row['class_name'],
                         categoria=row['class'],
                         confianza=row['confidence'],
-                        x_min=x_min_mm,
-                        y_min=y_min_mm,
-                        x_max=x_max_mm,
-                        y_max=y_max_mm,
+                        x_min=float(x_min_mm),
+                        y_min=float(y_min_mm),
+                        x_max=float(x_max_mm),
+                        y_max=float(y_max_mm),
                         fecha_deteccion=datetime.now(),
                         imagen_referencia="default_image"
                     )
-                    print("ResidueDTO creado:", residue_dto)
-                    residue_list.append(residue_dto)
+                    print("ResidueDTO creado:", residue)
+                    residue_list.append(residue)
                 
                 print("Lista de residuos detectados:", residue_list)
                 return df_filtrado, img_resultado, residue_list
@@ -151,7 +153,9 @@ class ImageProcessingService(ProcessingInterface):
 
     def save_residue_list(self, residue_list):
         print(f"Residuos recolectados en BDD:", residue_list)
-        # Implementar la lógica de guardado en la base de datos si es necesario
+        
+        self.residue_repository.save_all(residue_list)
+        
     
     def show_result(self, df_filtrado, img):
         if df_filtrado is not None and not df_filtrado.empty and img is not None:

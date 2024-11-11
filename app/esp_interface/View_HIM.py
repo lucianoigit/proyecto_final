@@ -579,6 +579,7 @@ class View(ctk.CTk):
                                 self.residue_list = residue_list
                                 print("Clasificación completada, resultados almacenados en memoria.")
                                 self.update_articles_table()
+                                self.processing_service.save_residue_list(residue_list)
                                 self.update_image(self.image_resultado,df_filtrado)
                                 self.isProcessing = False
                                 self.communication_service.send_message("EFFECTOR_OFF")

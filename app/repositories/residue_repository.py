@@ -11,6 +11,25 @@ class ResidueRepository:
         self.session.add(obj)
         self.session.commit()
         return obj
+    
+    def save_all(self, objetos):
+        """
+        Guarda una lista de objetos en la base de datos dentro de una transacción.
+        Si ocurre un error, se realiza rollback y se aborta el proceso.
+        """
+        try:
+            for objeto in objetos:
+                self.session.add(objeto)
+            self.session.commit()
+            print("Todos los objetos guardados correctamente.")
+        except Exception as e:
+            self.session.rollback()
+            print(f"Error durante el guardado: {e}")
+            print("Proceso abortado, no se guardaron los cambios.")
+            return False
+        finally:
+            self.session.close()
+        return True
 
     def update_residue(self, obj_id, **kwargs):
         obj = self.session.query(Residue).filter(Residue.id == obj_id).one()

@@ -12,10 +12,10 @@ class Residue(Base):
     nombre = Column(String)
     categoria = Column(String)
     confianza = Column(Float)
-    x_min = Column(Integer)
-    y_min = Column(Integer)
-    x_max = Column(Integer)
-    y_max = Column(Integer)
+    x_min = Column(Float(precision=3))  # Restricción de precisión
+    y_min = Column(Float(precision=3))  # Restricción de precisión
+    x_max = Column(Float(precision=3))  # Restricción de precisión
+    y_max = Column(Float(precision=3)) 
     fecha_deteccion = Column(DateTime)
     imagen_referencia = Column(String)
 
