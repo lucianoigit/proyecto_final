@@ -57,6 +57,9 @@ class View(ctk.CTk):
         self.isProcessing = False
         self.first_run = True
         self.roi = None
+        self.max_speed = None
+        self.moving_conveyor_belt_speed=None
+        self.moving_home_max_speed=None
         
 
         # Paleta de colores aplicada
@@ -301,11 +304,11 @@ class View(ctk.CTk):
                                         hover_color="#a3a7d9", text_color=self.text_color)
         ml_model_button.grid(row=0, column=1, padx=10, pady=10, sticky="nsew")
 
-        # Botón de calibración de tipo de cámara
+    
 
 
         # Botón de configuración de cinta transportadora
-        conveyor_config_button = ctk.CTkButton(configure_panel, text="Configuración de Cinta Transportadora", 
+        conveyor_config_button = ctk.CTkButton(configure_panel, text="Configuración de velocidad", 
                                             command=self.configure_conveyor, fg_color=self.btn_color, 
                                             hover_color="#a3a7d9", text_color=self.text_color)
         conveyor_config_button.grid(row=1, column=1, padx=10, pady=10, sticky="nsew")
@@ -317,7 +320,67 @@ class View(ctk.CTk):
 
         self.show_main_panel()
         #self.receive_data()
+        
 
+    def configure_conveyor(self):
+        # Crear ventana modal para configuración de velocidad
+        conveyor_window = ctk.CTkToplevel(self)
+        conveyor_window.title("Configuración de Velocidad")
+        conveyor_window.geometry("400x600")
+
+        # Variables a configurar
+        self.speed_vars = {
+            "Speed": None,
+            "MaxSpeed": None,
+            "MovingHomeSpeed": None,
+            "MovingHomeMaxSpeed": None,
+            "MovingHomeAcceleration": None,
+            "MovingConveyorBeltSpeed": None,
+            "MovingConveyorBeltMaxSpeed": None,
+            "MovingConveyorBeltAcceleration": None
+        }
+
+        # Crear campos de entrada y botones para cada variable de velocidad
+        for i, var in enumerate(self.speed_vars):
+            label = ctk.CTkLabel(conveyor_window, text=var)
+            label.grid(row=i, column=0, padx=10, pady=5, sticky="w")
+
+            entry = ctk.CTkEntry(conveyor_window)
+            entry.grid(row=i, column=1, padx=10, pady=5, sticky="ew")
+            self.speed_vars[var] = entry
+
+            button = ctk.CTkButton(conveyor_window, text="Guardar",
+                                   command=lambda v=var, e=entry: self.set_speed(v, e))
+            button.grid(row=i, column=2, padx=10, pady=5)
+
+            # Cargar valor actual
+            self.communication_service.get_data(f"GET {var}", lambda response, var=var: self.update_field(response, var))
+
+    def update_field(self, response, variable):
+        # Actualiza campo de entrada con valor recibido
+        try:
+            value = response.split(" ")[1]
+            if variable in self.speed_vars:
+                self.speed_vars[variable].delete(0, ctk.END)
+                self.speed_vars[variable].insert(0, value)
+                print(f"{variable} cargado con valor {value}")
+        except IndexError:
+            print(f"Error al procesar la respuesta para {variable}: {response}")
+
+    def set_speed(self, variable, entry):
+        # Envía el valor ingresado para la variable de velocidad
+        value = entry.get()
+        command = f"SET {variable} {value}"
+
+        def callback(response):
+            if f"{variable} Set to {value}" in response:
+                print(f"{variable} configurado exitosamente a {value}")
+            else:
+                print(f"Error al configurar {variable}. Respuesta recibida: {response}")
+
+        self.communication_service.send_and_receive(command, f"{variable} {value}", callback)
+
+        
     def update_articles_table(self):
         # Limpiar filas anteriores
         for widget in self.articles_frame.winfo_children()[5:]:  # Ignoramos las primeras 5 que son los headers
@@ -538,9 +601,6 @@ class View(ctk.CTk):
         # Lógica para calibración de modelo ML
         pass
 
-    def configure_conveyor(self):
-        # Lógica para configuración de cinta transportadora
-        pass
 
 
     def show_dashboard(self):

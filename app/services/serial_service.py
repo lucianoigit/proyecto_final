@@ -59,6 +59,25 @@ class SerialService:
                 callback("Error")
                 return
 
+    def get_data(self, message, callback):
+        """
+        Envía un mensaje por el puerto serial y espera una respuesta cualquiera.
+        No verifica si la respuesta coincide con algún valor esperado.
+        """
+        self.send_message(message)
+        print(f"Mensaje enviado: {message}, esperando cualquier respuesta...")
+
+        try:
+            # Bloquear y esperar hasta que haya un mensaje en la cola
+            response = self.message_queue.get(timeout=5)  # Espera hasta 5 segundos para recibir una respuesta
+            print(f"Respuesta recibida: {response}")
+            callback(response)  # Llama al callback con la respuesta recibida
+        except queue.Empty:
+            print("No se recibió ninguna respuesta en el tiempo esperado.")
+            callback("No response")
+        except Exception as e:
+            print(f"Error al recibir datos: {e}")
+            callback("Error")
 
     def receive_data(self):
         """

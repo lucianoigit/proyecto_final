@@ -26,3 +26,7 @@ class CommunicationInterface(ABC):
     @abstractmethod
     def send_and_receive(self,message,expected_message):
         pass
+    
+    @abstractmethod
+    def get_data(self, message, callback):
+        pass
