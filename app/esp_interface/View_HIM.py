@@ -300,7 +300,7 @@ class View(ctk.CTk):
 
         # Botón de calibración de modelo ML
         ml_model_button = ctk.CTkButton(configure_panel, text="Calibración de Modelo ML", 
-                                        command=self.calibrate_ml_model, fg_color=self.nav_color, 
+                                        command=self.configure_classifier, fg_color=self.nav_color, 
                                         hover_color="#a3a7d9", text_color=self.text_color)
         ml_model_button.grid(row=0, column=1, padx=10, pady=10, sticky="nsew")
 
@@ -321,6 +321,85 @@ class View(ctk.CTk):
         self.show_main_panel()
         #self.receive_data()
         
+        
+
+
+    def configure_classifier(self):
+        classifier_window = ctk.CTkToplevel(self)
+        classifier_window.title("Configuración de Clasificador")
+        classifier_window.geometry("400x600")
+
+        # Selección de modelo
+        model_label = ctk.CTkLabel(classifier_window, text="Seleccionar Modelo:")
+        model_label.grid(row=0, column=0, padx=10, pady=5, sticky="w")
+
+        model_options = ["Modelo 1", "Modelo 2"]  # Simulando opciones de modelos
+        self.selected_model = ctk.StringVar(value=model_options[0])
+
+        model_menu = ctk.CTkOptionMenu(classifier_window, values=model_options, variable=self.selected_model, command=self.load_classes_for_model)
+        model_menu.grid(row=0, column=1, padx=10, pady=5, sticky="ew")
+
+        # Frame para las clases
+        self.class_frame = ctk.CTkFrame(classifier_window)
+        self.class_frame.grid(row=1, column=0, columnspan=2, padx=10, pady=10, sticky="nsew")
+
+        # Cargar las clases iniciales para el primer modelo
+        self.load_classes_for_model(self.selected_model.get())
+
+    def load_classes_for_model(self, model_name):
+        """Cargar las clases y campos de entrada para el modelo seleccionado."""
+        # Simular clases y posiciones asociadas a cada modelo
+        if model_name == "Modelo 1":
+            self.model_classes = {
+                "Clase 1": {"x": -100, "y": 100},
+                "Clase 2": {"x": 100, "y": 100},
+                "Clase 3": {"x": -100, "y": -100},
+                "Clase 4": {"x": 100, "y": -100},
+            }
+        elif model_name == "Modelo 2":
+            self.model_classes = {
+                "Clase A": {"x": -50, "y": 50},
+                "Clase B": {"x": 50, "y": 50},
+                "Clase C": {"x": -50, "y": -50},
+                "Clase D": {"x": 50, "y": -50},
+            }
+
+        # Limpiar el frame de clases antes de agregar las nuevas entradas
+        for widget in self.class_frame.winfo_children():
+            widget.destroy()
+
+        # Crear campos de entrada para cada clase
+        for i, (class_name, pos) in enumerate(self.model_classes.items()):
+            label = ctk.CTkLabel(self.class_frame, text=class_name)
+            label.grid(row=i, column=0, padx=5, pady=5, sticky="w")
+
+            x_entry = ctk.CTkEntry(self.class_frame, width=50)
+            x_entry.insert(0, pos["x"])
+            x_entry.grid(row=i, column=1, padx=5, pady=5)
+
+            y_entry = ctk.CTkEntry(self.class_frame, width=50)
+            y_entry.insert(0, pos["y"])
+            y_entry.grid(row=i, column=2, padx=5, pady=5)
+
+            save_button = ctk.CTkButton(self.class_frame, text="Guardar", command=lambda c=class_name, x=x_entry, y=y_entry: self.set_class_position(c, x, y))
+            save_button.grid(row=i, column=3, padx=5, pady=5)
+
+    def set_class_position(self, class_name, x_entry, y_entry):
+        """Establece la posición para una clase y la guarda en el sistema."""
+        x, y = x_entry.get(), y_entry.get()
+        command = f"SET_POSITION {class_name} {x} {y}"
+
+        def callback(response):
+            expected_response = f"{class_name} Set to {x},{y}"
+            if expected_response in response:
+                print(f"{class_name} configurado exitosamente a X: {x}, Y: {y}")
+                self.model_classes[class_name]["x"] = x
+                self.model_classes[class_name]["y"] = y
+            else:
+                print(f"Error al configurar {class_name}. Respuesta recibida: {response}")
+
+        self.communication_service.send_and_receive(command, f"{class_name} Set to {x},{y}", callback)
+
 
     def configure_conveyor(self):
         # Crear ventana modal para configuración de velocidad
