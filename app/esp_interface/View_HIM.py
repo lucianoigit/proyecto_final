@@ -349,7 +349,7 @@ class View(ctk.CTk):
             # Procesar la respuesta recibida
             lines = response.strip().split("\n")
 
-            if response == "No hay categorias almacenadas":
+            if response == "No hay categorias almacenadas.":
                 # No hay categorías, permitir agregar nuevas
                 label = ctk.CTkLabel(self.category_frame, text="No hay categorías almacenadas.")
                 label.grid(row=0, column=0, padx=10, pady=5, sticky="w")
