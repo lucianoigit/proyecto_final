@@ -414,7 +414,7 @@ class View(ctk.CTk):
             else:
                 print(f"Error al añadir la categoría '{name}'. Respuesta: {response}")
 
-        self.communication_service.send_and_receive(command, f"Categoría añadida: {name} .Posiciones: X={x}, Y={y}, Z={z}", callback)
+        self.communication_service.send_and_receive(command, f"Categoría añadida", callback)
 
     def edit_category(self, name_entry, x, y, z):
         """Editar una categoría existente con posición fija."""
@@ -433,7 +433,7 @@ class View(ctk.CTk):
             else:
                 print(f"Error al modificar la categoría '{new_name}'. Respuesta: {response}")
 
-        self.communication_service.send_and_receive(command, f"Categoría modificada: {new_name} .Steps: X={x}, Y={y}, Z={z}", callback)
+        self.communication_service.send_and_receive(command, f"Categoría modificada", callback)
 
 
     def configure_conveyor(self):
@@ -492,7 +492,7 @@ class View(ctk.CTk):
             else:
                 print(f"Error al configurar {variable}. Respuesta recibida: {response}")
 
-        self.communication_service.send_and_receive(command, f"{variable} set to {value}", callback)
+        self.communication_service.send_and_receive(command, f"{variable} {value}", callback)
 
         
     def update_articles_table(self):
@@ -721,7 +721,14 @@ class View(ctk.CTk):
         self.show_reports_panel()
 
     def close_application(self):
-        self.quit()
+        
+        def callback(response):
+            if(response =="OK")
+            self.quit()  
+        
+        
+        self.communication_service.send_and_receive("NOHOME","OK",callback)
+        
         
     def iniciar_clasificacion(self):
         if self.isOpen is True:
@@ -930,7 +937,12 @@ class View(ctk.CTk):
             print("No puede iniciar sin antes calibrar la camara")
 
         # Iniciar la clasificación de manera continua
-        self.iniciar_clasificacion()  # Asegurarse de ejecutar el método correctamente
+        def callback(response):
+            self.iniciar_clasificacion()  # Asegurarse de ejecutar el método correctamente
+        
+        
+        self.communication_service.send_and_receive("HOME","OK",callback)
+        
   
     def tomar_foto(self):
         img = self.processing_service.capture_image()
