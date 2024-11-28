@@ -1107,14 +1107,33 @@ class View(ctk.CTk):
             self.update_figure(self.daily_histogram, fig2)
 
     def update_image(self, img, df_filtrado):
-        # Usar el método `show_result` para procesar la imagen con el DataFrame filtrado
-        img = self.processing_service.show_result(df_filtrado, img)
+        """
+        Actualiza la imagen procesada con los cuadros de detección y la muestra en la interfaz gráfica.
+        
+        :param img: Imagen a la cual agregar las detecciones (en formato numpy).
+        :param df_filtrado: DataFrame con las coordenadas de las detecciones (xmin, ymin, xmax, ymax, confianza, y nombre de clase).
+        """
+        # Crear una copia de la imagen para no modificar la original
+        img_copy = img.copy()
 
-        # Convertir la imagen procesada para mostrar en el label
-        img_pil = Image.fromarray(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))  # Convertir a RGB
+        # Dibujar los cuadros en la imagen usando las coordenadas del DataFrame
+        for _, row in df_filtrado.iterrows():
+            xmin, ymin, xmax, ymax = row['xmin'], row['ymin'], row['xmax'], row['ymax']
+            class_name = row['class_name']  # Nombre de la clase detectada
+            confidence = row['confidence']  # Confianza de la detección
+
+            # Dibujar el rectángulo (en color rojo) y el texto de la clase con la confianza
+            cv2.rectangle(img_copy, (xmin, ymin), (xmax, ymax), (0, 0, 255), 2)  # BGR: Rojo
+            label = f"{class_name} ({confidence:.2f})"
+            cv2.putText(img_copy, label, (xmin, ymin - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
+
+        # Convertir la imagen procesada a formato PIL (RGB) para que se pueda mostrar con customtkinter
+        img_pil = Image.fromarray(cv2.cvtColor(img_copy, cv2.COLOR_BGR2RGB))  # Convertir a RGB
         ctk_img = ctk.CTkImage(img_pil, size=(400, 300))  # Tamaño ajustado para la interfaz
+
+        # Actualizar la etiqueta con la nueva imagen
         self.image_label.configure(image=ctk_img)
-        self.image_label.image = ctk_img 
+        self.image_label.image = ctk_img  # M
 
 
     def start_communication(self):
