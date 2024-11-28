@@ -1133,7 +1133,7 @@ class View(ctk.CTk):
                 draw.text((xmin, ymin - 10), label, fill="white")
 
         # Paso 3: Convertir la imagen a formato CTkImage para CustomTkinter
-        ctk_img = ctk.CTkImage(img_pil, size=(400, 300))  # Ajustar el tamaño si es necesario
+        ctk_img = ctk.CTkImage(img_pil, size=(640, 480))  # Ajustar el tamaño si es necesario
 
         # Actualizar la etiqueta con la nueva imagen
         self.image_label.configure(image=ctk_img)
