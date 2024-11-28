@@ -727,7 +727,7 @@ class View(ctk.CTk):
                 self.quit()  
         
         
-        self.communication_service.send_and_receive("NOHOME 0.0,0.0,-730.0,0.0","OK",callback)
+        self.communication_service.send_and_receive("NOHOME 0.0,0.0,-700.0,0.0","OK",callback)
         
         
     def iniciar_clasificacion(self):
