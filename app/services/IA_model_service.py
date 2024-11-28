@@ -11,8 +11,9 @@ class MLModelService(MLModelInterface):
     def load_model(self):
         try:
             # Cargar el modelo YOLOv5 personalizado
-            model = YOLO(self.model_path)
-            model.export(format="ncnn")  # creates 'yolo11n_ncnn_model'
+            """ model = YOLO(self.model_path)
+            model.export(format="ncnn")  """ 
+            # creates 'yolo11n_ncnn_model'
             # Load the exported NCNN model
             ncnn_model = YOLO("yolo11n_ncnn_model")
             return ncnn_model

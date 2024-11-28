@@ -452,12 +452,12 @@ class View(ctk.CTk):
         command = f"SET {variable} {value}"
 
         def callback(response):
-            if f"{variable} Set to {value}" in response:
+            if response == "OK":
                 print(f"{variable} configurado exitosamente a {value}")
             else:
                 print(f"Error al configurar {variable}. Respuesta recibida: {response}")
 
-        self.communication_service.send_and_receive(command, f"{variable} {value}", callback)
+        self.communication_service.send_and_receive(command, f"{variable} set to {value}", callback)
 
         
     def update_articles_table(self):
