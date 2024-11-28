@@ -11,8 +11,8 @@ class MLModelService(MLModelInterface):
     def load_model(self):
         try:
             # Cargar el modelo YOLOv5 personalizado
-            """ model = YOLO(self.model_path)
-            model.export(format="ncnn")  """ 
+            model = YOLO(self.model_path)
+            model.export(format="ncnn")
             # creates 'yolo11n_ncnn_model'
             # Load the exported NCNN model
             ncnn_model = YOLO("yolo11n_ncnn_model")
@@ -21,7 +21,7 @@ class MLModelService(MLModelInterface):
             print(f"Error al cargar el modelo: {e}")
             return None
 
-    def run_model(self, img_path_or_img, confianza_minima=0.2, roi=None):
+    def run_model(self, img_path_or_img, confianza_minima=0.6, roi=None):
         """
         Ejecuta el modelo de clasificación en una región específica de la imagen.
         

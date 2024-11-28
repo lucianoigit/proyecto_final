@@ -32,7 +32,7 @@ def main():
       
 
         # Configuración del modelo y otros servicios
-        use_model = MLModelService(model_path="yolo11n.pt")
+        use_model = MLModelService(model_path="best.pt")
         reports_service = ReportsService(residue_repository)
         transport_service = TransportService()
 
