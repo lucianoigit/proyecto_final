@@ -1109,6 +1109,7 @@ class View(ctk.CTk):
     def update_image(self, img, df_filtrado):
         """
         Actualiza la imagen procesada con los cuadros de detección y la muestra en la interfaz gráfica.
+        Si no se detectan objetos, muestra el mensaje 'No Detection'.
         
         :param img: Imagen a la cual agregar las detecciones (en formato numpy).
         :param df_filtrado: DataFrame con las coordenadas de las detecciones (xmin, ymin, xmax, ymax, confianza, y nombre de clase).
@@ -1116,16 +1117,21 @@ class View(ctk.CTk):
         # Crear una copia de la imagen para no modificar la original
         img_copy = img.copy()
 
-        # Dibujar los cuadros en la imagen usando las coordenadas del DataFrame
-        for _, row in df_filtrado.iterrows():
-            xmin, ymin, xmax, ymax = row['xmin'], row['ymin'], row['xmax'], row['ymax']
-            class_name = row['class_name']  # Nombre de la clase detectada
-            confidence = row['confidence']  # Confianza de la detección
+        # Comprobar si el DataFrame está vacío (no hay detecciones)
+        if df_filtrado.empty:
+            # Si no hay detecciones, mostrar el mensaje "No Detection"
+            cv2.putText(img_copy, "No Detection", (50, img_copy.shape[0] // 2), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 0, 255), 3, cv2.LINE_AA)
+        else:
+            # Dibujar los cuadros en la imagen usando las coordenadas del DataFrame
+            for _, row in df_filtrado.iterrows():
+                xmin, ymin, xmax, ymax = row['xmin'], row['ymin'], row['xmax'], row['ymax']
+                class_name = row['class_name']  # Nombre de la clase detectada
+                confidence = row['confidence']  # Confianza de la detección
 
-            # Dibujar el rectángulo (en color rojo) y el texto de la clase con la confianza
-            cv2.rectangle(img_copy, (xmin, ymin), (xmax, ymax), (0, 0, 255), 2)  # BGR: Rojo
-            label = f"{class_name} ({confidence:.2f})"
-            cv2.putText(img_copy, label, (xmin, ymin - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
+                # Dibujar el rectángulo (en color rojo) y el texto de la clase con la confianza
+                cv2.rectangle(img_copy, (xmin, ymin), (xmax, ymax), (0, 0, 255), 2)  # BGR: Rojo
+                label = f"{class_name} ({confidence:.2f})"
+                cv2.putText(img_copy, label, (xmin, ymin - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
 
         # Convertir la imagen procesada a formato PIL (RGB) para que se pueda mostrar con customtkinter
         img_pil = Image.fromarray(cv2.cvtColor(img_copy, cv2.COLOR_BGR2RGB))  # Convertir a RGB
@@ -1133,7 +1139,7 @@ class View(ctk.CTk):
 
         # Actualizar la etiqueta con la nueva imagen
         self.image_label.configure(image=ctk_img)
-        self.image_label.image = ctk_img  # M
+        self.image_label.image = ctk_img  # Mantener la referencia
 
 
     def start_communication(self):
