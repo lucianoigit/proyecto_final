@@ -325,66 +325,70 @@ class View(ctk.CTk):
         
 
     def configure_classifier(self):
-        # Crear ventana de configuración
+        # Crear ventana de configuración    # Crear ventana de configuración
         classifier_window = ctk.CTkToplevel(self)
         classifier_window.title("Configuración de Clasificador")
         classifier_window.geometry("640x480")
 
-        # Botón para gestionar categorías
-        manage_button = ctk.CTkButton(classifier_window, text="Gestionar Categorías", command=self.display_categories)
-        manage_button.grid(row=0, column=0, padx=10, pady=10, columnspan=2)
+        # Botón para actualizar interfaz
+        refresh_button = ctk.CTkButton(classifier_window, text="Actualizar Interfaz", command=self.update_category_frame)
+        refresh_button.grid(row=0, column=0, padx=10, pady=10, columnspan=2)
 
         # Frame para mostrar y configurar categorías
         self.category_frame = ctk.CTkFrame(classifier_window)
         self.category_frame.grid(row=1, column=0, columnspan=2, padx=10, pady=10, sticky="nsew")
 
-    def display_categories(self):
-        """Mostrar categorías desde la memoria (self.categories) en la interfaz."""
+        # Actualizar la interfaz inicialmente
+        self.update_category_frame()
+
+    def update_category_frame(self):
+        """Actualizar el frame con las categorías almacenadas."""
         # Limpiar el frame antes de mostrar las categorías
         for widget in self.category_frame.winfo_children():
             widget.destroy()
 
-        positions = [(-100, 100), (100, 100), (-100, -100), (100, -100)]
-        max_categories = len(positions)
-
-        if len(self.categories) < max_categories:
-            # Espacio para agregar nuevas categorías
-            for i in range(len(self.categories), max_categories):
-                pos_x, pos_y = positions[i]
-                label = ctk.CTkLabel(self.category_frame, text=f"Espacio libre en ({pos_x}, {pos_y})")
+        if not self.categories:
+            # No hay categorías, mostrar campos para agregar nuevas
+            label = ctk.CTkLabel(self.category_frame, text="No hay categorías almacenadas. Agregue una nueva.")
+            label.grid(row=0, column=0, padx=10, pady=5, sticky="w")
+            self.create_new_category_fields()
+        else:
+            # Mostrar categorías existentes con opción de eliminar
+            for i, category in enumerate(self.categories):
+                name, x, y, z = category
+                label = ctk.CTkLabel(self.category_frame, text=f"{name} (X={x}, Y={y}, Z={z})")
                 label.grid(row=i, column=0, padx=10, pady=5, sticky="w")
 
-                name_entry = ctk.CTkEntry(self.category_frame, placeholder_text="Nombre de Categoría")
-                name_entry.grid(row=i, column=1, padx=5, pady=5)
-
-                save_button = ctk.CTkButton(
-                    self.category_frame,
-                    text="Guardar",
-                    command=lambda e=name_entry, x=pos_x, y=pos_y: self.add_category(e, x, y)
+                delete_button = ctk.CTkButton(
+                    self.category_frame, 
+                    text="Eliminar",
+                    command=lambda n=name: self.delete_category(n)
                 )
-                save_button.grid(row=i, column=2, padx=5, pady=5)
+                delete_button.grid(row=i, column=1, padx=5, pady=5)
 
-        # Mostrar categorías existentes
-        for i, category in enumerate(self.categories):
-            label = ctk.CTkLabel(
-                self.category_frame,
-                text=f"{category['name']} (X={category['x']}, Y={category['y']}, Z={category['z']})"
+            # Agregar campos para nuevas categorías al final
+            self.create_new_category_fields(start_row=len(self.categories))
+
+    def create_new_category_fields(self, start_row=0):
+        """Crear campos para agregar nuevas categorías con posiciones predefinidas."""
+        positions = [(-100, 100), (100, 100), (-100, -100), (100, -100)]
+
+        for i, pos in enumerate(positions):
+            label = ctk.CTkLabel(self.category_frame, text=f"Categoría (X={pos[0]}, Y={pos[1]})")
+            label.grid(row=start_row + i, column=0, padx=10, pady=5, sticky="w")
+
+            name_entry = ctk.CTkEntry(self.category_frame, placeholder_text="Nombre de Categoría")
+            name_entry.grid(row=start_row + i, column=1, padx=5, pady=5)
+
+            save_button = ctk.CTkButton(
+                self.category_frame, 
+                text="Guardar",
+                command=lambda e=name_entry, x=pos[0], y=pos[1]: self.add_category(e, x, y)
             )
-            label.grid(row=i, column=0, padx=10, pady=5, sticky="w")
-
-            name_entry = ctk.CTkEntry(self.category_frame, placeholder_text="Editar Nombre")
-            name_entry.insert(0, category["name"])
-            name_entry.grid(row=i, column=1, padx=5, pady=5)
-
-            edit_button = ctk.CTkButton(
-                self.category_frame,
-                text="Editar",
-                command=lambda e=name_entry, c=category: self.edit_category(e, c)
-            )
-            edit_button.grid(row=i, column=2, padx=5, pady=5)
+            save_button.grid(row=start_row + i, column=2, padx=5, pady=5)
 
     def add_category(self, name_entry, x, y):
-        """Agregar una nueva categoría al sistema."""
+        """Agregar una nueva categoría al sistema con posición fija."""
         name = name_entry.get()
         z = -600  # Posición Z fija
 
@@ -397,32 +401,28 @@ class View(ctk.CTk):
         def callback(response):
             if response == "OK":
                 print(f"Categoría '{name}' añadida con éxito en posición ({x}, {y}, {z}).")
-                self.categories.append({"name": name, "x": x, "y": y, "z": z})  # Guardar en memoria
-                self.display_categories()  # Actualizar interfaz
+                self.categories.append((name, x, y, z))  # Guardar en memoria
+                self.update_category_frame()
             else:
                 print(f"Error al añadir la categoría '{name}'. Respuesta: {response}")
 
         self.communication_service.send_and_receive(command, f"Categoría añadida", callback)
 
-    def edit_category(self, name_entry, category):
-        """Editar una categoría existente."""
-        new_name = name_entry.get()
-
-        if not new_name:
-            print("El nuevo nombre de la categoría es obligatorio.")
-            return
-
-        command = f"ADD_CATEGORY {new_name},{category['x']},{category['y']},{category['z']}"
+    def delete_category(self, name):
+        """Eliminar una categoría del sistema y de la memoria."""
+        command = f"REMOVE_CATEGORY {name}"
+        
+        upperName= name.upper()
 
         def callback(response):
             if response == "OK":
-                print(f"Categoría '{category['name']}' modificada a '{new_name}' en posición ({category['x']}, {category['y']}, {category['z']}).")
-                category["name"] = new_name  # Actualizar en memoria
-                self.display_categories()  # Actualizar interfaz
+                print(f"Categoría '{name}' eliminada con éxito.")
+                self.categories = [c for c in self.categories if c[0] != name]  # Eliminar de memoria
+                self.update_category_frame()
             else:
-                print(f"Error al modificar la categoría '{category['name']}'. Respuesta: {response}")
+                print(f"Error al eliminar la categoría '{name}'. Respuesta: {response}")
 
-        self.communication_service.send_and_receive(command, f"Categoría modificada", callback)
+        self.communication_service.send_and_receive(command, f"Categoría eliminada: {upperName}", callback)
 
     def configure_conveyor(self):
         # Crear ventana modal para configuración de velocidad
