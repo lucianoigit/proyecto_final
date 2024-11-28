@@ -723,11 +723,11 @@ class View(ctk.CTk):
     def close_application(self):
         
         def callback(response):
-            if(response =="OK")
-            self.quit()  
+            if(response =="OK"):
+                self.quit()  
         
         
-        self.communication_service.send_and_receive("NOHOME","OK",callback)
+        self.communication_service.send_and_receive("NOHOME 0.0,0.0,-800.0,0.0","OK",callback)
         
         
     def iniciar_clasificacion(self):
@@ -938,7 +938,8 @@ class View(ctk.CTk):
 
         # Iniciar la clasificación de manera continua
         def callback(response):
-            self.iniciar_clasificacion()  # Asegurarse de ejecutar el método correctamente
+            if(response =="OK"):
+                self.iniciar_clasificacion()  # Asegurarse de ejecutar el método correctamente
         
         
         self.communication_service.send_and_receive("HOME","OK",callback)
