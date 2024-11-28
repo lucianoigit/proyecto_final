@@ -323,82 +323,117 @@ class View(ctk.CTk):
         
         
 
-
     def configure_classifier(self):
+        # Crear ventana de configuración
         classifier_window = ctk.CTkToplevel(self)
         classifier_window.title("Configuración de Clasificador")
-        classifier_window.geometry("400x600")
+        classifier_window.geometry("500x600")
 
-        # Selección de modelo
-        model_label = ctk.CTkLabel(classifier_window, text="Seleccionar Modelo:")
-        model_label.grid(row=0, column=0, padx=10, pady=5, sticky="w")
+        # Botón para listar categorías
+        list_button = ctk.CTkButton(classifier_window, text="Listar Categorías", command=self.list_categories)
+        list_button.grid(row=0, column=0, padx=10, pady=10, columnspan=2)
 
-        model_options = ["Modelo 1", "Modelo 2"]  # Simulando opciones de modelos
-        self.selected_model = ctk.StringVar(value=model_options[0])
+        # Frame para mostrar y configurar categorías
+        self.category_frame = ctk.CTkFrame(classifier_window)
+        self.category_frame.grid(row=1, column=0, columnspan=2, padx=10, pady=10, sticky="nsew")
 
-        model_menu = ctk.CTkOptionMenu(classifier_window, values=model_options, variable=self.selected_model, command=self.load_classes_for_model)
-        model_menu.grid(row=0, column=1, padx=10, pady=5, sticky="ew")
-
-        # Frame para las clases
-        self.class_frame = ctk.CTkFrame(classifier_window)
-        self.class_frame.grid(row=1, column=0, columnspan=2, padx=10, pady=10, sticky="nsew")
-
-        # Cargar las clases iniciales para el primer modelo
-        self.load_classes_for_model(self.selected_model.get())
-
-    def load_classes_for_model(self, model_name):
-        """Cargar las clases y campos de entrada para el modelo seleccionado."""
-        # Simular clases y posiciones asociadas a cada modelo
-        if model_name == "Modelo 1":
-            self.model_classes = {
-                "Clase 1": {"x": -100, "y": 100},
-                "Clase 2": {"x": 100, "y": 100},
-                "Clase 3": {"x": -100, "y": -100},
-                "Clase 4": {"x": 100, "y": -100},
-            }
-        elif model_name == "Modelo 2":
-            self.model_classes = {
-                "Clase A": {"x": -50, "y": 50},
-                "Clase B": {"x": 50, "y": 50},
-                "Clase C": {"x": -50, "y": -50},
-                "Clase D": {"x": 50, "y": -50},
-            }
-
-        # Limpiar el frame de clases antes de agregar las nuevas entradas
-        for widget in self.class_frame.winfo_children():
-            widget.destroy()
-
-        # Crear campos de entrada para cada clase
-        for i, (class_name, pos) in enumerate(self.model_classes.items()):
-            label = ctk.CTkLabel(self.class_frame, text=class_name)
-            label.grid(row=i, column=0, padx=5, pady=5, sticky="w")
-
-            x_entry = ctk.CTkEntry(self.class_frame, width=50)
-            x_entry.insert(0, pos["x"])
-            x_entry.grid(row=i, column=1, padx=5, pady=5)
-
-            y_entry = ctk.CTkEntry(self.class_frame, width=50)
-            y_entry.insert(0, pos["y"])
-            y_entry.grid(row=i, column=2, padx=5, pady=5)
-
-            save_button = ctk.CTkButton(self.class_frame, text="Guardar", command=lambda c=class_name, x=x_entry, y=y_entry: self.set_class_position(c, x, y))
-            save_button.grid(row=i, column=3, padx=5, pady=5)
-
-    def set_class_position(self, class_name, x_entry, y_entry):
-        """Establece la posición para una clase y la guarda en el sistema."""
-        x, y = x_entry.get(), y_entry.get()
-        command = f"SET_POSITION {class_name} {x} {y}"
+    def list_categories(self):
+        """Solicitar y mostrar las categorías almacenadas."""
+        command = "LIST_CATEGORY"
 
         def callback(response):
-            expected_response = f"{class_name} Set to {x},{y}"
-            if expected_response in response:
-                print(f"{class_name} configurado exitosamente a X: {x}, Y: {y}")
-                self.model_classes[class_name]["x"] = x
-                self.model_classes[class_name]["y"] = y
-            else:
-                print(f"Error al configurar {class_name}. Respuesta recibida: {response}")
+            # Limpiar el frame antes de mostrar las categorías
+            for widget in self.category_frame.winfo_children():
+                widget.destroy()
 
-        self.communication_service.send_and_receive(command, f"{class_name} Set to {x},{y}", callback)
+            # Procesar la respuesta recibida
+            lines = response.strip().split("\n")
+
+            if "No hay categorías almacenadas" in lines[0]:
+                # No hay categorías, permitir agregar nuevas
+                label = ctk.CTkLabel(self.category_frame, text="No hay categorías almacenadas.")
+                label.grid(row=0, column=0, padx=10, pady=5, sticky="w")
+                self.create_new_category_fields()
+            else:
+                # Hay categorías almacenadas, mostrar y permitir edición
+                self.create_fixed_category_fields(lines[1:])
+
+        # Enviar comando al ESP32 y procesar respuesta
+        self.communication_service.get_data(command, callback)
+
+    def create_new_category_fields(self):
+        """Crear campos para agregar nuevas categorías con posiciones predefinidas."""
+        positions = [(-100, 100), (100, 100), (-100, -100), (100, -100)]
+        labels = ["Categoría 1", "Categoría 2", "Categoría 3", "Categoría 4"]
+
+        for i, (label_text, pos) in enumerate(zip(labels, positions)):
+            label = ctk.CTkLabel(self.category_frame, text=f"{label_text} (X={pos[0]}, Y={pos[1]})")
+            label.grid(row=i, column=0, padx=10, pady=5, sticky="w")
+
+            name_entry = ctk.CTkEntry(self.category_frame, placeholder_text="Nombre de Categoría")
+            name_entry.grid(row=i, column=1, padx=5, pady=5)
+
+            save_button = ctk.CTkButton(self.category_frame, text="Guardar",
+                                        command=lambda e=name_entry, x=pos[0], y=pos[1]: self.add_category(e, x, y))
+            save_button.grid(row=i, column=2, padx=5, pady=5)
+
+    def create_fixed_category_fields(self, category_lines):
+        """Mostrar categorías almacenadas y permitir edición."""
+        for i, line in enumerate(category_lines):
+            parts = line.split(". Steps: ")
+            if len(parts) == 2:
+                category_name, positions = parts
+                pos_x, pos_y, pos_z = map(int, positions.split(", "))
+
+                label = ctk.CTkLabel(self.category_frame, text=f"{category_name} (X={pos_x}, Y={pos_y}, Z={pos_z})")
+                label.grid(row=i, column=0, padx=10, pady=5, sticky="w")
+
+                name_entry = ctk.CTkEntry(self.category_frame, placeholder_text="Nuevo Nombre")
+                name_entry.insert(0, category_name)
+                name_entry.grid(row=i, column=1, padx=5, pady=5)
+
+                save_button = ctk.CTkButton(self.category_frame, text="Editar",
+                                            command=lambda e=name_entry, x=pos_x, y=pos_y, z=pos_z: self.edit_category(e, x, y, z))
+                save_button.grid(row=i, column=2, padx=5, pady=5)
+
+    def add_category(self, name_entry, x, y):
+        """Agregar una nueva categoría al sistema con posición fija."""
+        name = name_entry.get()
+        z = -600  # Posición Z fija
+
+        if not name:
+            print("El nombre de la categoría es obligatorio.")
+            return
+
+        command = f"ADD_CATEGORY {name},{x},{y},{z}"
+
+        def callback(response):
+            if response =="OK":
+                print(f"Categoría '{name}' añadida con éxito en posición ({x}, {y}, {z}).")
+                self.list_categories()
+            else:
+                print(f"Error al añadir la categoría '{name}'. Respuesta: {response}")
+
+        self.communication_service.send_and_receive(command, f"Categoría añadida: {name} .Posiciones: X={x}, Y={y}, Z={z}", callback)
+
+    def edit_category(self, name_entry, x, y, z):
+        """Editar una categoría existente con posición fija."""
+        new_name = name_entry.get()
+
+        if not new_name:
+            print("El nuevo nombre de la categoría es obligatorio.")
+            return
+
+        command = f"ADD_CATEGORY {new_name},{x},{y},{z}"
+
+        def callback(response):
+            if response =="OK":
+                print(f"Categoría '{new_name}' modificada con éxito en posición ({x}, {y}, {z}).")
+                self.list_categories()
+            else:
+                print(f"Error al modificar la categoría '{new_name}'. Respuesta: {response}")
+
+        self.communication_service.send_and_receive(command, f"Categoría modificada: {new_name} .Steps: X={x}, Y={y}, Z={z}", callback)
 
 
     def configure_conveyor(self):
