@@ -339,7 +339,7 @@ class View(ctk.CTk):
 
     def list_categories(self):
         """Solicitar y mostrar las categorías almacenadas."""
-        command = "LIST_CATEGORY"
+        command = "LIST_CATEGORIES"
 
         def callback(response):
             # Limpiar el frame antes de mostrar las categorías
