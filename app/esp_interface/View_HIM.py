@@ -390,7 +390,7 @@ class View(ctk.CTk):
     def add_category(self, name_entry, x, y):
         """Agregar una nueva categoría al sistema con posición fija."""
         name = name_entry.get()
-        z = -600  # Posición Z fija
+        z = -500  # Posición Z fija
 
         if not name:
             print("El nombre de la categoría es obligatorio.")
@@ -715,7 +715,7 @@ class View(ctk.CTk):
                 self.quit()  
         
         
-        self.communication_service.send_and_receive("NOHOME 0.0,0.0,-720.0,0.0","OK",callback)
+        self.communication_service.send_and_receive("NOHOME 0.0,0.0,-700.0,0.0","OK",callback)
         
         
     def iniciar_clasificacion(self):
@@ -731,7 +731,7 @@ class View(ctk.CTk):
                     def capture_image_in_background():
                         print("Capturando imagen en segundo plano...")
                         img = self.processing_service.capture_image()
-                        self.communication_service.send_message("EFFECTOR_ON")
+                  
                         if img is None:
                             print("Error: No se pudo capturar la imagen. Reiniciando proceso.")
                             self.root.after(500, self.reset_procesamiento)
@@ -751,7 +751,7 @@ class View(ctk.CTk):
                                 self.processing_service.save_residue_list(residue_list)
                                 self.update_image(self.image_resultado,df_filtrado)
                                 self.isProcessing = False
-                                self.communication_service.send_message("EFFECTOR_OFF")
+
 
                                 if self.first_run:
                                     print("Primer ciclo de clasificación: enviando datos sin esperar START.")
@@ -766,7 +766,7 @@ class View(ctk.CTk):
 
                             # Pasar el ROI calculado al procesamiento de detección de objetos
                             self.processing_service.detected_objects_in_background(
-                                img_undistorted, 0.2, detection_callback, self.mmx, self.mmy, self.roi
+                                img_undistorted, 0.6, detection_callback, self.mmx, self.mmy, self.roi
                             )
 
                         except Exception as e:
@@ -902,7 +902,7 @@ class View(ctk.CTk):
             (row['xmin'] + row['xmax']) / 2 -self.x_center,
             (row['ymin'] + row['ymax']) / 2 -self.y_center, self.mmx, self.mmy
         )
-        clase = int(row["class"])
+        clase = row["class_name"]
         print(f"Coordenada única generada: x={x_mm}, y={y_mm}, z={z}, clase={clase}")
         return round(x_mm, 2), round(y_mm, 2), z, clase
     
@@ -913,7 +913,7 @@ class View(ctk.CTk):
                 (row['xmin'] + row['xmax']) / 2-self.x_center,
                 (row['ymin'] + row['ymax']) / 2-self.y_center, self.mmx, self.mmy
             )
-            clase = int(row["class"])
+            clase = row["class_name"]
             print(f"Coordenada generada: x={x_mm}, y={y_mm}, z={z}, clase={clase}")
             yield round(x_mm, 2), round(y_mm, 2), z, clase
 

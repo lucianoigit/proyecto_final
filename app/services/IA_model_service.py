@@ -72,7 +72,7 @@ class MLModelService(MLModelInterface):
             detections = results[0].boxes.data.cpu().numpy()  # Obtener detecciones del primer resultado
             print("Detectados:", detections)
             names = self.model.names  # Obtener los nombres de las clases desde el modelo
-            df = pd.DataFrame(detections, columns=['xmin', 'ymin', 'xmax', 'ymax', 'confidence', 'class'])
+            df = pd.DataFrame(detections, columns=['xmin', 'ymin', 'xmax', 'ymax', 'confidence', 'class_name'])
 
             # Filtrar por confianza mínima
             df_filtrado = df[df['confidence'] >= confianza_minima]
@@ -84,7 +84,7 @@ class MLModelService(MLModelInterface):
                 df_filtrado[['ymin', 'ymax']] += y_min
 
             # Convertir el índice de clase a nombre de clase
-            df_filtrado['class_name'] = df_filtrado['class'].apply(lambda x: names[int(x)])
+           # df_filtrado['class_name'] = df_filtrado['class'].apply(lambda x: names[int(x)])
             return df_filtrado, img
         except Exception as e:
             print(f"Error al ejecutar el modelo: {e}")
