@@ -327,7 +327,7 @@ class View(ctk.CTk):
         # Crear ventana de configuración
         classifier_window = ctk.CTkToplevel(self)
         classifier_window.title("Configuración de Clasificador")
-        classifier_window.geometry("500x600")
+        classifier_window.geometry("640x480")
 
         # Botón para listar categorías
         list_button = ctk.CTkButton(classifier_window, text="Listar Categorías", command=self.list_categories)
@@ -440,7 +440,7 @@ class View(ctk.CTk):
         # Crear ventana modal para configuración de velocidad
         conveyor_window = ctk.CTkToplevel(self)
         conveyor_window.title("Configuración de Velocidad")
-        conveyor_window.geometry("400x600")
+        conveyor_window.geometry("640x480")
 
         # Variables a configurar
         self.speed_vars = {
