@@ -371,7 +371,7 @@ class View(ctk.CTk):
 
     def create_new_category_fields(self, start_row=0):
         """Crear campos para agregar nuevas categorías con posiciones predefinidas."""
-        positions = [(-100, 100), (100, 100), (-100, -100), (100, -100)]
+        positions = [(-80, 80), (80, 80), (-80, -80), (80, -80)]
 
         for i, pos in enumerate(positions):
             label = ctk.CTkLabel(self.category_frame, text=f"Categoría (X={pos[0]}, Y={pos[1]})")
