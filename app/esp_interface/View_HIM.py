@@ -380,11 +380,20 @@ class View(ctk.CTk):
     def create_fixed_category_fields(self, category_lines):
         """Mostrar categorías almacenadas y permitir edición."""
         for i, line in enumerate(category_lines):
+            # Dividir el nombre de la categoría y las posiciones
             parts = line.split(". Steps: ")
             if len(parts) == 2:
-                category_name, positions = parts
-                pos_x, pos_y, pos_z = map(int, positions.split(", "))
+                category_name = parts[0].strip()
+                positions = parts[1].strip()
 
+                # Dividir las posiciones en X, Y, Z
+                try:
+                    pos_x, pos_y, pos_z = map(int, positions.split(", "))
+                except ValueError:
+                    print(f"Error al procesar posiciones: {positions}")
+                    continue
+
+                # Mostrar los datos en la interfaz
                 label = ctk.CTkLabel(self.category_frame, text=f"{category_name} (X={pos_x}, Y={pos_y}, Z={pos_z})")
                 label.grid(row=i, column=0, padx=10, pady=5, sticky="w")
 
@@ -392,8 +401,11 @@ class View(ctk.CTk):
                 name_entry.insert(0, category_name)
                 name_entry.grid(row=i, column=1, padx=5, pady=5)
 
-                save_button = ctk.CTkButton(self.category_frame, text="Editar",
-                                            command=lambda e=name_entry, x=pos_x, y=pos_y, z=pos_z: self.edit_category(e, x, y, z))
+                save_button = ctk.CTkButton(
+                    self.category_frame, 
+                    text="Editar",
+                    command=lambda e=name_entry, x=pos_x, y=pos_y, z=pos_z: self.edit_category(e, x, y, z)
+                )
                 save_button.grid(row=i, column=2, padx=5, pady=5)
 
     def add_category(self, name_entry, x, y):
