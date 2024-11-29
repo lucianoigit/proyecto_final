@@ -23,12 +23,8 @@ class MLModelService(MLModelInterface):
 
     def run_model(self, img_path_or_img, confianza_minima=0.6, roi=None):
         """
-        Ejecuta el modelo de clasificación, dibuja rectángulos en la imagen y filtra detecciones fuera del ROI.
-        
-        :param img_path_or_img: Ruta de la imagen o imagen en formato numpy.
-        :param confianza_minima: Nivel mínimo de confianza para considerar una detección.
-        :param roi: Región de interés en formato (x_min, y_min, x_max, y_max). Si es None, se usará toda la imagen.
-        :return: DataFrame con detecciones filtradas y la imagen con gráficos de rectángulos.
+        Ejecuta el modelo de clasificación, ajusta coordenadas a las dimensiones originales (640x480),
+        filtra por confianza y ROI, y dibuja rectángulos en la imagen.
         """
         try:
             # Verificar si la entrada es una ruta de archivo o una imagen
@@ -45,6 +41,9 @@ class MLModelService(MLModelInterface):
                 print("Error: La imagen proporcionada es 'None' o está vacía.")
                 return None, None
 
+            # Dimensiones originales de la imagen
+            img_height, img_width = 480, 640  # Imagen es 640x480
+
             # Ejecutar el modelo en la imagen completa
             results = self.model(img)
             if not results:
@@ -56,20 +55,27 @@ class MLModelService(MLModelInterface):
             names = self.model.names  # Obtener los nombres de las clases desde el modelo
             df = pd.DataFrame(detections, columns=['xmin', 'ymin', 'xmax', 'ymax', 'confidence', 'class'])
 
-            # Log: Detecciones originales antes del filtrado
-            print("\nDetecciones originales:")
+            # Escalar las coordenadas de las detecciones al tamaño de la imagen original
+            scale_x, scale_y = img_width / 640, img_height / 640
+            df['xmin'] *= scale_x
+            df['xmax'] *= scale_x
+            df['ymin'] *= scale_y
+            df['ymax'] *= scale_y
+
+            # Log: Detecciones originales después de escalar
+            print("\nDetecciones originales (escaladas):")
             for _, row in df.iterrows():
                 print(f"Clase: {names[int(row['class'])]}, Confianza: {row['confidence']:.2f}, "
-                    f"Coordenadas: ({row['xmin']}, {row['ymin']}) -> ({row['xmax']}, {row['ymax']})")
+                    f"Coordenadas: ({row['xmin']:.2f}, {row['ymin']:.2f}) -> ({row['xmax']:.2f}, {row['ymax']:.2f})")
 
             # Filtrar por confianza mínima
             df_filtrado = df[df['confidence'] >= confianza_minima]
 
-            # Log: Detecciones después del filtrado por confianza mínima
+            # Log: Detecciones después del filtrado por confianza
             print("\nDetecciones después del filtrado por confianza:")
             for _, row in df_filtrado.iterrows():
                 print(f"Clase: {names[int(row['class'])]}, Confianza: {row['confidence']:.2f}, "
-                    f"Coordenadas: ({row['xmin']}, {row['ymin']}) -> ({row['xmax']}, {row['ymax']})")
+                    f"Coordenadas: ({row['xmin']:.2f}, {row['ymin']:.2f}) -> ({row['xmax']:.2f}, {row['ymax']:.2f})")
 
             # Si se proporciona un ROI, filtrar detecciones fuera de rango
             if roi:
@@ -84,7 +90,7 @@ class MLModelService(MLModelInterface):
                 print("\nDetecciones después del filtrado por ROI:")
                 for _, row in df_filtrado.iterrows():
                     print(f"Clase: {names[int(row['class'])]}, Confianza: {row['confidence']:.2f}, "
-                        f"Coordenadas: ({row['xmin']}, {row['ymin']}) -> ({row['xmax']}, {row['ymax']})")
+                        f"Coordenadas: ({row['xmin']:.2f}, {row['ymin']:.2f}) -> ({row['xmax']:.2f}, {row['ymax']:.2f})")
 
             # Dibujar rectángulos en la imagen para cada detección filtrada
             for _, row in df_filtrado.iterrows():
