@@ -749,7 +749,7 @@ class View(ctk.CTk):
                                 print("Clasificación completada, resultados almacenados en memoria.")
                                 self.update_articles_table()
                                 self.processing_service.save_residue_list(residue_list)
-                                self.update_image(self.image_resultado,df_filtrado)
+                                self.update_image(self.image_resultado)
                                 self.isProcessing = False
 
 
@@ -1105,40 +1105,25 @@ class View(ctk.CTk):
             ax2.set_xlabel('Fecha')
             ax2.set_ylabel('Cantidad de Residuos')
             self.update_figure(self.daily_histogram, fig2)
+    def update_image(self, img):
+        """
+        Actualiza la etiqueta de la interfaz para mostrar la imagen procesada directamente desde YOLO.
+        
+        :param img: Imagen procesada en formato numpy (ya contiene los gráficos de YOLO).
+        """
+        try:
+            # Convertir la imagen de OpenCV (BGR) a PIL (RGB)
+            img_pil = Image.fromarray(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
 
-    def update_image(self, img, df_filtrado):
+            # Convertir la imagen PIL a CTkImage para usarla en CustomTkinter
+            ctk_img = ctk.CTkImage(img_pil, size=(640, 480))  # Ajustar tamaño si es necesario
 
-        # Paso 1: Convertir la imagen a formato PIL (RGB)
-        img_pil = Image.fromarray(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))  # Convertir a RGB desde BGR
+            # Actualizar la etiqueta de la interfaz con la nueva imagen
+            self.image_label.configure(image=ctk_img)
+            self.image_label.image = ctk_img  # Mantener referencia para evitar que sea recolectada por el GC
 
-        # Paso 2: Usar ImageDraw para dibujar los rectángulos
-        draw = ImageDraw.Draw(img_pil)  # Crear un objeto ImageDraw
-
-        # Comprobar si el DataFrame tiene detecciones
-        if df_filtrado.empty:
-            # Si no hay detecciones, dibujar "No Detection"
-            draw.text((50, img_pil.height // 2), "No Detection", fill=(255, 0, 0), font=None, anchor="nw")
-        else:
-            # Dibujar los cuadros en la imagen usando las coordenadas del DataFrame
-            for _, row in df_filtrado.iterrows():
-                xmin, ymin, xmax, ymax = row['xmin'], row['ymin'], row['xmax'], row['ymax']
-                class_name = row['class_name']  # Nombre de la clase detectada
-                confidence = row['confidence']  # Confianza de la detección
-
-                # Dibujar el rectángulo en la imagen
-                draw.rectangle([xmin, ymin, xmax, ymax], outline="red", width=2)
-                
-                # Etiqueta de la clase y confianza
-                label = f"{class_name} ({confidence:.2f})"
-                draw.text((xmin, ymin - 10), label, fill="white")
-
-        # Paso 3: Convertir la imagen a formato CTkImage para CustomTkinter
-        ctk_img = ctk.CTkImage(img_pil, size=(640, 480))  # Ajustar el tamaño si es necesario
-
-        # Actualizar la etiqueta con la nueva imagen
-        self.image_label.configure(image=ctk_img)
-        self.image_label.image = ctk_img  # Mantener la referencia a la imagen
-
+        except Exception as e:
+            print(f"Error al actualizar la imagen: {e}")
 
 
     def start_communication(self):
