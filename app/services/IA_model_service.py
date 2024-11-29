@@ -56,17 +56,35 @@ class MLModelService(MLModelInterface):
             names = self.model.names  # Obtener los nombres de las clases desde el modelo
             df = pd.DataFrame(detections, columns=['xmin', 'ymin', 'xmax', 'ymax', 'confidence', 'class'])
 
+            # Log: Detecciones originales antes del filtrado
+            print("\nDetecciones originales:")
+            for _, row in df.iterrows():
+                print(f"Clase: {names[int(row['class'])]}, Confianza: {row['confidence']:.2f}, "
+                    f"Coordenadas: ({row['xmin']}, {row['ymin']}) -> ({row['xmax']}, {row['ymax']})")
+
             # Filtrar por confianza mínima
             df_filtrado = df[df['confidence'] >= confianza_minima]
+
+            # Log: Detecciones después del filtrado por confianza mínima
+            print("\nDetecciones después del filtrado por confianza:")
+            for _, row in df_filtrado.iterrows():
+                print(f"Clase: {names[int(row['class'])]}, Confianza: {row['confidence']:.2f}, "
+                    f"Coordenadas: ({row['xmin']}, {row['ymin']}) -> ({row['xmax']}, {row['ymax']})")
 
             # Si se proporciona un ROI, filtrar detecciones fuera de rango
             if roi:
                 x_min, y_min, x_max, y_max = roi
-                print(f"Filtrando detecciones fuera del ROI: x_min={x_min}, y_min={y_min}, x_max={x_max}, y_max={y_max}")
+                print(f"\nFiltrando detecciones fuera del ROI: x_min={x_min}, y_min={y_min}, x_max={x_max}, y_max={y_max}")
                 df_filtrado = df_filtrado[
                     (df_filtrado['xmin'] >= x_min) & (df_filtrado['xmax'] <= x_max) &
                     (df_filtrado['ymin'] >= y_min) & (df_filtrado['ymax'] <= y_max)
                 ]
+
+                # Log: Detecciones después del filtrado por ROI
+                print("\nDetecciones después del filtrado por ROI:")
+                for _, row in df_filtrado.iterrows():
+                    print(f"Clase: {names[int(row['class'])]}, Confianza: {row['confidence']:.2f}, "
+                        f"Coordenadas: ({row['xmin']}, {row['ymin']}) -> ({row['xmax']}, {row['ymax']})")
 
             # Dibujar rectángulos en la imagen para cada detección filtrada
             for _, row in df_filtrado.iterrows():
