@@ -63,17 +63,6 @@ class MLModelService(MLModelInterface):
             df['center_x'] = (df['xmin'] + df['xmax']) / 2
             df['center_y'] = (df['ymin'] + df['ymax']) / 2
 
-            # Dibujar todas las detecciones (antes del filtro)
-            for _, row in df.iterrows():
-                xmin, ymin, xmax, ymax = int(row['xmin']), int(row['ymin']), int(row['xmax']), int(row['ymax'])
-                class_name = names[int(row['class'])]
-                confidence = row['confidence']
-                center_x, center_y = row['center_x'], row['center_y']
-
-                # Dibujar detección en la imagen
-                cv2.rectangle(img, (xmin, ymin), (xmax, ymax), (255, 0, 0), 2)  # Azul para detecciones sin filtrar
-                cv2.circle(img, (int(center_x), int(center_y)), 5, (255, 0, 0), -1)  # Centro del rectángulo
-                cv2.putText(img, f"{class_name} {confidence:.2f}", (xmin, ymin - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
 
             # Log: Detecciones antes del filtro
             print("\nDetecciones originales (antes del filtro):")
