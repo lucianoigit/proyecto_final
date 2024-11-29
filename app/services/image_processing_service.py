@@ -51,7 +51,7 @@ class ImageProcessingService(ProcessingInterface):
             print(f"Error en undistorted_image: {e}")
             return None
 
-    def detected_objects(self, img_undistorted, confianza_minima=0.2,tamano_entrada=(416, 416), relation_x=0.00000, relation_y=0.00000, roi=None):
+    def detected_objects(self, img_undistorted, confianza_minima=0.2,tamano_entrada=(416, 416), relation_x=0.00000, relation_y=0.00000, roi=None,clases=[]):
         try:
             print("Procesando imagen...")
             print("Tipo de relation_x:", type(relation_x), "| Valor de relation_x:", relation_x)
@@ -59,7 +59,7 @@ class ImageProcessingService(ProcessingInterface):
             print("Confianza mínima:", confianza_minima)
             print("ROI:", roi)
 
-            df_filtrado, img_resultado = self.use_model.run_model(img_undistorted, confianza_minima, roi)
+            df_filtrado, img_resultado = self.use_model.run_model(img_undistorted, confianza_minima, roi,clases)
            
            
            
@@ -103,14 +103,14 @@ class ImageProcessingService(ProcessingInterface):
             print(f"Error durante la detección: {e}")
             return None, None, []
 
-    def detected_objects_in_background(self, img_undistorted, confianza_minima=0.2, callback=None, relation_x=0.00000,relation_y=0.0000,roi=None):
+    def detected_objects_in_background(self, img_undistorted, confianza_minima=0.2, callback=None, relation_x=0.00000,relation_y=0.0000,roi=None,clases=[]):
         """
         Ejecuta detected_objects en un hilo separado para no bloquear la interfaz.
         El `callback` se llamará con los resultados cuando la detección termine.
         """
 
         def run_detection():
-            df_filtrado, img_resultado, residue_list = self.detected_objects(img_undistorted, confianza_minima,None,relation_x,relation_y,roi)
+            df_filtrado, img_resultado, residue_list = self.detected_objects(img_undistorted, confianza_minima,None,relation_x,relation_y,roi,clases)
 
             # Aquí usamos el método after para actualizar la UI en el hilo principal
             if callback:

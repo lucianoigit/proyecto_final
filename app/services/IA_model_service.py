@@ -11,18 +11,18 @@ class MLModelService(MLModelInterface):
     def load_model(self):
         try:
             # Cargar el modelo YOLOv5 personalizado
-            """             model = YOLO(self.model_path)
-            model.export(format="ncnn") """
+            model = YOLO(self.model_path)
+            model.export(format="ncnn")
             # creates 'yolo11n_ncnn_model'
             # Load the exported NCNN model
-            ncnn_model = YOLO("best_ncnn_model")
+            ncnn_model = YOLO("yolo11n_ncnn_model")
             return ncnn_model
         except Exception as e:
             print(f"Error al cargar el modelo: {e}")
             return None
-    def run_model(self, img_path_or_img, confianza_minima=0.6, roi=None):
+    def run_model(self, img_path_or_img, confianza_minima=0.6, roi=None, clases=[]):
         """
-        Ejecuta el modelo, calcula los centros de los objetos detectados, y verifica si están dentro del ROI.
+        Ejecuta el modelo, calcula los centros de los objetos detectados, y filtra por clases, confianza y ROI.
         """
         try:
             # Cargar la imagen
@@ -63,15 +63,22 @@ class MLModelService(MLModelInterface):
             df['center_x'] = (df['xmin'] + df['xmax']) / 2
             df['center_y'] = (df['ymin'] + df['ymax']) / 2
 
+            # Convertir índices de clase a nombres
+            df['class_name'] = df['class'].apply(lambda x: names[int(x)])
 
-            # Log: Detecciones antes del filtro
+            # Log: Detecciones originales (antes del filtro)
             print("\nDetecciones originales (antes del filtro):")
             for _, row in df.iterrows():
-                print(f"Clase: {names[int(row['class'])]}, Confianza: {row['confidence']:.2f}, "
+                print(f"Clase: {row['class_name']}, Confianza: {row['confidence']:.2f}, "
                     f"Centro: ({row['center_x']:.2f}, {row['center_y']:.2f})")
 
             # Filtrar por confianza mínima
             df_filtrado = df[df['confidence'] >= confianza_minima]
+
+            # Filtrar por clases específicas si se proporcionan
+            if clases:
+                df_filtrado = df_filtrado[df_filtrado['class_name'].isin(clases)]
+                print(f"\nDetecciones después de filtrar por clases específicas: {clases}")
 
             # Dibujar el ROI en la imagen si está definido
             if roi:
@@ -88,16 +95,14 @@ class MLModelService(MLModelInterface):
             # Dibujar detecciones filtradas
             for _, row in df_filtrado.iterrows():
                 xmin, ymin, xmax, ymax = int(row['xmin']), int(row['ymin']), int(row['xmax']), int(row['ymax'])
-                class_name = names[int(row['class'])]
+                class_name = row['class_name']
                 confidence = row['confidence']
                 center_x, center_y = row['center_x'], row['center_y']
 
+                # Dibujar rectángulo y centro
                 cv2.rectangle(img, (xmin, ymin), (xmax, ymax), (0, 255, 0), 2)  # Verde para detecciones filtradas
                 cv2.circle(img, (int(center_x), int(center_y)), 5, (0, 255, 0), -1)  # Centro del rectángulo
                 cv2.putText(img, f"{class_name} {confidence:.2f}", (xmin, ymin - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
-
-            # Convertir índices de clase a nombres
-            df_filtrado['class_name'] = df_filtrado['class'].apply(lambda x: names[int(x)])
 
             return df_filtrado, img
         except Exception as e:
