@@ -1116,10 +1116,6 @@ class View(ctk.CTk):
             img_pil = Image.fromarray(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
 
             # Dibujar el ROI en la imagen si está definido
-            if roi:
-                draw = ImageDraw.Draw(img_pil)
-                x_min, y_min, x_max, y_max = roi
-                draw.rectangle([x_min, y_min, x_max, y_max], outline="green", width=3)
 
             ctk_img = ctk.CTkImage(img_pil, size=(640, 480))
             self.image_label.configure(image=ctk_img)

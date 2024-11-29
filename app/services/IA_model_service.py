@@ -78,6 +78,11 @@ class MLModelService(MLModelInterface):
             # Filtrar por confianza mínima
             df_filtrado = df[df['confidence'] >= confianza_minima]
 
+            # Dibujar el ROI en la imagen si está definido
+            if roi:
+                x_min, y_min, x_max, y_max = roi
+                print(f"\nDibujando ROI: x_min={x_min}, y_min={y_min}, x_max={x_max}, y_max={y_max}")
+                cv2.rectangle(img, (x_min, y_min), (x_max, y_max), (0, 255, 255), 2)  # Amarillo para el ROI
             # Filtrar por ROI si está definido
             if roi:
                 x_min, y_min, x_max, y_max = roi
@@ -85,6 +90,7 @@ class MLModelService(MLModelInterface):
                     (df_filtrado['xmin'] >= x_min) & (df_filtrado['xmax'] <= x_max) &
                     (df_filtrado['ymin'] >= y_min) & (df_filtrado['ymax'] <= y_max)
                 ]
+                
 
             # Dibujar detecciones filtradas
             for _, row in df_filtrado.iterrows():
