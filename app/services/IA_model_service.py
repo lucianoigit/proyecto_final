@@ -15,7 +15,7 @@ class MLModelService(MLModelInterface):
             model.export(format="ncnn") """
             # creates 'yolo11n_ncnn_model'
             # Load the exported NCNN model
-            ncnn_model = YOLO("yolo11n_ncnn_model")
+            ncnn_model = YOLO("best_ncnn_model")
             return ncnn_model
         except Exception as e:
             print(f"Error al cargar el modelo: {e}")
