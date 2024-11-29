@@ -22,7 +22,7 @@ class MLModelService(MLModelInterface):
             return None
     def run_model(self, img_path_or_img, confianza_minima=0.6, roi=None):
         """
-        Ejecuta el modelo, muestra detecciones antes del filtro, y procesa la imagen con las detecciones marcadas.
+        Ejecuta el modelo, calcula los centros de los objetos detectados, y verifica si están dentro del ROI.
         """
         try:
             # Cargar la imagen
@@ -59,21 +59,27 @@ class MLModelService(MLModelInterface):
             df['ymin'] *= scale_y
             df['ymax'] *= scale_y
 
+            # Calcular el centro de cada detección
+            df['center_x'] = (df['xmin'] + df['xmax']) / 2
+            df['center_y'] = (df['ymin'] + df['ymax']) / 2
+
             # Dibujar todas las detecciones (antes del filtro)
             for _, row in df.iterrows():
                 xmin, ymin, xmax, ymax = int(row['xmin']), int(row['ymin']), int(row['xmax']), int(row['ymax'])
                 class_name = names[int(row['class'])]
                 confidence = row['confidence']
+                center_x, center_y = row['center_x'], row['center_y']
 
                 # Dibujar detección en la imagen
                 cv2.rectangle(img, (xmin, ymin), (xmax, ymax), (255, 0, 0), 2)  # Azul para detecciones sin filtrar
+                cv2.circle(img, (int(center_x), int(center_y)), 5, (255, 0, 0), -1)  # Centro del rectángulo
                 cv2.putText(img, f"{class_name} {confidence:.2f}", (xmin, ymin - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
 
             # Log: Detecciones antes del filtro
             print("\nDetecciones originales (antes del filtro):")
             for _, row in df.iterrows():
                 print(f"Clase: {names[int(row['class'])]}, Confianza: {row['confidence']:.2f}, "
-                    f"Coordenadas: ({row['xmin']:.2f}, {row['ymin']:.2f}) -> ({row['xmax']:.2f}, {row['ymax']:.2f})")
+                    f"Centro: ({row['center_x']:.2f}, {row['center_y']:.2f})")
 
             # Filtrar por confianza mínima
             df_filtrado = df[df['confidence'] >= confianza_minima]
@@ -83,22 +89,22 @@ class MLModelService(MLModelInterface):
                 x_min, y_min, x_max, y_max = roi
                 print(f"\nDibujando ROI: x_min={x_min}, y_min={y_min}, x_max={x_max}, y_max={y_max}")
                 cv2.rectangle(img, (x_min, y_min), (x_max, y_max), (0, 255, 255), 2)  # Amarillo para el ROI
-            # Filtrar por ROI si está definido
-            if roi:
-                x_min, y_min, x_max, y_max = roi
+
+                # Filtrar detecciones cuyo centro esté dentro del ROI
                 df_filtrado = df_filtrado[
-                    (df_filtrado['xmin'] >= x_min) & (df_filtrado['xmax'] <= x_max) &
-                    (df_filtrado['ymin'] >= y_min) & (df_filtrado['ymax'] <= y_max)
+                    (df_filtrado['center_x'] >= x_min) & (df_filtrado['center_x'] <= x_max) &
+                    (df_filtrado['center_y'] >= y_min) & (df_filtrado['center_y'] <= y_max)
                 ]
-                
 
             # Dibujar detecciones filtradas
             for _, row in df_filtrado.iterrows():
                 xmin, ymin, xmax, ymax = int(row['xmin']), int(row['ymin']), int(row['xmax']), int(row['ymax'])
                 class_name = names[int(row['class'])]
                 confidence = row['confidence']
+                center_x, center_y = row['center_x'], row['center_y']
 
                 cv2.rectangle(img, (xmin, ymin), (xmax, ymax), (0, 255, 0), 2)  # Verde para detecciones filtradas
+                cv2.circle(img, (int(center_x), int(center_y)), 5, (0, 255, 0), -1)  # Centro del rectángulo
                 cv2.putText(img, f"{class_name} {confidence:.2f}", (xmin, ymin - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
             # Convertir índices de clase a nombres
