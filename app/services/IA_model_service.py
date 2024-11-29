@@ -20,7 +20,7 @@ class MLModelService(MLModelInterface):
         except Exception as e:
             print(f"Error al cargar el modelo: {e}")
             return None
-    def run_model(self, img_path_or_img, confianza_minima=0.6, roi=None, clases=[]):
+    def run_model(self, img_path_or_img, confianza_minima=0.6, roi=None):
         """
         Ejecuta el modelo, calcula los centros de los objetos detectados, y filtra por clases, confianza y ROI.
         """
@@ -75,10 +75,7 @@ class MLModelService(MLModelInterface):
             # Filtrar por confianza mínima
             df_filtrado = df[df['confidence'] >= confianza_minima]
 
-            # Filtrar por clases específicas si se proporcionan
-            if clases:
-                df_filtrado = df_filtrado[df_filtrado['class_name'].isin(clases)]
-                print(f"\nDetecciones después de filtrar por clases específicas: {clases}")
+
 
             # Dibujar el ROI en la imagen si está definido
             if roi:

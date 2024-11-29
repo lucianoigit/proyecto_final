@@ -51,7 +51,7 @@ class ImageProcessingService(ProcessingInterface):
             print(f"Error en undistorted_image: {e}")
             return None
 
-    def detected_objects(self, img_undistorted, confianza_minima=0.2,tamano_entrada=(416, 416), relation_x=0.00000, relation_y=0.00000, roi=None,clases=[]):
+    def detected_objects(self, img_undistorted, confianza_minima=0.2,tamano_entrada=(416, 416), relation_x=0.00000, relation_y=0.00000, roi=None):
         try:
             print("Procesando imagen...")
             print("Tipo de relation_x:", type(relation_x), "| Valor de relation_x:", relation_x)
@@ -59,7 +59,7 @@ class ImageProcessingService(ProcessingInterface):
             print("Confianza mínima:", confianza_minima)
             print("ROI:", roi)
 
-            df_filtrado, img_resultado = self.use_model.run_model(img_undistorted, confianza_minima, roi,clases)
+            df_filtrado, img_resultado = self.use_model.run_model(img_undistorted, confianza_minima, roi)
            
            
            
