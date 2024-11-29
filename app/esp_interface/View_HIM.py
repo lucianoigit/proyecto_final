@@ -1107,31 +1107,23 @@ class View(ctk.CTk):
             ax2.set_xlabel('Fecha')
             ax2.set_ylabel('Cantidad de Residuos')
             self.update_figure(self.daily_histogram, fig2)
-            
+                
     def update_image(self, img, roi=None):
         """
-        Actualiza la etiqueta de la interfaz para mostrar la imagen procesada directamente desde YOLO,
-        con el ROI marcado si se proporciona.
-        
-        :param img: Imagen procesada en formato numpy (ya contiene los gráficos de YOLO).
-        :param roi: Tupla que define el ROI en formato (x_min, y_min, x_max, y_max). Opcional.
+        Actualiza la etiqueta de la interfaz para mostrar la imagen procesada, incluyendo el ROI.
         """
         try:
-            # Convertir la imagen de OpenCV (BGR) a PIL (RGB)
             img_pil = Image.fromarray(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
 
-            # Si hay un ROI, dibujarlo sobre la imagen usando PIL
+            # Dibujar el ROI en la imagen si está definido
             if roi:
-                draw = ImageDraw.Draw(img_pil)  # Crear objeto para dibujar
+                draw = ImageDraw.Draw(img_pil)
                 x_min, y_min, x_max, y_max = roi
-                draw.rectangle([x_min, y_min, x_max, y_max], outline="green", width=3)  # Dibujar rectángulo verde
+                draw.rectangle([x_min, y_min, x_max, y_max], outline="green", width=3)
 
-            # Convertir la imagen PIL a CTkImage para usarla en CustomTkinter
-            ctk_img = ctk.CTkImage(img_pil, size=(640, 480))  # Ajustar tamaño si es necesario
-
-            # Actualizar la etiqueta de la interfaz con la nueva imagen
+            ctk_img = ctk.CTkImage(img_pil, size=(640, 480))
             self.image_label.configure(image=ctk_img)
-            self.image_label.image = ctk_img  # Mantener referencia para evitar que sea recolectada por el GC
+            self.image_label.image = ctk_img
 
         except Exception as e:
             print(f"Error al actualizar la imagen: {e}")

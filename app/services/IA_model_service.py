@@ -20,50 +20,57 @@ class MLModelService(MLModelInterface):
         except Exception as e:
             print(f"Error al cargar el modelo: {e}")
             return None
-
     def run_model(self, img_path_or_img, confianza_minima=0.6, roi=None):
         """
-        Ejecuta el modelo de clasificación, ajusta coordenadas a las dimensiones originales (640x480),
-        filtra por confianza y ROI, y dibuja rectángulos en la imagen.
+        Ejecuta el modelo, muestra detecciones antes del filtro, y procesa la imagen con las detecciones marcadas.
         """
         try:
-            # Verificar si la entrada es una ruta de archivo o una imagen
+            # Cargar la imagen
             if isinstance(img_path_or_img, str):
-                img = cv2.imread(img_path_or_img)  # Leer la imagen desde la ruta del archivo
+                img = cv2.imread(img_path_or_img)
                 if img is None:
                     print("Error: No se pudo leer la imagen desde la ruta proporcionada.")
                     return None, None
             else:
-                img = img_path_or_img  # Asumir que la entrada es una imagen en formato numpy
+                img = img_path_or_img
 
-            # Validación para retornar error si la imagen es None
+            # Validar imagen
             if img is None or img.size == 0:
                 print("Error: La imagen proporcionada es 'None' o está vacía.")
                 return None, None
 
-            # Dimensiones originales de la imagen
+            # Dimensiones originales
             img_height, img_width = 480, 640  # Imagen es 640x480
 
-            # Ejecutar el modelo en la imagen completa
+            # Ejecutar modelo
             results = self.model(img)
             if not results:
                 print("No se detectaron objetos.")
                 return None, None
 
-            # Obtener las detecciones
-            detections = results[0].boxes.data.cpu().numpy()  # Obtener detecciones del primer resultado
-            names = self.model.names  # Obtener los nombres de las clases desde el modelo
+            detections = results[0].boxes.data.cpu().numpy()
+            names = self.model.names
             df = pd.DataFrame(detections, columns=['xmin', 'ymin', 'xmax', 'ymax', 'confidence', 'class'])
 
-            # Escalar las coordenadas de las detecciones al tamaño de la imagen original
+            # Escalar coordenadas al tamaño original
             scale_x, scale_y = img_width / 640, img_height / 640
             df['xmin'] *= scale_x
             df['xmax'] *= scale_x
             df['ymin'] *= scale_y
             df['ymax'] *= scale_y
 
-            # Log: Detecciones originales después de escalar
-            print("\nDetecciones originales (escaladas):")
+            # Dibujar todas las detecciones (antes del filtro)
+            for _, row in df.iterrows():
+                xmin, ymin, xmax, ymax = int(row['xmin']), int(row['ymin']), int(row['xmax']), int(row['ymax'])
+                class_name = names[int(row['class'])]
+                confidence = row['confidence']
+
+                # Dibujar detección en la imagen
+                cv2.rectangle(img, (xmin, ymin), (xmax, ymax), (255, 0, 0), 2)  # Azul para detecciones sin filtrar
+                cv2.putText(img, f"{class_name} {confidence:.2f}", (xmin, ymin - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
+
+            # Log: Detecciones antes del filtro
+            print("\nDetecciones originales (antes del filtro):")
             for _, row in df.iterrows():
                 print(f"Clase: {names[int(row['class'])]}, Confianza: {row['confidence']:.2f}, "
                     f"Coordenadas: ({row['xmin']:.2f}, {row['ymin']:.2f}) -> ({row['xmax']:.2f}, {row['ymax']:.2f})")
@@ -71,42 +78,24 @@ class MLModelService(MLModelInterface):
             # Filtrar por confianza mínima
             df_filtrado = df[df['confidence'] >= confianza_minima]
 
-            # Log: Detecciones después del filtrado por confianza
-            print("\nDetecciones después del filtrado por confianza:")
-            for _, row in df_filtrado.iterrows():
-                print(f"Clase: {names[int(row['class'])]}, Confianza: {row['confidence']:.2f}, "
-                    f"Coordenadas: ({row['xmin']:.2f}, {row['ymin']:.2f}) -> ({row['xmax']:.2f}, {row['ymax']:.2f})")
-
-            # Si se proporciona un ROI, filtrar detecciones fuera de rango
+            # Filtrar por ROI si está definido
             if roi:
                 x_min, y_min, x_max, y_max = roi
-                print(f"\nFiltrando detecciones fuera del ROI: x_min={x_min}, y_min={y_min}, x_max={x_max}, y_max={y_max}")
                 df_filtrado = df_filtrado[
                     (df_filtrado['xmin'] >= x_min) & (df_filtrado['xmax'] <= x_max) &
                     (df_filtrado['ymin'] >= y_min) & (df_filtrado['ymax'] <= y_max)
                 ]
 
-                # Log: Detecciones después del filtrado por ROI
-                print("\nDetecciones después del filtrado por ROI:")
-                for _, row in df_filtrado.iterrows():
-                    print(f"Clase: {names[int(row['class'])]}, Confianza: {row['confidence']:.2f}, "
-                        f"Coordenadas: ({row['xmin']:.2f}, {row['ymin']:.2f}) -> ({row['xmax']:.2f}, {row['ymax']:.2f})")
-
-            # Dibujar rectángulos en la imagen para cada detección filtrada
+            # Dibujar detecciones filtradas
             for _, row in df_filtrado.iterrows():
                 xmin, ymin, xmax, ymax = int(row['xmin']), int(row['ymin']), int(row['xmax']), int(row['ymax'])
                 class_name = names[int(row['class'])]
                 confidence = row['confidence']
 
-                # Dibujar el rectángulo
-                cv2.rectangle(img, (xmin, ymin), (xmax, ymax), (0, 255, 0), 2)
-                # Añadir texto con la clase y la confianza
-                cv2.putText(
-                    img, f"{class_name} {confidence:.2f}", 
-                    (xmin, ymin - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2
-                )
+                cv2.rectangle(img, (xmin, ymin), (xmax, ymax), (0, 255, 0), 2)  # Verde para detecciones filtradas
+                cv2.putText(img, f"{class_name} {confidence:.2f}", (xmin, ymin - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
-            # Convertir el índice de clase a nombre de clase
+            # Convertir índices de clase a nombres
             df_filtrado['class_name'] = df_filtrado['class'].apply(lambda x: names[int(x)])
 
             return df_filtrado, img
