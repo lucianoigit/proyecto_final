@@ -1105,26 +1105,15 @@ class View(ctk.CTk):
             ax2.set_xlabel('Fecha')
             ax2.set_ylabel('Cantidad de Residuos')
             self.update_figure(self.daily_histogram, fig2)
-    def update_image(self, img):
-        """
-        Actualiza la etiqueta de la interfaz para mostrar la imagen procesada directamente desde YOLO.
-        
-        :param img: Imagen procesada en formato numpy (ya contiene los gráficos de YOLO).
-        """
-        try:
-            # Convertir la imagen de OpenCV (BGR) a PIL (RGB)
-            img_pil = Image.fromarray(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
+    def update_image(self, img, df_filtrado):
+        # Usar el método `show_result` para procesar la imagen con el DataFrame filtrado
+        img = self.processing_service.show_result(df_filtrado, img)
 
-            # Convertir la imagen PIL a CTkImage para usarla en CustomTkinter
-            ctk_img = ctk.CTkImage(img_pil, size=(640, 480))  # Ajustar tamaño si es necesario
-
-            # Actualizar la etiqueta de la interfaz con la nueva imagen
-            self.image_label.configure(image=ctk_img)
-            self.image_label.image = ctk_img  # Mantener referencia para evitar que sea recolectada por el GC
-
-        except Exception as e:
-            print(f"Error al actualizar la imagen: {e}")
-
+        # Convertir la imagen procesada para mostrar en el label
+        img_pil = Image.fromarray(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))  # Convertir a RGB
+        ctk_img = ctk.CTkImage(img_pil, size=(400, 300))  # Tamaño ajustado para la interfaz
+        self.image_label.configure(image=ctk_img)
+        self.image_label.image = ctk_img 
 
     def start_communication(self):
             # CALLBACK
