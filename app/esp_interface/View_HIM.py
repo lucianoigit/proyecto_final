@@ -1166,6 +1166,7 @@ class View(ctk.CTk):
 
         # Abrir ventana de la cámara
         cv2.namedWindow("Seleccione un punto", cv2.WINDOW_NORMAL)
+        cv2.resizeWindow("Seleccione un punto", 640, 480)  # Redimensionar la ventana
         cv2.setMouseCallback("Seleccione un punto", click_event)
 
         while True:
