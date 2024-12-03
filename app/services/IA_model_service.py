@@ -17,7 +17,7 @@ class MLModelService(MLModelInterface):
             print(f"Error al cargar el modelo: {e}")
             return None
     
-    def run_model(self, img_path_or_img, confianza_minima=0.8, roi=None):
+    def run_model(self, img_path_or_img, confianza_minima=0.8, roi=None,x_centroide=None, y_centroide=None):
         """
         Ejecuta el modelo, calcula los centros de los objetos detectados, y filtra por clases, confianza y ROI.
         """
@@ -36,9 +36,6 @@ class MLModelService(MLModelInterface):
                 print("Error: La imagen proporcionada es 'None' o está vacía.")
                 return None, None
 
-            # Dimensiones originales
-            img_height, img_width = 480, 640  # Imagen es 640x480
-
             # Ejecutar modelo
             results = self.model(img)
             if not results:
@@ -48,14 +45,7 @@ class MLModelService(MLModelInterface):
             detections = results[0].boxes.data.cpu().numpy()
             names = self.model.names
             df = pd.DataFrame(detections, columns=['xmin', 'ymin', 'xmax', 'ymax', 'confidence', 'class'])
-
-            # Escalar coordenadas al tamaño original
-            scale_x, scale_y = img_width / 640, img_height / 640
-            df['xmin'] *= scale_x
-            df['xmax'] *= scale_x
-            df['ymin'] *= scale_y
-            df['ymax'] *= scale_y
-
+            
             # Calcular el centro de cada detección
             df['center_x'] = (df['xmin'] + df['xmax']) / 2
             df['center_y'] = (df['ymin'] + df['ymax']) / 2

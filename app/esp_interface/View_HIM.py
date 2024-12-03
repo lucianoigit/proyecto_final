@@ -146,7 +146,7 @@ class View(ctk.CTk):
         main_panel.grid_rowconfigure(2, weight=1)
 
         # Crear botón de inicio y detener
-        """         self.start_button = ctk.CTkButton(main_panel, text="", 
+        self.start_button = ctk.CTkButton(main_panel, text="", 
                                         command=self.on_start_button_clicked, 
                                         image=self.load_icon("icons/start.png"),
                                         fg_color=self.img_frame_color, 
@@ -154,9 +154,9 @@ class View(ctk.CTk):
                                         border_width=2,
                                         hover_color=self.bg_color,
                                         text_color=self.text_color)
-        self.start_button.grid(row=1, column=0, padx=5, pady=5, sticky="ew") """
+        self.start_button.grid(row=1, column=0, padx=5, pady=5, sticky="ew") 
         
-        self.test_button = ctk.CTkButton(main_panel, text="", 
+        """         self.test_button = ctk.CTkButton(main_panel, text="", 
                                         command=self.select_point_from_camera, 
                                         image=self.load_icon("icons/start.png"),
                                         fg_color=self.img_frame_color, 
@@ -164,7 +164,7 @@ class View(ctk.CTk):
                                         border_width=2,
                                         hover_color=self.bg_color,
                                         text_color=self.text_color)
-        self.test_button.grid(row=1, column=0, padx=5, pady=5, sticky="ew")
+        self.test_button.grid(row=1, column=0, padx=5, pady=5, sticky="ew") """
 
         self.stop_button = ctk.CTkButton(main_panel, text="", 
                                         command=self.on_stop_button_clicked, 
@@ -917,8 +917,8 @@ class View(ctk.CTk):
         Genera la coordenada para un único dato clasificado.
         """
         x_mm, y_mm = self.transport_service.convert_pixels_to_mm(
-            (row['xmin'] + row['xmax']) / 2 -self.x_center,
-            (row['ymin'] + row['ymax']) / 2 -self.y_center, self.mmx, self.mmy
+            (row["center_x"]) / 2 -self.x_center,
+            (row["center_y"]) / 2 -self.y_center, self.mmx, self.mmy
         )
         clase = row["class_name"]
         print(f"Coordenada única generada: x={x_mm}, y={y_mm}, z={z}, clase={clase}")
@@ -928,9 +928,9 @@ class View(ctk.CTk):
         print("Generando coordenadas para datos clasificados.")
         for _, row in df_filtrado.iterrows():
             x_mm, y_mm = self.transport_service.convert_pixels_to_mm(
-                (row['xmin'] + row['xmax']) / 2-self.x_center,
-                (row['ymin'] + row['ymax']) / 2-self.y_center, self.mmx, self.mmy
-            )
+            (row["center_x"]) / 2 -self.x_center,
+            (row["center_y"]) / 2 -self.y_center, self.mmx, self.mmy
+        )
             clase = row["class_name"]
             print(f"Coordenada generada: x={x_mm}, y={y_mm}, z={z}, clase={clase}")
             yield round(x_mm, 2), round(y_mm, 2), z, clase
@@ -976,7 +976,8 @@ class View(ctk.CTk):
         )
         print(f"Calibración de espacio físico completada: pixels_per_mm_x={pixels_per_mm_x}, pixels_per_mm_y={pixels_per_mm_y}")
 
-        x_center, y_center = self.transport_service.calculate_center(x1, x2, y1, y4)
+        centroid = self.calculate_centroid([(x1, y1), (x2, y2), (x3, y3), (x4, y4)])
+        x_center, y_center = centroid
         print(f"Punto central calculado: x_center={x_center}, y_center={y_center}")
 
         self.x_center = x_center
@@ -996,7 +997,14 @@ class View(ctk.CTk):
         
         print("Calibración completada con éxito")
         
-     
+    def calculate_centroid(points):
+        """Calcula el centroide de un conjunto de puntos (vértices del polígono)."""
+        x_coords = [p[0] for p in points]
+        y_coords = [p[1] for p in points]
+        centroid_x = int(np.mean(x_coords))
+        centroid_y = int(np.mean(y_coords))
+                
+        return (centroid_x,centroid_y)
 
 
         
