@@ -1198,9 +1198,9 @@ class View(ctk.CTk):
         relation_x = self.mmx  # Relación píxeles a milímetros en X
         relation_y = self.mmy  # Relación píxeles a milímetros en Y
 
-        # Convertir las coordenadas de píxeles a milímetros
-        x_mm = x_pixel * relation_x
-        y_mm = y_pixel * relation_y
+        x_mm, y_mm = self.transport_service.convert_pixels_to_mm(
+   x_pixel-self.x_center,y_pixel-self.y_center,self.mmy,self.mmx
+        )
         print(f"Coordenadas convertidas: X_mm={x_mm}, Y_mm={y_mm}")
 
         # Validar si están dentro de los límites permitidos
