@@ -146,7 +146,7 @@ class View(ctk.CTk):
         main_panel.grid_rowconfigure(2, weight=1)
 
         # Crear botón de inicio y detener
-        self.start_button = ctk.CTkButton(main_panel, text="", 
+        """         self.start_button = ctk.CTkButton(main_panel, text="", 
                                         command=self.on_start_button_clicked, 
                                         image=self.load_icon("icons/start.png"),
                                         fg_color=self.img_frame_color, 
@@ -154,7 +154,7 @@ class View(ctk.CTk):
                                         border_width=2,
                                         hover_color=self.bg_color,
                                         text_color=self.text_color)
-        self.start_button.grid(row=1, column=0, padx=5, pady=5, sticky="ew")
+        self.start_button.grid(row=1, column=0, padx=5, pady=5, sticky="ew") """
         
         self.test_button = ctk.CTkButton(main_panel, text="", 
                                         command=self.select_point_from_camera, 
@@ -1153,6 +1153,7 @@ class View(ctk.CTk):
                     print("Fallo la conexion", response)
             self.communication_service.send_and_receive("CONECTAR", "Conectado", handle_response)
 
+
     def select_point_from_camera(self):
         """Abre la cámara para seleccionar un punto y lo envía al procesador si cumple con los límites."""
         self.selected_point = None  # Inicializar variable para el punto seleccionado
@@ -1170,7 +1171,16 @@ class View(ctk.CTk):
         cv2.setMouseCallback("Seleccione un punto", click_event)
 
         while True:
+            # Asegurarse de que la cámara esté correctamente inicializada
+            if self.picam2 is None:
+                print("Error: Cámara no inicializada")
+                break
+
             frame = self.picam2.capture_array()  # Capturar frame de la cámara
+            if frame is None:
+                print("Error: No se pudo obtener un frame de la cámara")
+                break
+            
             frame_bgr = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
 
             # Mostrar el punto seleccionado en el frame
@@ -1195,26 +1205,46 @@ class View(ctk.CTk):
         Convierte las coordenadas de píxeles a milímetros y las valida.
         Solo se envían las coordenadas si están dentro del rango permitido.
         """
+        # Asegúrate de que la relación esté inicializada correctamente
+        if self.mmx == 0 or self.mmy == 0:
+            print("Error: Las relaciones mmx o mmy no están inicializadas correctamente.")
+            return
+        
         # Factores de conversión (relaciones definidas)
         relation_x = self.mmx  # Relación píxeles a milímetros en X
         relation_y = self.mmy  # Relación píxeles a milímetros en Y
 
-        x_mm, y_mm = self.transport_service.convert_pixels_to_mm(
-   x_pixel-self.x_center,y_pixel-self.y_center,self.mmy,self.mmx
-        )
-        print(f"Coordenadas convertidas: X_mm={x_mm}, Y_mm={y_mm}")
+        # Asegúrate de que el servicio de transporte esté inicializado
+        if self.transport_service is None:
+            print("Error: El servicio de transporte no está inicializado.")
+            return
 
-        # Validar si están dentro de los límites permitidos
-        if -100 <= x_mm <= 100 and -100 <= y_mm <= 100:
-            print(f"Punto válido: X_mm={x_mm}, Y_mm={y_mm}")
-            self.send_coordinates(x_mm, y_mm)
-        else:
-            print(f"Punto fuera de rango: X_mm={x_mm}, Y_mm={y_mm}. No se enviará.")
+        try:
+            # Convertir los puntos de píxeles a milímetros
+            x_mm, y_mm = self.transport_service.convert_pixels_to_mm(
+                x_pixel - self.x_center, y_pixel - self.y_center, relation_y, relation_x
+            )
+            print(f"Coordenadas convertidas: X_mm={x_mm}, Y_mm={y_mm}")
+
+            # Validar si están dentro de los límites permitidos
+            if -100 <= x_mm <= 100 and -100 <= y_mm <= 100:
+                print(f"Punto válido: X_mm={x_mm}, Y_mm={y_mm}")
+                self.send_coordinates(x_mm, y_mm)
+            else:
+                print(f"Punto fuera de rango: X_mm={x_mm}, Y_mm={y_mm}. No se enviará.")
+        except Exception as e:
+            print(f"Error al procesar el punto: {e}")
 
     def send_coordinates(self, x_mm, y_mm):
         """Envía las coordenadas validadas al sistema."""
+        # Asegúrate de que el comando sea válido
         command = f"SEND_POINT {x_mm:.2f} {y_mm:.2f}"  # Crear el comando
         print(f"Enviando comando: {command}")
+
+        # Asegúrate de que el servicio de comunicación esté disponible
+        if self.communication_service is None:
+            print("Error: El servicio de comunicación no está disponible.")
+            return
 
         def callback(response):
             if response == "OK":
