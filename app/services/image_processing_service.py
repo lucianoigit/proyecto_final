@@ -160,31 +160,3 @@ class ImageProcessingService(ProcessingInterface):
         self.residue_repository.save_all(residue_list)
         
     
-    def show_result(self, df_filtrado, img):
-        if df_filtrado is not None and not df_filtrado.empty and img is not None:
-            for index, row in df_filtrado.iterrows():
-                # Definir coordenadas del rectángulo
-                x_min, y_min, x_max, y_max = int(row['xmin']), int(row['ymin']), int(row['xmax']), int(row['ymax'])
-                
-                # Dibujar el rectángulo de detección
-                cv2.rectangle(img, (x_min, y_min), (x_max, y_max), (0, 255, 0), 2)
-                
-                # Calcular y dibujar el centroide
-                centro_x = (x_min + x_max) // 2
-                centro_y = (y_min + y_max) // 2
-                cv2.circle(img, (centro_x, centro_y), 5, (255, 0, 0), -1)  # Dibuja el centro en azul
-                
-                # Agregar texto con nombre de la clase y nivel de confianza
-                class_name = row['class_name']
-                confidence = row['confidence']
-                label = f"{class_name} {confidence:.2f}"
-                cv2.putText(img, label, (x_min, y_min - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
-                
-                print(f"Objeto detectado: {class_name} con confianza {confidence:.2f} en ({centro_x}, {centro_y})")
-
-            return img
-        else:
-            if img is not None:
-                print("No hay resultados para mostrar.")
-                return img
-                

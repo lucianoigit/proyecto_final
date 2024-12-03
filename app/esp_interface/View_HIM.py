@@ -155,6 +155,16 @@ class View(ctk.CTk):
                                         hover_color=self.bg_color,
                                         text_color=self.text_color)
         self.start_button.grid(row=1, column=0, padx=5, pady=5, sticky="ew")
+        
+        self.test_button = ctk.CTkButton(main_panel, text="", 
+                                        command=self.select_point_from_camera, 
+                                        image=self.load_icon("icons/start.png"),
+                                        fg_color=self.img_frame_color, 
+                                        border_color=self.btn_color,              
+                                        border_width=2,
+                                        hover_color=self.bg_color,
+                                        text_color=self.text_color)
+        self.test_button.grid(row=1, column=0, padx=5, pady=5, sticky="ew")
 
         self.stop_button = ctk.CTkButton(main_panel, text="", 
                                         command=self.on_stop_button_clicked, 
@@ -1143,3 +1153,74 @@ class View(ctk.CTk):
                     print("Fallo la conexion", response)
             self.communication_service.send_and_receive("CONECTAR", "Conectado", handle_response)
 
+    def select_point_from_camera(self):
+        """Abre la cámara para seleccionar un punto y lo envía al procesador si cumple con los límites."""
+        self.selected_point = None  # Inicializar variable para el punto seleccionado
+
+        def click_event(event, x, y, flags, param):
+            """Captura el evento de clic en la imagen y guarda las coordenadas del punto seleccionado."""
+            if event == cv2.EVENT_LBUTTONDOWN:
+                self.selected_point = (x, y)
+                print(f"Punto seleccionado: X={x}, Y={y}")
+                cv2.destroyAllWindows()  # Cerrar la ventana después de seleccionar un punto
+
+        # Abrir ventana de la cámara
+        cv2.namedWindow("Seleccione un punto", cv2.WINDOW_NORMAL)
+        cv2.setMouseCallback("Seleccione un punto", click_event)
+
+        while True:
+            frame = self.picam2.capture_array()  # Capturar frame de la cámara
+            frame_bgr = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+
+            # Mostrar el punto seleccionado en el frame
+            if self.selected_point:
+                cv2.circle(frame_bgr, self.selected_point, 5, (0, 255, 0), -1)  # Dibujar punto seleccionado
+
+            cv2.imshow("Seleccione un punto", frame_bgr)
+
+            # Esperar a que se seleccione un punto o se presione 'q' para salir
+            if cv2.waitKey(1) & 0xFF == ord('q') or self.selected_point:
+                break
+
+        cv2.destroyAllWindows()  # Asegurarse de que se cierre la ventana
+
+        if self.selected_point:
+            x, y = self.selected_point
+            print(f"Coordenadas seleccionadas: X={x}, Y={y}")
+            self.process_and_validate_point(x, y)  # Llama a la función para procesar y validar el punto
+
+    def process_and_validate_point(self, x_pixel, y_pixel):
+        """
+        Convierte las coordenadas de píxeles a milímetros y las valida.
+        Solo se envían las coordenadas si están dentro del rango permitido.
+        """
+        # Factores de conversión (relaciones definidas)
+        relation_x = self.mmx  # Relación píxeles a milímetros en X
+        relation_y = self.mmy  # Relación píxeles a milímetros en Y
+
+        # Convertir las coordenadas de píxeles a milímetros
+        x_mm = x_pixel * relation_x
+        y_mm = y_pixel * relation_y
+        print(f"Coordenadas convertidas: X_mm={x_mm}, Y_mm={y_mm}")
+
+        # Validar si están dentro de los límites permitidos
+        if -100 <= x_mm <= 100 and -100 <= y_mm <= 100:
+            print(f"Punto válido: X_mm={x_mm}, Y_mm={y_mm}")
+            self.send_coordinates(x_mm, y_mm)
+        else:
+            print(f"Punto fuera de rango: X_mm={x_mm}, Y_mm={y_mm}. No se enviará.")
+
+    def send_coordinates(self, x_mm, y_mm):
+        """Envía las coordenadas validadas al sistema."""
+        command = f"SEND_POINT {x_mm:.2f} {y_mm:.2f}"  # Crear el comando
+        print(f"Enviando comando: {command}")
+
+        def callback(response):
+            if response == "OK":
+                print(f"Coordenadas enviadas con éxito: X_mm={x_mm}, Y_mm={y_mm}")
+            else:
+                print(f"Error al enviar coordenadas. Respuesta: {response}")
+
+        command = f"{x_mm},{y_mm},{-600},{self.offset},nada"
+        print(f"Enviando comando de único dato: {command}")
+        self.communication_service.send_and_receive(command, "OK", callback)

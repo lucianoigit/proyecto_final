@@ -23,7 +23,3 @@ class ProcessingInterface(ABC):
     @abstractmethod
     def save_residue_list(self):
         pass
-
-    @abstractmethod
-    def show_result(self, df_filtrado, img):
-        pass
