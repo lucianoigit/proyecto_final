@@ -8,6 +8,7 @@ from queue import Queue
 import time
 from datetime import datetime
 import numpy as np
+import serial
 
 class CameraApp:
     def __init__(self):
@@ -51,6 +52,21 @@ class CameraApp:
         # Iniciar la actualización de la interfaz
         self.update_ui()
 
+        try:
+            # Configuración del puerto serial
+            self.serial_port = serial.Serial(
+                port='/dev/ttyUSB0',  # Cambia esto según tu configuración
+                baudrate=115200,
+                timeout=1
+            )
+            
+            # Enviar el comando para encender la luz
+            self.serial_port.write(b"LED_ON\n")
+            print("Comando 'LED_ON' enviado")
+        
+        except Exception as e:
+            print(f"Error al enviar el mensaje: {str(e)}")
+
     def setup_ui(self):
         """Configura la interfaz de usuario"""
         # Frame principal responsivo
@@ -70,48 +86,35 @@ class CameraApp:
         ctk.CTkLabel(left_frame, text="Controles de Cámara").pack(pady=10)
         
         # Agregar controles deslizantes (repetir para cada control)
-        controls = [
-            ("Brillo", self.update_brightness, 54.44, 0, 100),
-            ("Exposición", self.update_exposure, 66.66, 0, 100),
-            ("Contraste", self.update_contrast, 1, -100, 100),
-            ("Saturación", self.update_saturation, -1, -100, 100),
-            ("Nitidez", self.update_sharpness, 2, -100, 100),
-            ("ISO", self.update_iso, 100, 100, 800),
-        ]
         
-        for label, command, default, min_val, max_val in controls:
-            ctk.CTkLabel(left_frame, text=f"{label}:").pack(pady=2)
-            slider = ctk.CTkSlider(left_frame, from_=min_val, to=max_val, command=command)
-            slider.set(default)
-            slider.pack(pady=5, padx=10, fill="x")
         
         # Otras configuraciones (balance de blancos, resolución, etc.)
-        ctk.CTkLabel(left_frame, text="Balance de Blancos Automático:").pack(pady=2)
-        self.awb_checkbox = ctk.CTkCheckBox(
-            left_frame, text="Activar", command=self.toggle_awb
-        )
-        self.awb_checkbox.select()
-        self.awb_checkbox.pack(pady=5, padx=10, fill="x")
+        # ctk.CTkLabel(left_frame, text="Balance de Blancos Automático:").pack(pady=2)
+        # self.awb_checkbox = ctk.CTkCheckBox(
+        #     left_frame, text="Activar", command=self.toggle_awb
+        # )
+        # self.awb_checkbox.select()
+        # self.awb_checkbox.pack(pady=5, padx=10, fill="x")
         
-        ctk.CTkLabel(left_frame, text="Modo de Balance de Blancos:").pack(pady=2)
-        self.awb_mode_menu = ctk.CTkOptionMenu(
-            left_frame, 
-            values=["auto", "incandescent", "fluorescent", "daylight", "cloudy"],
-            command=self.change_awb_mode
-        )
-        self.awb_mode_menu.set("auto")
-        self.awb_mode_menu.pack(pady=5, padx=10, fill="x")
+        # ctk.CTkLabel(left_frame, text="Modo de Balance de Blancos:").pack(pady=2)
+        # self.awb_mode_menu = ctk.CTkOptionMenu(
+        #     left_frame, 
+        #     values=["auto", "incandescent", "fluorescent", "daylight", "cloudy"],
+        #     command=self.change_awb_mode
+        # )
+        # self.awb_mode_menu.set("auto")
+        # self.awb_mode_menu.pack(pady=5, padx=10, fill="x")
         
-        ctk.CTkLabel(left_frame, text="Resolución:").pack(pady=2)
+        # ctk.CTkLabel(left_frame, text="Resolución:").pack(pady=2)
         self.resolution_var = ctk.StringVar(value="640x480")
-        resolutions = ["640x480", "1280x720", "1920x1080"]
-        self.resolution_menu = ctk.CTkOptionMenu(
-            left_frame, 
-            values=resolutions,
-            variable=self.resolution_var,
-            command=self.change_resolution
-        )
-        self.resolution_menu.pack(pady=5, padx=10, fill="x")
+        # resolutions = ["640x480", "1280x720", "1920x1080"]
+        # self.resolution_menu = ctk.CTkOptionMenu(
+        #     left_frame, 
+        #     values=resolutions,
+        #     variable=self.resolution_var,
+        #     command=self.change_resolution
+        # )
+        # self.resolution_menu.pack(pady=5, padx=10, fill="x")
         
         # Botón de captura
         self.capture_button = ctk.CTkButton(
@@ -193,11 +196,14 @@ class CameraApp:
         """Inicializa la cámara"""
         try:
             self.picam2 = Picamera2()
+            self.camera_config = self.picam2.create_preview_configuration()
             self.camera_config = self.picam2.create_still_configuration(
-                main={"size": (640, 480)},
-                lores={"size": (320, 240)},
-                display="lores"
-            )
+                main={"size": (640, 480)})
+            # self.camera_config = self.picam2.create_still_configuration(
+            #     main={"size": (640, 480)},
+            #     lores={"size": (320, 240)},
+            #     display="lores"
+            # )
             self.picam2.configure(self.camera_config)
             self.picam2.start()
             time.sleep(2)  # Dar tiempo a la cámara para inicializarse
@@ -230,18 +236,42 @@ class CameraApp:
         """Loop principal de captura de la cámara"""
         while self.is_running:
             try:
+                # Captura el frame de la cámara
                 frame = self.picam2.capture_array()
-                frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                 
+                # Detección de bordes con Canny
+                edges = cv2.Canny(frame, 100, 200)
+                edges_rgb = cv2.cvtColor(edges, cv2.COLOR_GRAY2RGB)
+                
+                # Si la cola está llena, elimina el frame más antiguo
                 if self.frame_queue.full():
                     self.frame_queue.get()
                 
-                self.frame_queue.put(frame_rgb)
-                time.sleep(0.03)  # ~30 FPS
+                # Agrega el frame procesado (detección de bordes) a la cola
+                self.frame_queue.put(edges_rgb)
                 
+                time.sleep(0.03)  # ~30 FPS
             except Exception as e:
                 print(f"Error en captura: {str(e)}")
                 time.sleep(0.1)
+
+    # def camera_capture_loop(self):
+        # """Loop principal de captura de la cámara"""
+        # while self.is_running:
+        #     try:
+        #         frame = self.picam2.capture_array()
+        #         # frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                
+        #         if self.frame_queue.full():
+        #             self.frame_queue.get()
+                
+        #         # self.frame_queue.put(frame_rgb)
+        #         self.frame_queue.put(frame)
+        #         time.sleep(0.03)  # ~30 FPS
+                
+        #     except Exception as e:
+        #         print(f"Error en captura: {str(e)}")
+        #         time.sleep(0.1)
 
     def update_ui(self):
         """Actualiza la interfaz de usuario con el último frame disponible"""
@@ -277,10 +307,11 @@ class CameraApp:
             filename = f"{next_number}.jpg"
             filepath = os.path.join(object_dir, filename)
             
-            cv2.imwrite(filepath, frame)
-            
             frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            image = Image.fromarray(frame_rgb)
+            cv2.imwrite(filepath, frame_rgb)
+            
+            # image = Image.fromarray(frame_rgb)
+            image = Image.fromarray(frame)
             image = self.resize_image_for_display(image)
             photo = ImageTk.PhotoImage(image)
             self.capture_label.configure(image=photo)

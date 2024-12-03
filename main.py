@@ -20,8 +20,8 @@ def main():
 
     # Inicializa la cámara sin configurarla todavía
     picam2 = Picamera2()
-           # Configurar y comenzar la captura
-    picam2.configure(picam2.create_preview_configuration(main={"size": (640, 480), "format": "RGB888"}))
+    # Configurar y comenzar la captura
+    picam2.configure(picam2.create_still_configuration(main={"size": (640, 480)}))
     picam2.start()
         
     
@@ -29,10 +29,8 @@ def main():
         residue_repository = ResidueRepository(session)
         serial_service = SerialService(SERIAL_PORT, BAUD_RATE)
 
-      
-
         # Configuración del modelo y otros servicios
-        use_model = MLModelService(model_path="yolo11n.pt")
+        use_model = MLModelService(model_path="best_ncnn_model_yolo11n")
         reports_service = ReportsService(residue_repository)
         transport_service = TransportService()
 

@@ -11,16 +11,13 @@ class MLModelService(MLModelInterface):
     def load_model(self):
         try:
             # Cargar el modelo YOLOv5 personalizado
-            """             model = YOLO(self.model_path)
-            model.export(format="ncnn") """
-            # creates 'yolo11n_ncnn_model'
-            # Load the exported NCNN model
-            ncnn_model = YOLO("best_ncnn_model")
-            return ncnn_model
+            model = YOLO(self.model_path)
+            return model
         except Exception as e:
             print(f"Error al cargar el modelo: {e}")
             return None
-    def run_model(self, img_path_or_img, confianza_minima=0.6, roi=None):
+    
+    def run_model(self, img_path_or_img, confianza_minima=0.8, roi=None):
         """
         Ejecuta el modelo, calcula los centros de los objetos detectados, y filtra por clases, confianza y ROI.
         """
@@ -33,7 +30,7 @@ class MLModelService(MLModelInterface):
                     return None, None
             else:
                 img = img_path_or_img
-
+            
             # Validar imagen
             if img is None or img.size == 0:
                 print("Error: La imagen proporcionada es 'None' o está vacía.")

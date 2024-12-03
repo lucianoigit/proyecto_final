@@ -3,8 +3,25 @@ import numpy as np
 from picamera2 import Picamera2
 from ultralytics import YOLO
 import pandas as pd
+import serial
 
 def main():
+    try:
+        # Configuración del puerto serial
+        serial_port = serial.Serial(
+            port='/dev/ttyUSB0',  # Cambia esto según tu configuración
+            baudrate=115200,
+            timeout=1
+        )
+        
+        # Enviar el comando para encender la luz
+        serial_port.write(b"LED_ON\n")
+        print("Comando 'LED_ON' enviado")
+    
+    except Exception as e:
+        print(f"Error al enviar el mensaje: {str(e)}")
+
+
     try:
         # Inicializar la cámara
         picam2 = Picamera2()
@@ -14,8 +31,9 @@ def main():
         print("Cámara inicializada. Presiona 'q' para salir.")
 
         # Cargar el modelo YOLO
-        model_path = "best_ncnn_model"  # Ruta al modelo
-        model = YOLO(model_path)
+        # model_path = "best_ncnn_model"  # Ruta al modelo
+        model_path = "best.pt"  # Ruta al modelo	
+        model = YOLO(model_path, task='detect')
 
         while True:
             # Capturar imagen de la cámara

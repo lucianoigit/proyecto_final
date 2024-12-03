@@ -1,0 +1,38 @@
+{
+    "confidence": 0.8,
+    "workspace_area": {
+        "vertices": [
+            {
+                "x": 111,
+                "y": 61
+            },
+            {
+                "x": 532,
+                "y": 67
+            },
+            {
+                "x": 531,
+                "y": 432
+            },
+            {
+                "x": 112,
+                "y": 429
+            }
+        ],
+        "centroid": {
+            "x": 321,
+            "y": 247
+        }
+    },
+    "models": {
+        "BOTELLAS": {
+            "path": "best_ncnn_yolo11n",
+            "classes": {
+                "bottle": {
+                    "x": null,
+                    "y": null
+                }
+            }
+        }
+    }
+}

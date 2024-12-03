@@ -284,7 +284,7 @@ class View(ctk.CTk):
         self.daily_histogram = ctk.CTkLabel(self.stats_panel, text="", fg_color=self.btn_color, text_color=self.btn_color)
         self.daily_histogram.grid(row=2, column=0, padx=10, pady=10, sticky="ew")
 
-                # Panel de configuración con fondo blanco
+        # Panel de configuración con fondo blanco
         configure_panel = ctk.CTkFrame(self, fg_color=self.img_frame_color)  # Fondo blanco
         configure_panel.grid(row=0, column=1, sticky="nsew", padx=20, pady=20)
         self.panels["configure"] = configure_panel
@@ -530,13 +530,14 @@ class View(ctk.CTk):
         scrollable_frame = ctk.CTkScrollableFrame(calibration_window, width=400, height=500)
         scrollable_frame.pack(fill="both", expand=True, padx=10, pady=10)
 
-        instruction_label = ctk.CTkLabel(scrollable_frame, text=(
-            "Por favor, seleccione los puntos en el siguiente orden:\n"
-            "1. Esquina superior izquierda (x1, y1)\n"
-            "2. Esquina superior derecha (x2, y2)\n"
-            "3. Esquina inferior derecha (x3, y3)\n"
-            "4. Esquina inferior izquierda (x4, y4)"
-        ))
+        instruction_label = ctk.CTkLabel(scrollable_frame, text=("Por favor, seleccione los puntos en la imagen"))
+        # instruction_label = ctk.CTkLabel(scrollable_frame, text=(
+        #     "Por favor, seleccione los puntos en el siguiente orden:\n"
+        #     "1. Esquina superior izquierda (x1, y1)\n"
+        #     "2. Esquina superior derecha (x2, y2)\n"
+        #     "3. Esquina inferior derecha (x3, y3)\n"
+        #     "4. Esquina inferior izquierda (x4, y4)"
+        # ))
         instruction_label.grid(row=0, column=0, columnspan=2, padx=10, pady=(10, 20), sticky="ew")
 
         self.points = []
@@ -545,19 +546,24 @@ class View(ctk.CTk):
             self.points.clear()
 
             cv2.namedWindow("Seleccione cuatro puntos",cv2.WINDOW_NORMAL)
+            # cv2.setWindowProperty("Seleccione cuatro puntos",cv2.WND_PROP_FULLSCREEN,cv2.WINDOW_FULLSCREEN)
             cv2.setWindowProperty("Seleccione cuatro puntos",cv2.WND_PROP_AUTOSIZE,cv2.WINDOW_FULLSCREEN)
             cv2.setMouseCallback("Seleccione cuatro puntos", click_event)
 
             while True:
                 frame = self.picam2.capture_array()
+                frame_bgr = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+                # frame_bgr = cv2.rotate(frame_bgr, cv2.ROTATE_90_CLOCKWISE)
+                # frame_bgr = cv2.rotate(frame_bgr, cv2.ROTATE_180)
+                # frame_bgr = cv2.rotate(frame_bgr, cv2.ROTATE_90_COUNTERCLOCKWISE)
                 for point in self.points:
-                    cv2.circle(frame, point, 5, (255, 0, 0), -1)
+                    cv2.circle(frame_bgr, point, 5, (255, 0, 0), -1)
 
                 if len(self.points) == 4:
                     ordered_points = ordenar_puntos(self.points)
-                    cv2.polylines(frame, [np.array(ordered_points)], isClosed=True, color=(0, 255, 0), thickness=2)
+                    cv2.polylines(frame_bgr, [np.array(ordered_points)], isClosed=True, color=(0, 255, 0), thickness=2)
 
-                cv2.imshow("Seleccione cuatro puntos", frame)
+                cv2.imshow("Seleccione cuatro puntos", frame_bgr)
 
                 if cv2.waitKey(1) & 0xFF == ord('q') or len(self.points) == 4:
                     break
@@ -721,9 +727,9 @@ class View(ctk.CTk):
     def iniciar_clasificacion(self):
         if self.isOpen is True:
             if not self.isProcessing:
-                print("### Iniciando proceso de clasificación ###")
-                print("relacion x ", self.mmx)
-                print("relacion y ", self.mmy)
+                # print("### Iniciando proceso de clasificación ###")
+                # print("relacion x ", self.mmx)
+                # print("relacion y ", self.mmy)
                 self.isProcessing = True
                 if self.df_filtrado is None or self.df_filtrado.empty:
                     print("Entramos a la clasificación - Primer ciclo o nuevo inicio.")
@@ -766,7 +772,7 @@ class View(ctk.CTk):
 
                             # Pasar el ROI calculado al procesamiento de detección de objetos
                             self.processing_service.detected_objects_in_background(
-                                img_undistorted, 0.6, detection_callback, self.mmx, self.mmy, self.roi
+                                img_undistorted, 0.2, detection_callback, self.mmx, self.mmy, self.roi
                             )
 
                         except Exception as e:

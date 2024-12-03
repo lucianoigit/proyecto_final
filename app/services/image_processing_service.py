@@ -28,6 +28,9 @@ class ImageProcessingService(ProcessingInterface):
         try:
             img_rgb = self.picam2.capture_array()
             img_bgr = cv2.cvtColor(img_rgb, cv2.COLOR_RGB2BGR)
+            # img_bgr = cv2.rotate(img_bgr, cv2.ROTATE_90_CLOCKWISE)
+            # img_bgr = cv2.rotate(img_bgr, cv2.ROTATE_180)
+            # img_bgr = cv2.rotate(img_bgr, cv2.ROTATE_90_COUNTERCLOCKWISE)
             return img_bgr
         except Exception as e:
             print(f"Error capturando la imagen: {e}")
@@ -54,8 +57,8 @@ class ImageProcessingService(ProcessingInterface):
     def detected_objects(self, img_undistorted, confianza_minima=0.2,tamano_entrada=(416, 416), relation_x=0.00000, relation_y=0.00000, roi=None):
         try:
             print("Procesando imagen...")
-            print("Tipo de relation_x:", type(relation_x), "| Valor de relation_x:", relation_x)
-            print("Tipo de relation_y:", type(relation_y), "| Valor de relation_y:", relation_y)
+            # print("Tipo de relation_x:", type(relation_x), "| Valor de relation_x:", relation_x)
+            # print("Tipo de relation_y:", type(relation_y), "| Valor de relation_y:", relation_y)
             print("Confianza mínima:", confianza_minima)
             print("ROI:", roi)
 

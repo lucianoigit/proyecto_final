@@ -1,0 +1,23 @@
+(venv) raspberrypi@raspberrypi:~/proyecto_final $ rpicam-vid --width 640 --height 480 -o video.h264 -t 10000
+[2:52:50.557553435] [3125]  INFO Camera camera_manager.cpp:325 libcamera v0.3.2+27-7330f29b
+[2:52:50.659014642] [3128]  WARN RPiSdn sdn.cpp:40 Using legacy SDN tuning - please consider moving SDN inside rpi.denoise
+[2:52:50.664401119] [3128]  INFO RPI vc4.cpp:447 Registered camera /base/soc/i2c0mux/i2c@1/ov5647@36 to Unicam device /dev/media3 and ISP device /dev/media0
+[2:52:50.664538983] [3128]  INFO RPI pipeline_base.cpp:1126 Using configuration file '/usr/share/libcamera/pipeline/rpi/vc4/rpi_apps.yaml'
+Made X/EGL preview window
+Mode selection for 640:480:12:P
+    SGBRG10_CSI2P,640x480/0 - Score: 1000
+    SGBRG10_CSI2P,1296x972/0 - Score: 1287
+    SGBRG10_CSI2P,1920x1080/0 - Score: 1636.67
+    SGBRG10_CSI2P,2592x1944/0 - Score: 1854
+Stream configuration adjusted
+[2:52:51.302442873] [3125]  INFO Camera camera.cpp:1197 configuring streams: (0) 640x480-YUV420 (1) 640x480-SGBRG10_CSI2P
+[2:52:51.303068181] [3128]  INFO RPI vc4.cpp:622 Sensor: /base/soc/i2c0mux/i2c@1/ov5647@36 - Selected sensor format: 640x480-SGBRG10_1X10 - Selected unicam format: 640x480-pGAA
+Halting: reached timeout of 10000 milliseconds.
+(venv) raspberrypi@raspberrypi:~/proyecto_final $ python image_capturer.py
+[2:56:21.527791221] [3172]  INFO Camera camera_manager.cpp:325 libcamera v0.3.2+27-7330f29b
+[2:56:21.585244781] [3180]  WARN RPiSdn sdn.cpp:40 Using legacy SDN tuning - please consider moving SDN inside rpi.denoise
+[2:56:21.590331166] [3180]  INFO RPI vc4.cpp:447 Registered camera /base/soc/i2c0mux/i2c@1/ov5647@36 to Unicam device /dev/media3 and ISP device /dev/media0
+[2:56:21.590472051] [3180]  INFO RPI pipeline_base.cpp:1126 Using configuration file '/usr/share/libcamera/pipeline/rpi/vc4/rpi_apps.yaml'
+[2:56:21.606347713] [3172]  INFO Camera camera.cpp:1197 configuring streams: (0) 640x480-BGR888 (1) 320x240-YUV420 (2) 640x480-SGBRG10_CSI2P
+[2:56:21.607066252] [3180]  INFO RPI vc4.cpp:622 Sensor: /base/soc/i2c0mux/i2c@1/ov5647@36 - Selected sensor format: 640x480-SGBRG10_1X10 - Selected unicam format: 640x480-pGAA
+/home/raspberrypi/proyecto_final/venv/lib/python3.11/site-packages/customtkinter/windows/widgets/core_widget_classes/ctk_base_class.py:179: UserWarning: CTkLabel Warning: Given image is not CTkImage but <class 'PIL.I

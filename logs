@@ -1,7 +1,0 @@
-(venv) raspberrypi@raspberrypi:~/proyecto_final $ python main.py
-Traceback (most recent call last):
-  File "/home/raspberrypi/proyecto_final/main.py", line 1, in <module>
-    from app.esp_interface.View_HIM import View
-  File "/home/raspberrypi/proyecto_final/app/esp_interface/View_HIM.py", line 2, in <module>
-    from PIL import Image, ImageTk,ImageOps
-ImportError: cannot import name 'ImageTk' from 'PIL' (/usr/lib/python3/dist-packages/PIL/__init__.py)
