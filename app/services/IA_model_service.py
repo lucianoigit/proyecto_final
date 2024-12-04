@@ -35,10 +35,10 @@ class MLModelService(MLModelInterface):
             return cv2.pointPolygonTest(polygon, (x, y), False) >= 0
         return False
 
-    def run_model(self, img_path_or_img, confianza_minima=0.8, area_de_trabajo=None):
+    def run_model(self, img_path_or_img, confianza_minima=0.8, x_centroide=None, y_centroide=None, area_de_trabajo=None):
         """
         Ejecuta el modelo, calcula los centros de los objetos detectados, y filtra por clases y confianza.
-        Ahora, verifica si los centros de las detecciones están dentro del área de trabajo definida por un polígono.
+        Además, dibuja el centroide general y los centros de las detecciones de los objetos.
         """
         try:
             # Cargar la imagen
@@ -93,6 +93,11 @@ class MLModelService(MLModelInterface):
                     cv2.rectangle(img, (xmin, ymin), (xmax, ymax), (0, 0, 255), 2)  # Rojo para detecciones fuera
                     cv2.circle(img, (int(center_x), int(center_y)), 5, (0, 0, 255), -1)  # Centro de la detección en rojo
                     cv2.putText(img, f"{class_name} {confidence:.2f}", (xmin, ymin - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
+
+            # Graficar el centroide general (x_centroide, y_centroide) si están definidos
+            if x_centroide is not None and y_centroide is not None:
+                cv2.circle(img, (int(x_centroide), int(y_centroide)), 5, (255, 0, 0), -1)  # Centroide general (azul)
+                cv2.putText(img, "Centroide", (int(x_centroide), int(y_centroide) - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
 
             return df_filtrado, img
         except Exception as e:
