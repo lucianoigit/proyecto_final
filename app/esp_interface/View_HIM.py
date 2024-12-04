@@ -61,6 +61,7 @@ class View(ctk.CTk):
         self.moving_conveyor_belt_speed=None
         self.moving_home_max_speed=None
         self.categories = []
+        self.config_data = self.load_config()
         
 
         # Paleta de colores aplicada
@@ -557,7 +558,7 @@ class View(ctk.CTk):
 
             cv2.namedWindow("Seleccione cuatro puntos",cv2.WINDOW_NORMAL)
             cv2.setWindowProperty("Seleccione cuatro puntos",cv2.WND_PROP_FULLSCREEN,cv2.WINDOW_FULLSCREEN)
-            """ cv2.setWindowProperty("Seleccione cuatro puntos",cv2.WND_PROP_AUTOSIZE,cv2.WINDOW_FULLSCREEN) """
+            #cv2.setWindowProperty("Seleccione cuatro puntos",cv2.WND_PROP_AUTOSIZE,cv2.WINDOW_FULLSCREEN)
             cv2.setMouseCallback("Seleccione cuatro puntos", click_event)
 
             while True:
@@ -974,6 +975,7 @@ class View(ctk.CTk):
             physical_width_mm,
             physical_height_mm,self.x1,self.x2,self.y1,self.y4
         )
+        self.calculate_scale_factor()
         print(f"Calibración de espacio físico completada: pixels_per_mm_x={pixels_per_mm_x}, pixels_per_mm_y={pixels_per_mm_y}")
 
         centroid = self.calculate_centroid(self.points)
@@ -1265,4 +1267,85 @@ class View(ctk.CTk):
             print(f"Enviando comando de único dato: {command}")
             self.communication_service.send_and_receive(command, "OK", callback)
         except Exception as e:
-            print(f"Error al enviar las coordenadas: {e}")
+            print(f"Error al enviar las coordenadas: {e}")    
+    
+    def calculate_scale_factor(self, reference_size=(200,200)):
+        """
+        Calcular el factor de escala para convertir pixeles a milímetros.
+        
+        :param reference_size: Tamaño de referencia en mm (ancho, alto)
+        """
+        def point_distance(p1, p2):
+            return np.sqrt((p1[0] - p2[0])**2 + (p1[1] - p2[1])**2)
+
+        distance_px = [
+            point_distance(self.points[0], self.points[1]),
+            point_distance(self.points[1], self.points[2]),
+            point_distance(self.points[2], self.points[3]),
+            point_distance(self.points[3], self.points[0])
+        ]
+
+        # Mapeo de distancias de referencia
+        ref_width, ref_height = reference_size
+        expected_side_lengths = [ref_width, ref_height, ref_width, ref_height]
+
+        scale_factors = [expected / mesure for expected, mesure in zip(expected_side_lengths, distance_px)]
+        self.mmy = np.mean(scale_factors)
+        self.mmx = self.mmy
+
+        print(f"Factor de escala (píxeles a mm): {self.mmy}")
+        
+        
+        
+
+    def configure_area(self):
+        """Configurar el área de trabajo mediante selección de puntos de referencia."""
+        self.points.clear()
+
+        cv2.namedWindow("Seleccione cuatro puntos", cv2.WINDOW_NORMAL)
+        cv2.setWindowProperty("Seleccione cuatro puntos", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
+        cv2.setMouseCallback("Seleccione cuatro puntos", self.mouse_callback)
+
+        while True:
+            frame = self.picam2.capture_array()
+            frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+
+            # Dibujar puntos seleccionados
+            for point in self.points:
+                cv2.circle(frame, point, 5, (0, 255, 0), -1)
+
+            # Dibujar segmentos entre puntos seleccionados
+            if len(self.points) > 1:
+                for i in range(len(self.points) - 1):
+                    cv2.line(frame, self.points[i], self.points[i+1], (0, 255, 0), 2)
+            
+            # Dibujar centroide y guardar
+            if len(self.points) == 4:
+                cv2.polylines(frame, [np.array(self.points)], isClosed=True, color=(255, 0, 0), thickness=2)
+
+                centroid = self.calculate_centroid(self.points)
+                cv2.circle(frame, centroid, 5, (0, 0, 255), -1)
+
+                font = cv2.FONT_HERSHEY_SIMPLEX
+                cv2.putText(frame, "Guardando...", (50, 50), font, 1, (0, 255, 255), 2, cv2.LINE_AA)
+
+                cv2.imshow("Seleccione cuatro puntos", frame)
+                cv2.waitKey(3000)
+                break
+            else:
+                font = cv2.FONT_HERSHEY_SIMPLEX
+                cv2.putText(frame, 'Seleccione 4 puntos', (50, 50), font, 1, (0, 255, 255), 2, cv2.LINE_AA)
+
+            cv2.imshow("Seleccione cuatro puntos", frame)
+
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
+        cv2.destroyAllWindows()
+
+    def mouse_callback(self, event, x, y, flags, param):
+        """Manejar eventos del mouse para seleccionar puntos."""
+        if event == cv2.EVENT_LBUTTONDOWN:
+            if len(self.points) < 4:
+                self.points.append((x, y))
+                print(f"Punto seleccionado: {(x, y)}")
+

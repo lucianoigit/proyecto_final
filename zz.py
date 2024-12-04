@@ -60,7 +60,7 @@ class ObjectDetectionApp:
 
     def load_config(self):
         """Cargar configuraciones desde un archivo JSON."""
-        config_file = "config.json"
+        config_file = "config2.json"
         if os.path.exists(config_file):
             with open(config_file, "r") as file:
                 return json.load(file)
