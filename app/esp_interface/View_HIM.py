@@ -276,7 +276,7 @@ class View(ctk.CTk):
         self.reports_scrollable_frame = ctk.CTkScrollableFrame(
             reports_panel, 
             fg_color=self.nav_color,  # Color de fondo ajustado
-            width=400,  # Ancho ajustado
+            width=640,  # Ancho ajustado
             height=300  # Alto ajustado
         )
         self.reports_scrollable_frame.grid(row=1, column=0, padx=10, pady=10, sticky="nsew")
