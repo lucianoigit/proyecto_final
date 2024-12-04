@@ -17,6 +17,17 @@ class MLModelService(MLModelInterface):
         except Exception as e:
             print(f"Error al cargar el modelo: {e}")
             return None
+        
+    def inicialiced_model(self,img):
+        try:
+            results = self.model(img)
+            if not results:
+                print("No se detectaron objetos.")
+                return None, None
+        except Exception as e:
+            print("Fallo la inicializacion")
+            return None
+            
 
     def is_point_inside_workspace(self, x, y, area_de_trabajo):
         """

@@ -21,6 +21,7 @@ class ImageProcessingService(ProcessingInterface):
         self.use_model = use_model
         self.transport_service = transport_service
         self.picam2 = picamera  # Inyección de la cámara
+        self.hilos=None
 
     def capture_image(self):
         # Detener la cámara en caso de que esté activa
@@ -56,6 +57,7 @@ class ImageProcessingService(ProcessingInterface):
 
     def detected_objects(self, img_undistorted, confianza_minima=0.2,tamano_entrada=(416, 416), relation_x=0.00000, relation_y=0.00000, roi=None,x_center=None,y_center=None,points=None):
         try:
+            print("Cantidad de hilos andado",self.hilos)
             print("Procesando imagen...")
             # print("Tipo de relation_x:", type(relation_x), "| Valor de relation_x:", relation_x)
             # print("Tipo de relation_y:", type(relation_y), "| Valor de relation_y:", relation_y)
@@ -125,6 +127,33 @@ class ImageProcessingService(ProcessingInterface):
         # Crear y arrancar el hilo
         self.detection_thread = threading.Thread(target=run_detection)
         self.detection_thread.start()
+        self.hilos.append(self.detection_thread)
+        
+    def inicialiced_model_inference(self,callback=None):
+        """
+        Ejecuta detected_objects en un hilo separado para no bloquear la interfaz.
+        El `callback` se llamará con los resultados cuando la detección termine.
+        """
+
+        def run_detection():
+            image = self.picam2.capture_array()
+            resultado = self.use_model.inicialiced_model(image)
+            # Aquí usamos el método after para actualizar la UI en el hilo principal
+            if callback:
+                # Si necesitas pasar los datos de vuelta al hilo principal para actualizar la interfaz
+                if(resultado == None):
+                    response = "FAIL"
+                    callback(response)
+                else:
+                    response = "SUCESS"
+                    callback(response)
+                    
+                
+
+        # Crear y arrancar el hilo
+        self.detection_thread = threading.Thread(target=run_detection)
+        self.detection_thread.start()
+        self.hilos.append(self.detection_thread)
 
     def wait_for_detection(self):
         """ Espera a que el hilo de detección termine, si existe. """

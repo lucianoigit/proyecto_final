@@ -23,3 +23,6 @@ class ProcessingInterface(ABC):
     @abstractmethod
     def save_residue_list(self):
         pass
+    @abstractmethod
+    def inicialiced_model_inference(self,callback=None):
+        pass

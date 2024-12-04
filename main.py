@@ -37,6 +37,15 @@ def main():
         # Inicia el servicio de procesamiento de imágenes
         image_service = ImageProcessingService(residue_repository, use_model, transport_service, picamera=picam2)
         
+        def callback_inicialiced_model(response):
+            
+            if response == "FAIL":
+                print("FALLO LA INCIALIZACION DEL MODELO")
+            else:
+                print("INICIALIZACION TERMINADA CON EXITO")
+            
+        
+        image_service.inicialiced_model_inference(callback_inicialiced_model)
         # Inicializa la aplicación principal
         app = View(serial_service, image_service, reports_service, transport_service, None, picamera=picam2)
         app.mainloop()

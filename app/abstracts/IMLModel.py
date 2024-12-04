@@ -13,3 +13,7 @@ class MLModelInterface(ABC):
     @abstractmethod
     def is_point_inside_workspace(self, x, y, area_de_trabajo):
         pass
+    
+    @abstractmethod  
+    def inicialiced_model(self,img):
+        pass
