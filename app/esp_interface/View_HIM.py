@@ -949,16 +949,9 @@ class View(ctk.CTk):
         """
         if not self.calibracion:
             print("No puede iniciar sin antes calibrar la camara")
+            
+        self.iniciar_clasificacion()  # Asegurarse de ejecutar el método correctamente
 
-        # Iniciar la clasificación de manera continua
-        def callback(response):
-            if(response =="OK"):
-                self.iniciar_clasificacion()  # Asegurarse de ejecutar el método correctamente
-        
-        
-        self.communication_service.send_and_receive("HOME","OK",callback)
-        
-  
     def tomar_foto(self):
         img = self.processing_service.capture_image()
      
