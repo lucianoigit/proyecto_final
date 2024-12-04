@@ -37,6 +37,7 @@ class MLModelService(MLModelInterface):
         """
         Ejecuta el modelo, calcula los centros de los objetos detectados, y filtra por clases y confianza.
         Además, dibuja el centroide general y los centros de las detecciones de los objetos.
+        También dibuja el polígono del área de trabajo en la imagen.
         """
         try:
             # Cargar la imagen
@@ -72,6 +73,12 @@ class MLModelService(MLModelInterface):
 
             # Filtrar por confianza mínima
             df_filtrado = df[df['confidence'] >= confianza_minima]
+
+            # Dibujar el polígono del área de trabajo si está definido
+            if area_de_trabajo:
+                area_points = np.array(area_de_trabajo, np.int32)
+                area_points = area_points.reshape((-1, 1, 2))  # Reshape para cv2.polylines
+                cv2.polylines(img, [area_points], isClosed=True, color=(0, 255, 255), thickness=2)  # Dibujar el área de trabajo en amarillo
 
             # Dibujar las detecciones en la imagen
             for _, row in df_filtrado.iterrows():
