@@ -306,7 +306,7 @@ class View(ctk.CTk):
 
         # Botón de calibración de cámara
         calibration_button = ctk.CTkButton(configure_panel, text="Calibración de Cámara", 
-                                        command=self.configure_area, fg_color=self.nav_color, 
+                                        command=self.calibrate_camera_type, fg_color=self.nav_color, 
                                         hover_color="#a3a7d9", text_color=self.text_color)
         calibration_button.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
 
@@ -984,7 +984,7 @@ class View(ctk.CTk):
 
         self.x_center = x_center
         self.y_center = y_center
-        offset = self.transport_service.get_offset(y1, y4, pixels_per_mm_y)
+        offset = 200
         print(f"Offset calculado: offset={offset}")
 
         self.square_size = square_size 
