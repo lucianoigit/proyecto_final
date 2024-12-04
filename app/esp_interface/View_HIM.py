@@ -292,8 +292,8 @@ class View(ctk.CTk):
         self.category_pie_chart = ctk.CTkLabel(self.stats_panel, text="", text_color=self.btn_color)
         self.category_pie_chart.grid(row=1, column=0, padx=10, pady=10, sticky="ew")
 
-        self.daily_histogram = ctk.CTkLabel(self.stats_panel, text="", fg_color=self.btn_color, text_color=self.btn_color)
-        self.daily_histogram.grid(row=2, column=0, padx=10, pady=10, sticky="ew")
+        self.class_hitogram = ctk.CTkLabel(self.stats_panel, text="", fg_color=self.btn_color, text_color=self.btn_color)
+        self.class_hitogram.grid(row=2, column=0, padx=10, pady=10, sticky="ew")
 
         # Panel de configuración con fondo blanco
         configure_panel = ctk.CTkFrame(self, fg_color=self.img_frame_color)  # Fondo blanco
@@ -1093,7 +1093,7 @@ class View(ctk.CTk):
             self.update_reports_list(reports)
         elif selected_option == "Gráfico de Torta":
             self.reports_scrollable_frame.grid_remove()
-            self.daily_histogram.grid_remove()
+            self.class_hitogram.grid_remove()
             self.stats_panel.grid()
             self.category_pie_chart.grid()
             self.update_statistics(reports, chart_type="pie")
@@ -1101,7 +1101,7 @@ class View(ctk.CTk):
             self.reports_scrollable_frame.grid_remove()
             self.category_pie_chart.grid_remove()
             self.stats_panel.grid()
-            self.daily_histogram.grid()
+            self.class_hitogram.grid()
             self.update_statistics(reports, chart_type="histogram")
 
     # Modificamos la función para que acepte el tipo de gráfico a mostrar
@@ -1119,15 +1119,15 @@ class View(ctk.CTk):
             ax1.axis('equal')
             self.update_figure(self.category_pie_chart, fig1)
         elif chart_type == "histogram":
-            dates = [report.fecha_deteccion for report in reports]
-            date_counts = {date: dates.count(date) for date in set(dates)}
+            name = [report.nombre for report in reports]
+            date_counts = {name: name.count(date) for date in set(name)}
             
             # Tamaño reducido de la figura
-            fig2, ax2 = plt.subplots(figsize=(4, 3))  # Ajustar tamaño de gráfico (ancho, alto)
+            fig2, ax2 = plt.subplots(figsize=(4, 2))  # Ajustar tamaño de gráfico (ancho, alto)
             ax2.bar(date_counts.keys(), date_counts.values())
-            ax2.set_xlabel('Fecha')
+            ax2.set_xlabel('Clase')
             ax2.set_ylabel('Cantidad de Residuos')
-            self.update_figure(self.daily_histogram, fig2)
+            self.update_figure(self.class_hitogram, fig2)
                 
     def update_image(self, img, roi=None):
         """
