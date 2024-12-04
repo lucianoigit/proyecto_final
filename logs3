@@ -1,0 +1,19 @@
+413    0.040002 -0.00035302]]
+Configurando coordenadas de los cuatro puntos del área de calibración.
+Calibración completada: píxeles por mm en x: 0.795 y en y: 0.66
+Calibración de espacio físico completada: pixels_per_mm_x=0.795, pixels_per_mm_y=0.66
+Exception in Tkinter callback
+Traceback (most recent call last):
+  File "/usr/lib/python3.11/tkinter/__init__.py", line 1948, in __call__
+    return self.func(*args)
+           ^^^^^^^^^^^^^^^^
+  File "/home/raspberrypi/proyecto_final/venv/lib/python3.11/site-packages/customtkinter/windows/widgets/ctk_button.py", line 554, in _clicked
+    self._command()
+  File "/home/raspberrypi/proyecto_final/app/esp_interface/View_HIM.py", line 626, in start_calibration
+    self.calibrate_camera(square_size, physical_width_mm, physical_height_mm, x1, y1, x2, y2, x3, y3, x4, y4)
+  File "/home/raspberrypi/proyecto_final/app/esp_interface/View_HIM.py", line 979, in calibrate_camera
+    centroid = self.calculate_centroid(self.points)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: View.calculate_centroid() takes 1 positional argument but 2 were given
+Error al ejecutar el modelo: tuple indices must be integers or slices, not str
+Imagen procesada. DataFrame resultante: None

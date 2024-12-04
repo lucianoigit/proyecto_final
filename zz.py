@@ -46,6 +46,9 @@ class ObjectDetectionApp:
 
         self.serial_port = None
 
+        self.procesar_imagen = True
+        self.is_first_move = True
+
         # Almacenar referencias a hilos
         self.processing_threads = []
 
@@ -58,9 +61,19 @@ class ObjectDetectionApp:
 
         self.iniciar_comunicacion_serial()
 
+        cmd = "ADD_CATEGORY bottle,0,0,-600\n"
+        print(cmd)
+        self.serial_port.write(cmd.encode())
+        # Esperar respuesta  del ESP32
+        while True:
+            respuesta = self.serial_port.readline().decode().strip()
+            print(respuesta)
+            if respuesta == "Categoría añadida":
+                break
+
     def load_config(self):
         """Cargar configuraciones desde un archivo JSON."""
-        config_file = "config2.json"
+        config_file = "config.json"
         if os.path.exists(config_file):
             with open(config_file, "r") as file:
                 return json.load(file)
@@ -204,22 +217,27 @@ class ObjectDetectionApp:
                     cv2.polylines(frame, [np.array(self.reference_points)], isClosed=True, color=(255, 0, 0), thickness=2)
                     
                     centroid = calculate_centroid(self.reference_points)
+                    print("Centroide:", centroid)
                     cv2.circle(frame, centroid, 5, (0, 0, 255), -1)
                     
                     font = cv2.FONT_HERSHEY_SIMPLEX
                     cv2.putText(frame, "Guardando...", (50, 50), font, 1, (0, 255, 255), 2, cv2.LINE_AA)
+
+                    # Calcular escala de píxeles a milímetros
+                    pixel_to_mm_scale = calculate_pixel_to_mm_scale(self.reference_points)
 
                     # Actualizar los puntos y el centroide en la configuración
                     self.config_data["workspace_area"]["vertices"] = [
                         {"x": point[0], "y": point[1]} for point in self.reference_points
                     ]
                     self.config_data["workspace_area"]["centroid"] = {"x": centroid[0], "y": centroid[1]}
+                    self.config_data["workspace_area"]["pixel_to_mm_scale"] = pixel_to_mm_scale
 
                     # Guardar la configuración actualizada
                     self.save_config()
                     
                     cv2.imshow("Seleccione cuatro puntos", frame)
-                    cv2.waitKey(3000)
+                    cv2.waitKey(2000)
                     break
                 else:
                     font = cv2.FONT_HERSHEY_SIMPLEX
@@ -247,8 +265,25 @@ class ObjectDetectionApp:
             centroid_y = int(np.mean(y_coords))
             return (centroid_x, centroid_y)
 
+        def calculate_pixel_to_mm_scale(points):
+            """Calcula la relación de píxeles a milímetros."""
+            # Distancias en píxeles entre los puntos consecutivos
+            pixel_distances = []
+            for i in range(4):
+                x1, y1 = points[i]
+                x2, y2 = points[(i + 1) % 4]  # Siguiente punto (ciclo cerrado)
+                distance = np.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
+                pixel_distances.append(distance)
+            
+            # Promedio de las distancias en píxeles
+            avg_pixel_distance = np.mean(pixel_distances)
+
+            # Relación de escala (200 mm / distancia promedio en píxeles)
+            return 200.0 / avg_pixel_distance
+    
         open_camera_and_select_points()
         print("Puntos de referencia seleccionados:", self.reference_points)
+        print("Relación píxeles a milímetros:", self.config_data["workspace_area"]["pixel_to_mm_scale"])
         
         # if(len(self.reference_points) == 4):
         #     cv2.polylines(frame, [np.array(self.reference_points)], isClosed=True, color=(255, 0, 0), thickness=2)
@@ -477,6 +512,21 @@ class ObjectDetectionApp:
 
 
     # Botones de control
+    # def iniciar_modelo(self):
+    #     try:
+    #         # Habilitar botones
+    #         self.btn_detener.configure(state="normal")
+    #         self.btn_iniciar_modelo.configure(state="disabled")
+            
+    #         # Iniciar thread de captura y procesamiento
+    #         self.stop_event.clear()
+    #         thread = threading.Thread(target=self.capturar_y_procesar, daemon=True)
+    #         thread.start()
+    #         self.processing_threads.append(thread)
+            
+    #         self.modelo_iniciado = True
+    #     except Exception as e:
+    #         print("Error iniciar modelo")
     def iniciar_modelo(self):
         try:
             # Habilitar botones
@@ -485,9 +535,12 @@ class ObjectDetectionApp:
             
             # Iniciar thread de captura y procesamiento
             self.stop_event.clear()
-            thread = threading.Thread(target=self.capturar_y_procesar, daemon=True)
+            thread = threading.Thread(target=self.iniciar, daemon=True)
             thread.start()
+            # thread_frame_left = threading.Thread(target=self.mostrar_imagen, args=(self.frame,), daemon=True)
+            # thread_frame_left.start()
             self.processing_threads.append(thread)
+            # self.processing_threads.append(thread_frame_left)
             
             self.modelo_iniciado = True
         except Exception as e:
@@ -523,6 +576,173 @@ class ObjectDetectionApp:
         self.btn_iniciar_clasificacion.configure(state="disabled")
         self.btn_detener.configure(state="disabled")
 
+    """    def iniciar_modelo(self):
+        try:
+            frame = self.picam2.capture_array("main")
+            if self.model:
+                results = self.model(frame)
+                annotated_frame = frame.copy()
+
+                # Filtrar resultados basados en la confianza del modelo
+                filtered_results = self.filter_results_by_confidence(results)
+                print(filtered_results)
+                self.draw_workspace_area(annotated_frame)
+
+                self.detected_objects_mm = []
+
+                # Dibujar las cajas filtradas
+                self.draw_filtered_boxes(annotated_frame, filtered_results)
+
+                self.enviar_comandos(self.detected_objects_mm)
+                
+                # Convertir frames
+                original_photo = self.convert_frame_to_photo(frame)
+                processed_photo = self.convert_frame_to_photo(annotated_frame)
+
+                self.root.after(10, self.update_frames, original_photo, processed_photo)
+
+                # Esperar el comando "SEGUI" antes de procesar el siguiente frame
+                while True:
+                    respuesta = self.serial_port.readline().decode().strip()
+                    if respuesta == "SEGUI":
+                        print("Recibido 'SEGUI', procesando nuevo frame...")
+                        break
+
+        except Exception as e:
+            print("Error iniciar modelo")
+    """
+    def iniciar(self):
+        try:
+            # # Iniciar hilo para esperar comandos del ESP32
+            # threading.Thread(target=self.esperar_comandos, daemon=True).start()
+
+            while not self.stop_event.is_set():
+                frame = self.picam2.capture_array("main")
+                original_photo = self.convert_frame_to_photo(frame)
+                self.root.after(0, self.update_frame_left, original_photo)
+                # Realizar nueva inferencia cuando se reciba "SEGUI"
+                if self.procesar_imagen:
+                    if self.model:
+                        frame = self.picam2.capture_array("main")
+                        results = self.model(frame)
+                        annotated_frame = frame.copy()
+
+                        # Filtrar resultados basados en la confianza del modelo
+                        filtered_results = self.filter_results_by_confidence(results)
+                        print(filtered_results)
+                        self.draw_workspace_area(annotated_frame)
+
+                        self.detected_objects_mm = []
+
+                        # Dibujar las cajas filtradas
+                        self.draw_filtered_boxes(annotated_frame, filtered_results)
+
+                        if self.is_first_move:
+                            self.is_first_move = False
+                            # original_photo = self.convert_frame_to_photo(frame)
+                            processed_photo = self.convert_frame_to_photo(annotated_frame)
+                            self.root.after(0, self.update_frame_right, processed_photo)
+                            # self.root.after(0, self.update_frames, original_photo, processed_photo)
+                            self.enviar_comandos(self.detected_objects_mm)
+                            # Iniciar hilo para esperar comandos del ESP32
+                            hilo = threading.Thread(target=self.esperar_comandos, daemon=True)
+                            hilo.start()
+                            # self.detected_objects_mm.clear()
+                            self.processing_threads.append(hilo)
+                        # self.enviar_comandos(self.detected_objects_mm)
+
+                        # Actualizar la lista compartida de objetos detectados
+                        # self.objetos_detectados = self.detected_objects_mm
+                        self.procesar_imagen = False  # Detener procesamiento hasta recibir "SEGUI"
+                    
+                        # Convertir frames
+                        # original_photo = self.convert_frame_to_photo(frame)
+                        processed_photo = self.convert_frame_to_photo(annotated_frame)
+
+                        self.root.after(0, self.update_frame_right, processed_photo)
+                        # self.root.after(10, self.update_frames, original_photo, processed_photo)
+
+        except Exception as e:
+            print("Error iniciar modelo:", e)
+
+    def esperar_comandos(self):
+        """Espera comandos del ESP32 y gestiona el flujo."""
+        try:
+            while not self.stop_event.is_set():
+                # Leer comando del ESP32
+                respuesta = self.serial_port.readline().decode().strip()
+
+                if respuesta == "SEGUI":
+                    # Habilitar procesamiento de nueva imagen
+                    print(f"Comando recibido: {respuesta}")
+                    self.procesar_imagen = True
+
+                elif respuesta == "START":
+                    # Enviar la lista de objetos detectados
+                    print(f"Comando recibido: {respuesta}")
+                    self.enviar_comandos(self.detected_objects_mm)
+                    self.detected_objects_mm.clear()
+        except Exception as e:
+            print("Error al esperar comandos:", e)
+
+    def enviar_comandos(self, objetos_detectados):
+        """Envía objetos detectados al ESP32."""
+        z = int(-600)
+        try:
+            if objetos_detectados:
+                for i, objeto in enumerate(objetos_detectados):
+                    if i==0:
+                        cb = -200
+                    else:
+                        cb = 0
+                    # cb = -200 if i == 0 else 0  # cb es -200 solo para el primer objeto, luego 0
+                    comando = f"{objeto['x_mm']:.2f},{objeto['y_mm']:.2f},{z},{cb},{objeto['class_name']}\n"
+                    print("Comando enviado:", comando)
+                    self.serial_port.write(comando.encode())  # Enviar comando por serial
+                    
+                    # Esperar respuesta "OK" del ESP32
+                    # print("Esperar respuesta 'OK'")
+                    start_time = time.time()
+                    while True:
+                        if time.time() - start_time > 5:
+                            raise serial.SerialTimeoutException("Tiempo de espera excedido")
+                        
+                        respuesta = self.serial_port.readline().decode().strip()
+                        if respuesta == "OK":
+                            print("Respuesta: ", respuesta)
+                            break
+
+                # Enviar comando "FIN" para indicar que se enviaron todos los objetos
+                print("Comando FIN enviado")
+                self.serial_port.write(b"FIN\n")
+            else:
+                # Caso sin objetos detectados
+                comando = "0,0,0,-200,nada\n"
+                print("Comando enviado:", comando)
+                self.serial_port.write(comando.encode())  # Enviar comando por serial
+                
+                start_time = time.time()
+                # Esperar respuesta "OK" del ESP32
+                while True:
+                    if time.time() - start_time > 5:
+                        raise serial.SerialTimeoutException("Tiempo de espera excedido")
+                    
+                    respuesta = self.serial_port.readline().decode().strip()
+                    print(respuesta)
+                    if respuesta == "OK":
+                        break
+
+                # Enviar comando "FIN"
+                print("Comando FIN enviado")
+                self.serial_port.write(b"FIN\n")
+        except (serial.SerialTimeoutException, Exception) as e:
+            print("Error al enviar comandos:", e)
+
+    # def mostrar_imagen(self, frame):
+    #     while not self.stop_event.is_set():
+    #         original_photo = self.convert_frame_to_photo(frame)
+    #         self.root.after(0, self.update_frame_left, original_photo)
+    #         # self.root.after(10, self.update_frames, original_photo, processed_photo)
 
     # Procesamiento
     def capturar_y_procesar(self):
@@ -562,7 +782,7 @@ class ObjectDetectionApp:
             try:
                 # Obtener frame
                 frame = self.picam2.capture_array("main")
-                frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+                # frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
 
                 # Realizar detección
                 if self.model:
@@ -607,29 +827,86 @@ class ObjectDetectionApp:
             self.serial_port.write(b"LED_ON\n")
         except Exception as e:
             print("Error al iniciar comunicacion serial")
-
+    """
     def enviar_comandos(self, objetos_detectados):
-        for objeto in objetos_detectados:
-            # Formato del comando: "x,y,z,w,nombre"
-            # comando = f"{objeto['x']},{objeto['y']},{objeto['z']},{objeto['w']},{objeto['nombre']}\n"
-            comando = f"{objeto['x']},{objeto['y']},-600,{objeto['w']},{objeto['nombre']}\n"
-            self.serial_port.write(comando.encode())
-            
-            # Esperar respuesta "OK"
-            while True:
-                respuesta = self.serial_port.readline().decode().strip()
-                if respuesta == "OK":
-                    break
-            
-        # Enviar comando "FIN"
-        self.serial_port.write(b"FIN\n")
         
-        # Esperar respuesta "SEGUI"
+        z = -600
+        cb = -200
+        if objetos_detectados:
+            print("OBJETO DETECTADO")
+            for i, objeto in enumerate(objetos_detectados):
+                cb = -200 if i==0 else 0
+
+                # Create the command string
+                comando = f"{objeto['x_mm']},{objeto['y_mm']},{z},{cb},{objeto['class_name']}\n"
+                print(comando)
+                # Send the command over serial
+                # self.serial_port.write(comando.encode())
+                
+                print("Esperar respuesta 'OK'")
+                # Wait for response "OK"
+                # while True:
+                #     respuesta = self.serial_port.readline().decode().strip()
+                #     if respuesta == "OK":
+                #         break
+            
+            # Send command "FIN" after all objects have been sent
+            # self.serial_port.write(b"FIN\n")
+            print("FIN\n")
+        else:
+            print("OBJETO NO DETECTADO")
+            # If no objects are detected, send default values
+            default_command = "0,0,0,-200,nada\n"
+            print(default_command)
+            # self.serial_port.write(default_command.encode())
+            
+            print("Esperar respuesta 'OK'")
+            # while True:
+            #     respuesta = self.serial_port.readline().decode().strip()
+            #     if respuesta == "OK":
+            #         break
+            print("FIN\n")
+
+        # Wait for response "SEGUI" from ESP32 before proceeding
         while True:
             respuesta = self.serial_port.readline().decode().strip()
             if respuesta == "SEGUI":
                 break
 
+        # if objetos_detectados:
+        #     for objeto in objetos_detectados:
+        #         comando = f"{objeto['x_mm']},{objeto['y_mm']},-600,{cb},{objeto['class_name']}\n"
+        #         print(comando)
+        #         # self.serial_port.write(comando.encode())
+                
+        #         print("Esperar respuesta 'OK'")
+        #         # # Esperar respuesta "OK"
+        #         # while True:
+        #         #     respuesta = self.serial_port.readline().decode().strip()
+        #         #     if respuesta == "OK":
+        #         #         break
+                
+        #     # Enviar comando "FIN"
+        #     self.serial_port.write(b"FIN\n")
+        # else:
+        #     print("0,0,0,-200,nada\n")
+        #     print("Esperar respuesta 'OK'")
+        #     print("FIN\n")
+        #     # Esperar respuesta "OK"
+        #     # while True:
+        #     #     respuesta = self.serial_port.readline().decode().strip()
+        #     #     if respuesta == "OK":
+        #     #         print("FIN\n")
+        #     #         break
+        #     # return
+            
+        
+        # # Esperar respuesta "SEGUI"
+        # while True:
+        #     respuesta = self.serial_port.readline().decode().strip()
+        #     if respuesta == "SEGUI":
+        #         break
+    """
     # Función para filtrar resultados por confianza
     def filter_results_by_confidence(self, results):
         """Filtrar los resultados según el umbral de confianza configurado en el archivo JSON."""
@@ -639,8 +916,17 @@ class ObjectDetectionApp:
 
         for result in results[0].boxes.data:
             confidence = result[4]  # La confianza está en el índice 4 de cada resultado
+            # class_id = int(result[5]) # El ID de la clase está en el índice 5
             if confidence >= confidence_threshold:
                 filtered_results.append(result)
+                # filtered_results.append({
+                #     "x1": result[0],
+                #     "y1": result[1],
+                #     "x2": result[2],
+                #     "y2": result[3],
+                #     "confidence": confidence,
+                #     "class_id": class_id
+                # })
         
         return filtered_results
 
@@ -652,24 +938,58 @@ class ObjectDetectionApp:
             points = [(vertex["x"], vertex["y"]) for vertex in vertices]
             points = np.array(points, np.int32)
             points = points.reshape((-1, 1, 2))
-            cv2.polylines(frame, [points], isClosed=True, color=(0, 255, 255), thickness=2)  # Dibuja en azul
+            cv2.polylines(frame, [points], isClosed=True, color=(255, 255, 255), thickness=2)  # Dibuja en azul
 
     # Función para dibujar las cajas filtradas
     def draw_filtered_boxes(self, frame, filtered_results):
         """Dibuja las cajas de delimitación filtradas en el frame, con colores basados en su posición."""
+        # Obtener el centroide del área de trabajo y la escala de conversión
+        centroid_x = self.config_data["workspace_area"]["centroid"]["x"]
+        centroid_y = self.config_data["workspace_area"]["centroid"]["y"]
+        pixel_to_mm_scale = self.config_data["workspace_area"]["pixel_to_mm_scale"]
+        class_name = "bottle"
+
         for result in filtered_results:
             x1, y1, x2, y2 = map(int, result[:4])  # Coordenadas de la caja
             confidence = result[4]  # Confianza de la predicción
+            
+            # Calcular el centro de la caja
+            center_x = (x1 + x2) / 2
+            center_y = (y1 + y2) / 2
+
+            is_inside = self.is_point_inside_workspace(center_x, center_y)
 
             # Verificar si la caja está dentro del área de trabajo
-            is_inside = self.is_box_inside_workspace(x1, y1, x2, y2)
+            # is_inside = self.is_box_inside_workspace(x1, y1, x2, y2)
 
             # Colorear la caja según si está dentro o fuera del área de trabajo
-            box_color = (0, 255, 0) if is_inside else (0, 0, 255)  # Verde si está dentro, rojo si está fuera
+            box_color = (0, 255, 0) if is_inside else (255, 255, 0)  # Verde si está dentro, rojo si está fuera
             cv2.rectangle(frame, (x1, y1), (x2, y2), box_color, 2)
 
             # Opcional: Agregar texto con la confianza
-            cv2.putText(frame, f"{confidence:.2f}", (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, box_color, 2)
+            label = f"{class_name} ({confidence:.2f})"
+            cv2.putText(frame, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, box_color, 2)
+
+            # Imprimir el punto central si está dentro del área de trabajo
+            if is_inside:
+                # print(f"Punto central dentro del área de trabajo: ({center_x:.2f}, {center_y:.2f})")
+                
+                adjusted_x = center_x - centroid_x
+                adjusted_y = center_y - centroid_y
+
+                # Convertir coordenadas de píxeles a milímetros
+                adjusted_x_mm = adjusted_x * pixel_to_mm_scale
+                adjusted_y_mm = adjusted_y * pixel_to_mm_scale
+
+                self.detected_objects_mm.append({
+                    "x_mm": adjusted_x_mm,
+                    "y_mm": adjusted_y_mm,
+                    "confidence": confidence,
+                    "class_name": class_name
+                })
+
+                print(f"Objeto detectado: {class_name}, Coordenadas (mm): ({adjusted_x_mm:.2f}, {adjusted_y_mm:.2f}), Confianza: {confidence:.2f}")
+                # print(f"Punto central ajustado (mm): ({adjusted_x_mm:.2f}, {adjusted_y_mm:.2f})")
 
     # Función para verificar si la caja está dentro del área de trabajo
     def is_box_inside_workspace(self, x1, y1, x2, y2):
@@ -695,6 +1015,22 @@ class ObjectDetectionApp:
             return inside_count == 4
         return False      
 
+    # Función para verificar si un punto está dentro del área de trabajo
+    def is_point_inside_workspace(self, x, y):
+        """Verifica si un punto (x, y) está dentro del área de trabajo."""
+        vertices = self.config_data["workspace_area"].get("vertices", [])
+        if len(vertices) == 4:
+            # Convertir los vértices en una lista de puntos
+            points = [(vertex["x"], vertex["y"]) for vertex in vertices]
+
+            # Crear un polígono a partir de los vértices del área de trabajo
+            polygon = np.array(points, np.int32)
+            polygon = polygon.reshape((-1, 1, 2))
+
+            # Usamos cv2.pointPolygonTest para comprobar si el punto está dentro del polígono
+            return cv2.pointPolygonTest(polygon, (x, y), False) >= 0
+
+        return False
 
 
     def convert_frame_to_photo(self, frame):
@@ -702,6 +1038,16 @@ class ObjectDetectionApp:
         imagen = PIL.Image.fromarray(frame)
         imagen = imagen.resize((320, 240), PIL.Image.LANCZOS)
         return PIL.ImageTk.PhotoImage(imagen)
+
+    def update_frame_left(self, original_photo):
+        # Actualizar frames en el hilo principal de Tkinter
+        self.original_image_container.configure(image=original_photo)
+        self.original_image_container.image = original_photo
+        
+    def update_frame_right(self, processed_photo):
+        # Actualizar frames en el hilo principal de Tkinter
+        self.processed_image_container.configure(image=processed_photo)
+        self.processed_image_container.image = processed_photo
 
     def update_frames(self, original_photo, processed_photo):
         # Actualizar frames en el hilo principal de Tkinter
