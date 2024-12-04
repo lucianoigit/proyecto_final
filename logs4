@@ -1,0 +1,45 @@
+Exception in Tkinter callback
+Traceback (most recent call last):
+  File "/usr/lib/python3.11/tkinter/__init__.py", line 1948, in __call__
+    return self.func(*args)
+           ^^^^^^^^^^^^^^^^
+  File "/home/raspberrypi/proyecto_final/venv/lib/python3.11/site-packages/customtkinter/windows/widgets/core_widget_classes/dropdown_menu.py", line 96, in <lambda>
+    command=lambda v=value: self._button_callback(v),
+                            ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/raspberrypi/proyecto_final/venv/lib/python3.11/site-packages/customtkinter/windows/widgets/core_widget_classes/dropdown_menu.py", line 106, in _button_callback
+    self._command(value)
+  File "/home/raspberrypi/proyecto_final/venv/lib/python3.11/site-packages/customtkinter/windows/widgets/ctk_optionmenu.py", line 385, in _dropdown_callback
+    self._command(self._current_value)
+  File "/home/raspberrypi/proyecto_final/app/esp_interface/View_HIM.py", line 1099, in update_view
+    self.update_statistics(reports, chart_type="pie")
+  File "/home/raspberrypi/proyecto_final/app/esp_interface/View_HIM.py", line 1120, in update_statistics
+    self.update_figure(self.category_pie_chart, fig1)
+    ^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.11/tkinter/__init__.py", line 2410, in __getattr__
+    return getattr(self.tk, attr)
+           ^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: '_tkinter.tkapp' object has no attribute 'update_figure'
+2024-12-04 04:31:42,361 INFO sqlalchemy.engine.Engine SELECT objetos.id AS objetos_id, objetos.nombre AS objetos_nombre, objetos.categoria AS objetos_categoria, objetos.confianza AS objetos_confianza, objetos.x_min AS objetos_x_min, objetos.y_min AS objetos_y_min, objetos.x_max AS objetos_x_max, objetos.y_max AS objetos_y_max, objetos.fecha_deteccion AS objetos_fecha_deteccion, objetos.imagen_referencia AS objetos_imagen_referencia 
+FROM objetos
+2024-12-04 04:31:42,362 INFO sqlalchemy.engine.Engine [cached since 79.35s ago] ()
+Exception in Tkinter callback
+Traceback (most recent call last):
+  File "/usr/lib/python3.11/tkinter/__init__.py", line 1948, in __call__
+    return self.func(*args)
+           ^^^^^^^^^^^^^^^^
+  File "/home/raspberrypi/proyecto_final/venv/lib/python3.11/site-packages/customtkinter/windows/widgets/core_widget_classes/dropdown_menu.py", line 96, in <lambda>
+    command=lambda v=value: self._button_callback(v),
+                            ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/raspberrypi/proyecto_final/venv/lib/python3.11/site-packages/customtkinter/windows/widgets/core_widget_classes/dropdown_menu.py", line 106, in _button_callback
+    self._command(value)
+  File "/home/raspberrypi/proyecto_final/venv/lib/python3.11/site-packages/customtkinter/windows/widgets/ctk_optionmenu.py", line 385, in _dropdown_callback
+    self._command(self._current_value)
+  File "/home/raspberrypi/proyecto_final/app/esp_interface/View_HIM.py", line 1105, in update_view
+    self.update_statistics(reports, chart_type="histogram")
+  File "/home/raspberrypi/proyecto_final/app/esp_interface/View_HIM.py", line 1130, in update_statistics
+    self.update_figure(self.daily_histogram, fig2)
+    ^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.11/tkinter/__init__.py", line 2410, in __getattr__
+    return getattr(self.tk, attr)
+           ^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: '_tkinter.tkapp' object has no attribute 'update_figure'

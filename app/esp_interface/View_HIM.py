@@ -542,13 +542,6 @@ class View(ctk.CTk):
         scrollable_frame.pack(fill="both", expand=True, padx=10, pady=10)
 
         instruction_label = ctk.CTkLabel(scrollable_frame, text=("Por favor, seleccione los puntos en la imagen"))
-        # instruction_label = ctk.CTkLabel(scrollable_frame, text=(
-        #     "Por favor, seleccione los puntos en el siguiente orden:\n"
-        #     "1. Esquina superior izquierda (x1, y1)\n"
-        #     "2. Esquina superior derecha (x2, y2)\n"
-        #     "3. Esquina inferior derecha (x3, y3)\n"
-        #     "4. Esquina inferior izquierda (x4, y4)"
-        # ))
         instruction_label.grid(row=0, column=0, columnspan=2, padx=10, pady=(10, 20), sticky="ew")
 
         self.points = []
@@ -558,21 +551,34 @@ class View(ctk.CTk):
 
             cv2.namedWindow("Seleccione cuatro puntos",cv2.WINDOW_NORMAL)
             cv2.setWindowProperty("Seleccione cuatro puntos",cv2.WND_PROP_FULLSCREEN,cv2.WINDOW_FULLSCREEN)
-            #cv2.setWindowProperty("Seleccione cuatro puntos",cv2.WND_PROP_AUTOSIZE,cv2.WINDOW_FULLSCREEN)
             cv2.setMouseCallback("Seleccione cuatro puntos", click_event)
 
             while True:
                 frame = self.picam2.capture_array()
                 frame_bgr = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
-                # frame_bgr = cv2.rotate(frame_bgr, cv2.ROTATE_90_CLOCKWISE)
-                # frame_bgr = cv2.rotate(frame_bgr, cv2.ROTATE_180)
-                # frame_bgr = cv2.rotate(frame_bgr, cv2.ROTATE_90_COUNTERCLOCKWISE)
+                
+                # Dibujar puntos seleccionados
                 for point in self.points:
                     cv2.circle(frame_bgr, point, 5, (255, 0, 0), -1)
 
+                # Dibujar segmentos entre puntos seleccionados
+                if len(self.points) > 1:
+                    for i in range(len(self.points) - 1):
+                        cv2.line(frame_bgr, self.points[i], self.points[i+1], (0, 255, 0), 2)
+                
+
                 if len(self.points) == 4:
+                    
                     ordered_points = ordenar_puntos(self.points)
                     cv2.polylines(frame_bgr, [np.array(ordered_points)], isClosed=True, color=(0, 255, 0), thickness=2)
+                    
+                    font = cv2.FONT_HERSHEY_SIMPLEX
+                    cv2.putText(frame_bgr, "Guardando...", (50, 50), font, 1, (0, 255, 255), 2, cv2.LINE_AA)
+                    cv2.imshow("Seleccione cuatro puntos", frame_bgr)
+                    cv2.waitKey(2000)
+                else:
+                    font = cv2.FONT_HERSHEY_SIMPLEX
+                    cv2.putText(frame_bgr, 'Seleccione 4 puntos', (50, 50), font, 1, (0, 255, 255), 2, cv2.LINE_AA)
 
                 cv2.imshow("Seleccione cuatro puntos", frame_bgr)
 
@@ -582,24 +588,24 @@ class View(ctk.CTk):
 
             cv2.destroyAllWindows()
 
-            if len(self.points) == 4:
-                (x1, y1), (x2, y2), (x3, y3), (x4, y4) = self.points
-                x1_entry.delete(0, ctk.END)
-                y1_entry.delete(0, ctk.END)
-                x2_entry.delete(0, ctk.END)
-                y2_entry.delete(0, ctk.END)
-                x3_entry.delete(0, ctk.END)
-                y3_entry.delete(0, ctk.END)
-                x4_entry.delete(0, ctk.END)
-                y4_entry.delete(0, ctk.END)
-                x1_entry.insert(0, str(x1))
-                y1_entry.insert(0, str(y1))
-                x2_entry.insert(0, str(x2))
-                y2_entry.insert(0, str(y2))
-                x3_entry.insert(0, str(x3))
-                y3_entry.insert(0, str(y3))
-                x4_entry.insert(0, str(x4))
-                y4_entry.insert(0, str(y4))
+            # if len(self.points) == 4:
+            #     (x1, y1), (x2, y2), (x3, y3), (x4, y4) = self.points
+            #     x1_entry.delete(0, ctk.END)
+            #     y1_entry.delete(0, ctk.END)
+            #     x2_entry.delete(0, ctk.END)
+            #     y2_entry.delete(0, ctk.END)
+            #     x3_entry.delete(0, ctk.END)
+            #     y3_entry.delete(0, ctk.END)
+            #     x4_entry.delete(0, ctk.END)
+            #     y4_entry.delete(0, ctk.END)
+            #     x1_entry.insert(0, str(x1))
+            #     y1_entry.insert(0, str(y1))
+            #     x2_entry.insert(0, str(x2))
+            #     y2_entry.insert(0, str(y2))
+            #     x3_entry.insert(0, str(x3))
+            #     y3_entry.insert(0, str(y3))
+            #     x4_entry.insert(0, str(x4))
+            #     y4_entry.insert(0, str(y4))
 
         def click_event(event, x, y, flags, param):
             if event == cv2.EVENT_LBUTTONDOWN and len(self.points) < 4:
