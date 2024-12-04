@@ -97,7 +97,7 @@ class ImageProcessingService(ProcessingInterface):
                     )
                     print("ResidueDTO creado:", residue)
                     residue_list.append(residue)
-                    self.residue_repository.save_all(residue_list)
+                    #self.residue_repository.save_all(residue_list)
                 
                 print("Lista de residuos detectados:", residue_list)
                 return df_filtrado, img_resultado, residue_list

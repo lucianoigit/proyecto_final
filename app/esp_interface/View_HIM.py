@@ -537,17 +537,22 @@ class View(ctk.CTk):
         calibration_window.title("Configuración de Calibración")
         calibration_window.geometry("400x300")
 
+        fram = ctk.CTkFrame(calibration_window, width=380, height=280)
+        fram.pack(fill="both", expand=True, padx=10, pady=10)
 
-        scrollable_frame = ctk.CTkScrollableFrame(calibration_window, width=380, height=280)
-        # scrollable_frame = ctk.CTkScrollableFrame(calibration_window, width=400, height=500)
-        scrollable_frame.pack(fill="both", expand=True, padx=10, pady=10)
+        # scrollable_frame = ctk.CTkScrollableFrame(calibration_window, width=380, height=280)
+        # # scrollable_frame = ctk.CTkScrollableFrame(calibration_window, width=400, height=500)
+        # scrollable_frame.pack(fill="both", expand=True, padx=10, pady=10)
 
-        instruction_label = ctk.CTkLabel(scrollable_frame, text=("Por favor, seleccione los puntos en la imagen"))
+        instruction_label = ctk.CTkLabel(fram, text=("Por favor, seleccione los puntos en la imagen"))
         instruction_label.grid(row=0, column=0, columnspan=2, padx=10, pady=(10, 20), sticky="ew")
 
+        select_points_button = ctk.CTkButton(fram, text="Seleccionar Puntos en la Cámara", command=open_camera_and_select_points)
+        select_points_button.grid(row=1, column=0, columnspan=2, padx=10, pady=10, sticky="ew")
+
         # Etiqueta para mostrar el estado de la calibración
-        self.calibration_status_label = ctk.CTkLabel(scrollable_frame, text="", font=("Arial",12,"bold"))
-        self.calibration_status_label.grid(row=1, column=0, columnspan=2, padx=10, pady=(0, 20), sticky="ew")
+        self.calibration_status_label = ctk.CTkLabel(fram, text="", font=("Arial",16,"bold"))
+        self.calibration_status_label.grid(row=2, column=0, columnspan=2, padx=10, pady=(0, 20), sticky="ew")
         
         self.points = []
 
@@ -637,13 +642,12 @@ class View(ctk.CTk):
         # (square_size_entry, width_entry, height_entry, x1_entry, y1_entry, x2_entry, y2_entry, 
         # x3_entry, y3_entry, x4_entry, y4_entry) = entries
 
-        select_points_button = ctk.CTkButton(scrollable_frame, text="Seleccionar Puntos en la Cámara", command=open_camera_and_select_points)
-        select_points_button.grid(row=1, column=0, columnspan=2, padx=10, pady=10, sticky="ew")
+        
         # select_points_button.grid(row=len(labels) + 1, column=0, columnspan=2, padx=10, pady=10, sticky="ew")
 
         # start_button.grid(row=len(labels) + 2, column=0, columnspan=2, padx=10, pady=10, sticky="ew")
 
-        scrollable_frame.grid_columnconfigure(1, weight=1)
+        # scrollable_frame.grid_columnconfigure(1, weight=1)
 
 
         
@@ -933,11 +937,14 @@ class View(ctk.CTk):
         """
         Método principal de clasificación.
         """
+        
         if not self.calibracion:
             print("No puede iniciar sin antes calibrar la camara")
-            
-        self.iniciar_clasificacion()  # Asegurarse de ejecutar el método correctamente
-
+        else:
+            self.iniciar_clasificacion()  # Asegurarse de ejecutar el método correctamente
+        # Iniciar la clasificación de manera continua
+        
+  
     def tomar_foto(self):
         img = self.processing_service.capture_image()
      
