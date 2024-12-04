@@ -137,7 +137,10 @@ class ImageProcessingService(ProcessingInterface):
 
         def run_detection():
             image = self.picam2.capture_array()
+            print("IMAGEN TOMADA CON EXITO")
             resultado = self.use_model.inicialiced_model(image)
+            print("PROCESAMIENTO TERMINADO")
+            print("resultados",resultado)
             # Aquí usamos el método after para actualizar la UI en el hilo principal
             if callback:
                 # Si necesitas pasar los datos de vuelta al hilo principal para actualizar la interfaz

@@ -38,7 +38,7 @@ def main():
         image_service = ImageProcessingService(residue_repository, use_model, transport_service, picamera=picam2)
         
         def callback_inicialiced_model(response):
-            
+            print("RESPONSE CALLBACK",response)
             if response == "FAIL":
                 print("FALLO LA INCIALIZACION DEL MODELO")
             else:
