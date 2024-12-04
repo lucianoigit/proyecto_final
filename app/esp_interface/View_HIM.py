@@ -306,7 +306,7 @@ class View(ctk.CTk):
 
         # Botón de calibración de cámara
         calibration_button = ctk.CTkButton(configure_panel, text="Calibración de Cámara", 
-                                        command=self.calibrate_camera_type, fg_color=self.nav_color, 
+                                        command=self.select_point_from_camera, fg_color=self.nav_color, 
                                         hover_color="#a3a7d9", text_color=self.text_color)
         calibration_button.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
 
