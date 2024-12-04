@@ -1367,6 +1367,8 @@ class View(ctk.CTk):
         y_coords = [p[1] for p in points]
         centroid_x = int(np.mean(x_coords))
         centroid_y = int(np.mean(y_coords))
+        
+        print("centroid",centroid_x,centroid_y)
         return (centroid_x, centroid_y)
 
     def calculate_offset_and_calibrate(self):
@@ -1377,8 +1379,7 @@ class View(ctk.CTk):
         y4 = self.points[3][1]  # Coordenada y del cuarto punto
 
         # Supongamos que el offset es la diferencia entre y1 y y4, ajustado a una escala adecuada
-        offset = abs(y1 - y4)
-        print(f"Offset calculado: {offset}")
+        self.offset=200
 
         # Establecer el estado de calibración
         self.calibracion = True
