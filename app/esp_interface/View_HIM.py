@@ -61,7 +61,7 @@ class View(ctk.CTk):
         self.moving_conveyor_belt_speed=None
         self.moving_home_max_speed=None
         self.categories = []
-        self.config_data = self.load_config()
+
         
 
         # Paleta de colores aplicada
