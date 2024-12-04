@@ -997,7 +997,7 @@ class View(ctk.CTk):
         
         print("Calibración completada con éxito")
         
-    def calculate_centroid(points):
+    def calculate_centroid(self,points):
         """Calcula el centroide de un conjunto de puntos (vértices del polígono)."""
         x_coords = [p[0] for p in points]
         y_coords = [p[1] for p in points]
@@ -1005,10 +1005,7 @@ class View(ctk.CTk):
         centroid_y = int(np.mean(y_coords))
                 
         return (centroid_x,centroid_y)
-
-
-        
-
+    
     def undistort_image(self, img):
         return self.processing_service.undistorted_image(img)
 
