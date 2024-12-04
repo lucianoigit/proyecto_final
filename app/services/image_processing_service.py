@@ -21,7 +21,7 @@ class ImageProcessingService(ProcessingInterface):
         self.use_model = use_model
         self.transport_service = transport_service
         self.picam2 = picamera  # Inyección de la cámara
-        self.hilos=None
+        self.hilos=[]
 
     def capture_image(self):
         # Detener la cámara en caso de que esté activa
