@@ -320,10 +320,10 @@ class View(ctk.CTk):
 
 
         # Botón de configuración de cinta transportadora
-        conveyor_config_button = ctk.CTkButton(configure_panel, text="Configuración de velocidad", 
+        """         conveyor_config_button = ctk.CTkButton(configure_panel, text="Configuración de velocidad", 
                                             command=self.configure_conveyor, fg_color=self.btn_color, 
                                             hover_color="#a3a7d9", text_color=self.text_color)
-        conveyor_config_button.grid(row=1, column=1, padx=10, pady=10, sticky="nsew")
+        conveyor_config_button.grid(row=1, column=1, padx=10, pady=10, sticky="nsew") """
 
         # Ajustar las proporciones de las columnas y filas del grid
         for i in range(2):  # Ajustar el número según la cantidad de filas o columnas que necesites
