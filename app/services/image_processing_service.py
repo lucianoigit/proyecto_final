@@ -54,7 +54,7 @@ class ImageProcessingService(ProcessingInterface):
             print(f"Error en undistorted_image: {e}")
             return None
 
-    def detected_objects(self, img_undistorted, confianza_minima=0.2,tamano_entrada=(416, 416), relation_x=0.00000, relation_y=0.00000, roi=None,x_center=None,y_center=None):
+    def detected_objects(self, img_undistorted, confianza_minima=0.2,tamano_entrada=(416, 416), relation_x=0.00000, relation_y=0.00000, roi=None,x_center=None,y_center=None,points=None):
         try:
             print("Procesando imagen...")
             # print("Tipo de relation_x:", type(relation_x), "| Valor de relation_x:", relation_x)
@@ -62,7 +62,7 @@ class ImageProcessingService(ProcessingInterface):
             print("Confianza mínima:", confianza_minima)
             print("ROI:", roi)
 
-            df_filtrado, img_resultado = self.use_model.run_model(img_undistorted, confianza_minima, roi,x_centroide=x_center,y_centroide=y_center)
+            df_filtrado, img_resultado = self.use_model.run_model(img_undistorted, confianza_minima, roi,x_centroide=x_center,y_centroide=y_center,area_de_trabajo=points)
            
            
            
@@ -106,14 +106,14 @@ class ImageProcessingService(ProcessingInterface):
             print(f"Error durante la detección: {e}")
             return None, None, []
 
-    def detected_objects_in_background(self, img_undistorted, confianza_minima=0.2, callback=None, relation_x=0.00000,relation_y=0.0000,roi=None,x_center=None,y_center=None):
+    def detected_objects_in_background(self, img_undistorted, confianza_minima=0.2, callback=None, relation_x=0.00000,relation_y=0.0000,roi=None,x_center=None,y_center=None,points=None):
         """
         Ejecuta detected_objects en un hilo separado para no bloquear la interfaz.
         El `callback` se llamará con los resultados cuando la detección termine.
         """
 
         def run_detection():
-            df_filtrado, img_resultado, residue_list = self.detected_objects(img_undistorted, confianza_minima,None,relation_x,relation_y,roi,x_center,y_center)
+            df_filtrado, img_resultado, residue_list = self.detected_objects(img_undistorted, confianza_minima,None,relation_x,relation_y,roi,x_center,y_center,points)
 
             # Aquí usamos el método after para actualizar la UI en el hilo principal
             if callback:

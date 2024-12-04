@@ -1,7 +1,8 @@
 import cv2
+import numpy as np
+import pandas as pd
 from ultralytics import YOLO
 from app.abstracts.IMLModel import MLModelInterface
-import pandas as pd
 
 class MLModelService(MLModelInterface):
     def __init__(self, model_path: str):
@@ -16,10 +17,28 @@ class MLModelService(MLModelInterface):
         except Exception as e:
             print(f"Error al cargar el modelo: {e}")
             return None
-    
-    def run_model(self, img_path_or_img, confianza_minima=0.8, roi=None,x_centroide=None, y_centroide=None):
+
+    def is_point_inside_workspace(self, x, y, area_de_trabajo):
         """
-        Ejecuta el modelo, calcula los centros de los objetos detectados, y filtra por clases, confianza y ROI.
+        Verifica si un punto (x, y) está dentro del área de trabajo definida por un polígono.
+        `area_de_trabajo` es una lista de diccionarios con las coordenadas de los vértices del polígono.
+        """
+        if len(area_de_trabajo) == 4:
+            # Convertir los vértices en una lista de puntos (x, y)
+            points = [(vertex["x"], vertex["y"]) for vertex in area_de_trabajo]
+
+            # Crear un polígono a partir de los vértices del área de trabajo
+            polygon = np.array(points, np.int32)
+            polygon = polygon.reshape((-1, 1, 2))
+
+            # Usamos cv2.pointPolygonTest para comprobar si el punto está dentro del polígono
+            return cv2.pointPolygonTest(polygon, (x, y), False) >= 0
+        return False
+
+    def run_model(self, img_path_or_img, confianza_minima=0.8, area_de_trabajo=None):
+        """
+        Ejecuta el modelo, calcula los centros de los objetos detectados, y filtra por clases y confianza.
+        Ahora, verifica si los centros de las detecciones están dentro del área de trabajo definida por un polígono.
         """
         try:
             # Cargar la imagen
@@ -53,49 +72,27 @@ class MLModelService(MLModelInterface):
             # Convertir índices de clase a nombres
             df['class_name'] = df['class'].apply(lambda x: names[int(x)])
 
-            # Log: Detecciones originales (antes del filtro)
-            print("\nDetecciones originales (antes del filtro):")
-            for _, row in df.iterrows():
-                print(f"Clase: {row['class_name']}, Confianza: {row['confidence']:.2f}, "
-                    f"Centro: ({row['center_x']:.2f}, {row['center_y']:.2f})")
-
             # Filtrar por confianza mínima
             df_filtrado = df[df['confidence'] >= confianza_minima]
 
-
-
-        # Dibujar el ROI en la imagen si está definido
-            if roi:
-                x_min, y_min, x_max, y_max = roi
-                print(f"\nDibujando ROI: x_min={x_min}, y_min={y_min}, x_max={x_max}, y_max={y_max}")
-                cv2.rectangle(img, (x_min, y_min), (x_max, y_max), (0, 255, 255), 2)  # Amarillo para el ROI
-
-                # Filtrar detecciones cuyo centro esté dentro del ROI
-                df_filtrado = df_filtrado[
-                    (df_filtrado['center_x'] >= x_min) & (df_filtrado['center_x'] <= x_max) &
-                    (df_filtrado['center_y'] >= y_min) & (df_filtrado['center_y'] <= y_max)
-                ]
-
-            # Dibujar detecciones filtradas
+            # Dibujar las detecciones en la imagen
             for _, row in df_filtrado.iterrows():
                 xmin, ymin, xmax, ymax = int(row['xmin']), int(row['ymin']), int(row['xmax']), int(row['ymax'])
                 class_name = row['class_name']
                 confidence = row['confidence']
                 center_x, center_y = row['center_x'], row['center_y']
 
-                # Dibujar rectángulo y centro
-                cv2.rectangle(img, (xmin, ymin), (xmax, ymax), (0, 255, 0), 2)  # Verde para detecciones filtradas
-                cv2.circle(img, (int(center_x), int(center_y)), 5, (0, 255, 0), -1)  # Centro del rectángulo
-                cv2.putText(img, f"{class_name} {confidence:.2f}", (xmin, ymin - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
-
-            # Si se proporcionan los parámetros `x_centroide` y `y_centroide`, dibujar ese punto
-            if x_centroide is not None and y_centroide is not None:
-                print(f"Marcando centroide en: ({x_centroide}, {y_centroide})")
-                # Dibujar el centroide global
-                cv2.circle(img, (int(x_centroide), int(y_centroide)), 10, (255, 0, 0), -1)  # Rojo para el centroide global
-                cv2.putText(img, "Centroide Global", (int(x_centroide), int(y_centroide) - 10),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
-
+                # Verificar si el centro de la detección está dentro del área de trabajo
+                if area_de_trabajo and self.is_point_inside_workspace(center_x, center_y, area_de_trabajo):
+                    # Si el centro está dentro del área de trabajo, lo dibujamos en verde
+                    cv2.rectangle(img, (xmin, ymin), (xmax, ymax), (0, 255, 0), 2)  # Verde para detecciones dentro
+                    cv2.circle(img, (int(center_x), int(center_y)), 5, (0, 255, 0), -1)  # Centro de la detección
+                    cv2.putText(img, f"{class_name} {confidence:.2f}", (xmin, ymin - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+                else:
+                    # Si el centro no está dentro, lo dibujamos en rojo
+                    cv2.rectangle(img, (xmin, ymin), (xmax, ymax), (0, 0, 255), 2)  # Rojo para detecciones fuera
+                    cv2.circle(img, (int(center_x), int(center_y)), 5, (0, 0, 255), -1)  # Centro de la detección en rojo
+                    cv2.putText(img, f"{class_name} {confidence:.2f}", (xmin, ymin - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
 
             return df_filtrado, img
         except Exception as e:

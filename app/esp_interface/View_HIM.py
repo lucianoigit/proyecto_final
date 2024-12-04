@@ -782,7 +782,7 @@ class View(ctk.CTk):
 
                             # Pasar el ROI calculado al procesamiento de detección de objetos
                             self.processing_service.detected_objects_in_background(
-                                img_undistorted, 0.2, detection_callback, self.mmx, self.mmy, self.roi,self.x_center,self.y_center
+                                img_undistorted, 0.2, detection_callback, self.mmx, self.mmy, self.roi,self.x_center,self.y_center,self.points
                             )
 
                         except Exception as e:
@@ -992,8 +992,7 @@ class View(ctk.CTk):
         self.offset = offset
         
         print("Calibración de ROI basada en los puntos seleccionados.")
-        self.roi = self.calculate_roi_from_points(x1, y1, x2, y2, x3, y3, x4, y4)
-        print(f"Configuración de ROI: {self.roi}")
+
         
         print("Calibración completada con éxito")
         
