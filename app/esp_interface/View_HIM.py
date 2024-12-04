@@ -783,7 +783,7 @@ class View(ctk.CTk):
 
                             # Pasar el ROI calculado al procesamiento de detección de objetos
                             self.processing_service.detected_objects_in_background(
-                                img_undistorted, 0.2, detection_callback, self.mmx, self.mmy, self.roi,self.x_center,self.y_center,self.points
+                                img_undistorted, 0.8, detection_callback, self.mmx, self.mmy, self.roi,self.x_center,self.y_center,self.points
                             )
 
                         except Exception as e:
