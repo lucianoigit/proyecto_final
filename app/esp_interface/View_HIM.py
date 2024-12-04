@@ -1086,7 +1086,7 @@ class View(ctk.CTk):
     # Método para actualizar la vista según la opción seleccionada
     def update_view(self, selected_option):
         reports = self.reports_service.get_all_rankings()  # Obtener los datos de informes
-        print("reportes", reports)
+
         if selected_option == "Lista de Clasificación":
             self.stats_panel.grid_remove()
             self.reports_scrollable_frame.grid()
@@ -1116,7 +1116,7 @@ class View(ctk.CTk):
 
         if chart_type == "pie":
             # Tamaño reducido de la figura
-            fig1, ax1 = plt.subplots(figsize=(4, 3))  # Ajustar tamaño de gráfico (ancho, alto)
+            fig1, ax1 = plt.subplots(figsize=(4, 2))  # Ajustar tamaño de gráfico (ancho, alto)
             ax1.pie(category_counts.values(), labels=category_counts.keys(), autopct='%1.1f%%')
             ax1.axis('equal')
             self.update_figure(self.category_pie_chart, fig1)
