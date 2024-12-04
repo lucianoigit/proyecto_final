@@ -21,18 +21,16 @@ class MLModelService(MLModelInterface):
     def is_point_inside_workspace(self, x, y, area_de_trabajo):
         """
         Verifica si un punto (x, y) está dentro del área de trabajo definida por un polígono.
-        `area_de_trabajo` es una lista de diccionarios con las coordenadas de los vértices del polígono.
+        `area_de_trabajo` es una lista de tuplas con las coordenadas de los vértices del polígono.
         """
-        if len(area_de_trabajo) == 4:
-            # Convertir los vértices en una lista de puntos (x, y)
-            points = [(vertex["x"], vertex["y"]) for vertex in area_de_trabajo]
-
-            # Crear un polígono a partir de los vértices del área de trabajo
-            polygon = np.array(points, np.int32)
-            polygon = polygon.reshape((-1, 1, 2))
+        if len(area_de_trabajo) == 4:  # Asegurarse de que el área de trabajo tenga 4 vértices
+            # Crear un polígono a partir de los vértices del área de trabajo (formato [(x1, y1), (x2, y2), ...])
+            polygon = np.array(area_de_trabajo, np.int32)
+            polygon = polygon.reshape((-1, 1, 2))  # Reshape necesario para cv2.pointPolygonTest
 
             # Usamos cv2.pointPolygonTest para comprobar si el punto está dentro del polígono
             return cv2.pointPolygonTest(polygon, (x, y), False) >= 0
+        
         return False
 
     def run_model(self, img_path_or_img, confianza_minima=0.8, x_centroide=None, y_centroide=None, area_de_trabajo=None):
