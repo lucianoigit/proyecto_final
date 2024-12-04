@@ -976,7 +976,7 @@ class View(ctk.CTk):
         )
         print(f"Calibración de espacio físico completada: pixels_per_mm_x={pixels_per_mm_x}, pixels_per_mm_y={pixels_per_mm_y}")
 
-        centroid = self.calculate_centroid([(x1, y1), (x2, y2), (x3, y3), (x4, y4)])
+        centroid = self.calculate_centroid(self.points)
         x_center, y_center = centroid
         print(f"Punto central calculado: x_center={x_center}, y_center={y_center}")
 
