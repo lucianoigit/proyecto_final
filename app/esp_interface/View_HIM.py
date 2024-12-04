@@ -765,7 +765,7 @@ class View(ctk.CTk):
                                 self.residue_list = residue_list
                                 print("Clasificación completada, resultados almacenados en memoria.")
                                 self.update_articles_table()
-                                self.processing_service.save_residue_list(residue_list)
+                                #self.processing_service.save_residue_list(residue_list)
                                 self.update_image(self.image_resultado)
                                 self.isProcessing = False
 
@@ -790,7 +790,7 @@ class View(ctk.CTk):
                             print(f"Error al procesar la imagen: {e}")
                             self.root.after(500, self.reset_procesamiento)
 
-                    self.root.after(0, capture_image_in_background)
+                    self.root.after(10, capture_image_in_background)
                 else:
                     print("Buffer de datos lleno. Verificando disponibilidad para enviar...")
 
@@ -1292,92 +1292,3 @@ class View(ctk.CTk):
 
         print(f"Factor de escala (píxeles a mm): {self.mmy}")
         
-        
-        
-
-    def configure_area(self):
-        """Configurar el área de trabajo mediante selección de puntos de referencia."""
-        self.points.clear()
-
-        # Configuración de la ventana y callback del mouse
-        cv2.namedWindow("Seleccione cuatro puntos", cv2.WINDOW_NORMAL)
-        cv2.setWindowProperty("Seleccione cuatro puntos", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
-        cv2.setMouseCallback("Seleccione cuatro puntos", self.mouse_callback)
-
-        while True:
-            # Captura de la imagen desde la cámara
-            frame = self.picam2.capture_array()
-            frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
-
-            # Dibujar puntos seleccionados en la imagen
-            for point in self.points:
-                cv2.circle(frame, point, 5, (0, 255, 0), -1)
-
-            # Dibujar segmentos entre puntos seleccionados
-            if len(self.points) > 1:
-                for i in range(len(self.points) - 1):
-                    cv2.line(frame, self.points[i], self.points[i+1], (0, 255, 0), 2)
-
-            # Dibujar el polígono y centroide cuando se hayan seleccionado 4 puntos
-            if len(self.points) == 4:
-                cv2.polylines(frame, [np.array(self.points)], isClosed=True, color=(255, 0, 0), thickness=2)
-
-                centroid = self.calculate_centroid(self.points)
-                cv2.circle(frame, centroid, 5, (0, 0, 255), -1)
-
-                # Mostrar mensaje de "Guardando"
-                font = cv2.FONT_HERSHEY_SIMPLEX
-                cv2.putText(frame, "Guardando...", (50, 50), font, 1, (0, 255, 255), 2, cv2.LINE_AA)
-
-                # Calcular el offset
-                self.calculate_offset_and_calibrate()
-                
-                self.x_center,self.y_center = centroid
-
-                cv2.imshow("Seleccione cuatro puntos", frame)
-                cv2.waitKey(3000)  # Espera 3 segundos antes de finalizar
-                break
-            else:
-                font = cv2.FONT_HERSHEY_SIMPLEX
-                cv2.putText(frame, 'Seleccione 4 puntos', (50, 50), font, 1, (0, 255, 255), 2, cv2.LINE_AA)
-
-            # Mostrar la imagen con los puntos seleccionados
-            cv2.imshow("Seleccione cuatro puntos", frame)
-
-            # Salir del bucle si se presiona la tecla 'q'
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break
-
-        # Cerrar la ventana de OpenCV
-        cv2.destroyAllWindows()
-
-    def mouse_callback(self, event, x, y, flags, param):
-        """Manejar eventos del mouse para seleccionar puntos."""
-        if event == cv2.EVENT_LBUTTONDOWN:
-            if len(self.points) < 4:
-                self.points.append((x, y))
-                print(f"Punto seleccionado: {(x, y)}")
-
-    def calculate_centroid(self, points):
-        """Calcula el centroide de un conjunto de puntos (vértices del polígono)."""
-        x_coords = [p[0] for p in points]
-        y_coords = [p[1] for p in points]
-        centroid_x = int(np.mean(x_coords))
-        centroid_y = int(np.mean(y_coords))
-        
-        print("centroid",centroid_x,centroid_y)
-        return (centroid_x, centroid_y)
-
-    def calculate_offset_and_calibrate(self):
-        """Calcula el offset y marca la calibración como completada."""
-        # Aquí puedes definir los puntos específicos de tu área para el cálculo de offset
-        # Supongamos que tenemos un offset calculado entre los puntos 1 y 4 (y1 y y4)
-        y1 = self.points[0][1]  # Coordenada y del primer punto
-        y4 = self.points[3][1]  # Coordenada y del cuarto punto
-
-        # Supongamos que el offset es la diferencia entre y1 y y4, ajustado a una escala adecuada
-        self.offset=-200
-
-        # Establecer el estado de calibración
-        self.calibracion = True
-        print("Calibración completada.")
