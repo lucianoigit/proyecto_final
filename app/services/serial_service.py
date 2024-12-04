@@ -133,3 +133,29 @@ class SerialService:
 
     def __del__(self):
         self.close()  # Asegurar que se cierra el puerto serial cuando se destruye la instancia
+        
+    def receiver_and_action(self, expected_message, callback):
+        """
+        Este método espera recibir un mensaje específico (como 'start') desde el puerto serial,
+        y cuando lo reciba, ejecuta el callback o realiza una acción.
+        """
+        print(f"Esperando mensaje: {expected_message}...")
+
+        try:
+            # Bloqueamos y esperamos hasta que haya un mensaje en la cola
+            response = self.message_queue.get(timeout=5)  # Espera hasta 5 segundos para recibir una respuesta
+            print(f"Respuesta recibida: {response}")
+
+            if response.strip() == expected_message.strip():
+                print(f"Mensaje esperado recibido: {expected_message}")
+                callback(response)  # Ejecutar el callback con la respuesta recibida
+            else:
+                print(f"Mensaje inesperado recibido: {response}")
+                callback("Mensaje inesperado")  # Si no es el mensaje esperado
+
+        except queue.Empty:
+            print("No se recibió ningún mensaje en el tiempo esperado.")
+            callback("No response")  # Llamar al callback con "No response"
+        except Exception as e:
+            print(f"Error al recibir datos: {e}")
+            callback("Error")  # Llamar al callback con "Error"

@@ -30,3 +30,9 @@ class CommunicationInterface(ABC):
     @abstractmethod
     def get_data(self, message, callback):
         pass
+    
+    
+
+    @abstractmethod
+    def receiver_and_action(self, expected_message, callback):
+        pass

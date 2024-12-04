@@ -878,7 +878,7 @@ class View(ctk.CTk):
         """
         
         def on_start_received(response):
-            if response == "OK":
+            if response == "START":
                 print("Mensaje START recibido. Comenzando envío de datos clasificados desde memoria.")
                 self.verificar_disponibilidad()
                 
@@ -887,7 +887,7 @@ class View(ctk.CTk):
                 self.root.after(1000, self.esperar_start)
 
         print("Esperando mensaje START para comenzar el envío.")
-        self.communication_service.send_and_receive("", "START", on_start_received)
+        self.communication_service.receiver_and_action("START", on_start_received)
 
     def verificar_disponibilidad(self):
         def change_disponibilidad(command):
