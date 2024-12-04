@@ -145,7 +145,7 @@ class ImageProcessingService(ProcessingInterface):
             # Aquí usamos el método after para actualizar la UI en el hilo principal
             if callback:
                 # Si necesitas pasar los datos de vuelta al hilo principal para actualizar la interfaz
-                if(detections == None):
+                if(resultado == None):
                     response = "FAIL"
                     callback(response)
                 else:
