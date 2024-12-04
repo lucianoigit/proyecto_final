@@ -64,7 +64,7 @@ class MLModelService(MLModelInterface):
 
 
 
-            # Dibujar el ROI en la imagen si está definido
+        # Dibujar el ROI en la imagen si está definido
             if roi:
                 x_min, y_min, x_max, y_max = roi
                 print(f"\nDibujando ROI: x_min={x_min}, y_min={y_min}, x_max={x_max}, y_max={y_max}")
@@ -87,6 +87,15 @@ class MLModelService(MLModelInterface):
                 cv2.rectangle(img, (xmin, ymin), (xmax, ymax), (0, 255, 0), 2)  # Verde para detecciones filtradas
                 cv2.circle(img, (int(center_x), int(center_y)), 5, (0, 255, 0), -1)  # Centro del rectángulo
                 cv2.putText(img, f"{class_name} {confidence:.2f}", (xmin, ymin - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+
+            # Si se proporcionan los parámetros `x_centroide` y `y_centroide`, dibujar ese punto
+            if x_centroide is not None and y_centroide is not None:
+                print(f"Marcando centroide en: ({x_centroide}, {y_centroide})")
+                # Dibujar el centroide global
+                cv2.circle(img, (int(x_centroide), int(y_centroide)), 10, (255, 0, 0), -1)  # Rojo para el centroide global
+                cv2.putText(img, "Centroide Global", (int(x_centroide), int(y_centroide) - 10),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
+
 
             return df_filtrado, img
         except Exception as e:

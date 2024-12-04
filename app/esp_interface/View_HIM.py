@@ -754,7 +754,7 @@ class View(ctk.CTk):
                             return
 
                         try:
-                            img_undistorted = self.processing_service.undistorted_image(img)
+                            img_undistorted = img
                             
                             print("Imagen capturada y corregida para distorsión.")
 
@@ -782,7 +782,7 @@ class View(ctk.CTk):
 
                             # Pasar el ROI calculado al procesamiento de detección de objetos
                             self.processing_service.detected_objects_in_background(
-                                img_undistorted, 0.2, detection_callback, self.mmx, self.mmy, self.roi
+                                img_undistorted, 0.2, detection_callback, self.mmx, self.mmy, self.roi,self.x_center,self.y_center
                             )
 
                         except Exception as e:
