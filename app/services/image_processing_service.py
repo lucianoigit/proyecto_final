@@ -155,8 +155,20 @@ class ImageProcessingService(ProcessingInterface):
 
 
     def save_residue_list(self, residue_list):
+        # Obtener el tiempo antes de la ejecución
+        start_time = time.perf_counter()
+
+        # Imprimir los residuos recolectados (esto es solo para visualización)
         print(f"Residuos recolectados en BDD:", residue_list)
-        
+
+        # Guardar todos los residuos en la base de datos
         self.residue_repository.save_all(residue_list)
-        
-    
+
+        # Obtener el tiempo después de la ejecución
+        end_time = time.perf_counter()
+
+        # Calcular el tiempo de ejecución
+        execution_time = end_time - start_time
+
+        # Imprimir el tiempo de ejecución
+        print(f"Tiempo de ejecución: {execution_time:.4f} segundos")
