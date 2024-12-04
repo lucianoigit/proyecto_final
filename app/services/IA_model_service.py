@@ -26,6 +26,7 @@ class MLModelService(MLModelInterface):
         if len(area_de_trabajo) == 4:  # Asegurarse de que el área de trabajo tenga 4 vértices
             # Crear un polígono a partir de los vértices del área de trabajo (formato [(x1, y1), (x2, y2), ...])
             polygon = np.array(area_de_trabajo, np.int32)
+            print("Área de trabajo:", area_de_trabajo)
             polygon = polygon.reshape((-1, 1, 2))  # Reshape necesario para cv2.pointPolygonTest
 
             # Usamos cv2.pointPolygonTest para comprobar si el punto está dentro del polígono
@@ -74,6 +75,10 @@ class MLModelService(MLModelInterface):
             # Filtrar por confianza mínima
             df_filtrado = df[df['confidence'] >= confianza_minima]
 
+            # Filtrar las detecciones que están dentro del área de trabajo
+            if area_de_trabajo:
+                df_filtrado = df_filtrado[df_filtrado.apply(lambda row: self.is_point_inside_workspace(row['center_x'], row['center_y'], area_de_trabajo), axis=1)]
+            
             # Dibujar el polígono del área de trabajo si está definido
             if area_de_trabajo:
                 area_points = np.array(area_de_trabajo, np.int32)
@@ -87,8 +92,8 @@ class MLModelService(MLModelInterface):
                 confidence = row['confidence']
                 center_x, center_y = row['center_x'], row['center_y']
 
-                # Verificar si el centro de la detección está dentro del área de trabajo
-                if area_de_trabajo and self.is_point_inside_workspace(center_x, center_y, area_de_trabajo):
+                # Dibujar las detecciones dentro o fuera del área de trabajo
+                if self.is_point_inside_workspace(center_x, center_y, area_de_trabajo):
                     # Si el centro está dentro del área de trabajo, lo dibujamos en verde
                     cv2.rectangle(img, (xmin, ymin), (xmax, ymax), (0, 255, 0), 2)  # Verde para detecciones dentro
                     cv2.circle(img, (int(center_x), int(center_y)), 5, (0, 255, 0), -1)  # Centro de la detección
