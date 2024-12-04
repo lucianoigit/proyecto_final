@@ -62,7 +62,7 @@ class ImageProcessingService(ProcessingInterface):
             print("Confianza mínima:", confianza_minima)
             print("ROI:", roi)
 
-            df_filtrado, img_resultado = self.use_model.run_model(img_undistorted, confianza_minima, roi,x_centroide=x_center,y_centroide=y_center,area_de_trabajo=points)
+            df_filtrado, img_resultado = self.use_model.run_model(img_undistorted, confianza_minima,x_centroide=x_center,y_centroide=y_center,area_de_trabajo=points)
            
            
            

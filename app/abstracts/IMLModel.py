@@ -7,7 +7,7 @@ class MLModelInterface(ABC):
         pass
 
     @abstractmethod
-    def run_model(self, message,confianza,roi):
+    def run_model(self,img_path_or_img, confianza_minima=0.8,x_centroide=None, y_centroide=None, area_de_trabajo=None):
         pass
 
     @abstractmethod
