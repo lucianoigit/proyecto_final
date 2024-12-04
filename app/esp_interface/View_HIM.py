@@ -1086,7 +1086,7 @@ class View(ctk.CTk):
     # Método para actualizar la vista según la opción seleccionada
     def update_view(self, selected_option):
         reports = self.reports_service.get_all_rankings()  # Obtener los datos de informes
-
+        print("reportes", reports)
         if selected_option == "Lista de Clasificación":
             self.stats_panel.grid_remove()
             self.reports_scrollable_frame.grid()
@@ -1110,7 +1110,9 @@ class View(ctk.CTk):
         self.total_residues_label.configure(text=f"Total de Residuos: {total_residues}")
 
         categories = [report.categoria for report in reports]
+        names = [report.nombre for report in reports]
         category_counts = {category: categories.count(category) for category in set(categories)}
+        name_counts = {name: names.count(name) for name in set(names)}
 
         if chart_type == "pie":
             # Tamaño reducido de la figura
@@ -1119,12 +1121,11 @@ class View(ctk.CTk):
             ax1.axis('equal')
             self.update_figure(self.category_pie_chart, fig1)
         elif chart_type == "histogram":
-            name = [report.nombre for report in reports]
-            date_counts = {name: name.count(date) for date in set(name)}
+
             
             # Tamaño reducido de la figura
             fig2, ax2 = plt.subplots(figsize=(4, 2))  # Ajustar tamaño de gráfico (ancho, alto)
-            ax2.bar(date_counts.keys(), date_counts.values())
+            ax2.bar(name_counts.keys(), name_counts.values())
             ax2.set_xlabel('Clase')
             ax2.set_ylabel('Cantidad de Residuos')
             self.update_figure(self.class_hitogram, fig2)
