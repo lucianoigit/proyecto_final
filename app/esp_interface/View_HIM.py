@@ -544,6 +544,10 @@ class View(ctk.CTk):
         instruction_label = ctk.CTkLabel(scrollable_frame, text=("Por favor, seleccione los puntos en la imagen"))
         instruction_label.grid(row=0, column=0, columnspan=2, padx=10, pady=(10, 20), sticky="ew")
 
+        # Etiqueta para mostrar el estado de la calibración
+        self.calibration_status_label = ctk.CTkLabel(scrollable_frame, text="")
+        self.calibration_status_label.grid(row=1, column=0, columnspan=2, padx=10, pady=(0, 20), sticky="ew")
+        
         self.points = []
 
         def open_camera_and_select_points():
@@ -552,6 +556,8 @@ class View(ctk.CTk):
             cv2.namedWindow("Seleccione cuatro puntos",cv2.WINDOW_NORMAL)
             cv2.setWindowProperty("Seleccione cuatro puntos",cv2.WND_PROP_FULLSCREEN,cv2.WINDOW_FULLSCREEN)
             cv2.setMouseCallback("Seleccione cuatro puntos", click_event)
+
+            self.start_button.configure(state="normal")
 
             while True:
                 frame = self.picam2.capture_array()
@@ -568,47 +574,45 @@ class View(ctk.CTk):
                 
 
                 if len(self.points) == 4:
-                    
                     ordered_points = ordenar_puntos(self.points)
+                    
+                    (x1, y1), (x2, y2), (x3, y3), (x4, y4) = self.points   
+                    
+                    self.calibrate_camera(square_size=400, physical_width_mm=200, physical_height_mm=200,
+                                      x1=x1, y1=y1, 
+                                      x2=x2, y2=y2, 
+                                      x3=x3, y3=y3,
+                                      x4=x4, y4=y4)
+
                     cv2.polylines(frame_bgr, [np.array(ordered_points)], isClosed=True, color=(0, 255, 0), thickness=2)
                     
                     font = cv2.FONT_HERSHEY_SIMPLEX
-                    cv2.putText(frame_bgr, "Guardando...", (50, 50), font, 1, (0, 255, 255), 2, cv2.LINE_AA)
+                    cv2.putText(frame_bgr, "Guardando...", (50, 450), font, 1, (0, 255, 255), 2, cv2.LINE_AA)
                     cv2.imshow("Seleccione cuatro puntos", frame_bgr)
                     cv2.waitKey(2000)
+                    
+                    # Actualizar la leyenda después de la calibración
+                    self.calibration_status_label.configure(text="La calibración se realizó con éxito")
+                    calibration_window.update()  # Asegura que el texto se muestre inmediatamente
+
+                    # Esperar dos segundos antes de cerrar la ventana
+                    calibration_window.after(2000, calibration_window.destroy)
+                    
+                    break
                 else:
                     font = cv2.FONT_HERSHEY_SIMPLEX
-                    cv2.putText(frame_bgr, 'Seleccione 4 puntos', (50, 50), font, 1, (0, 255, 255), 2, cv2.LINE_AA)
+                    cv2.putText(frame_bgr, 'Seleccione 4 puntos', (50, 450), font, 1, (0, 255, 255), 2, cv2.LINE_AA)
 
                 cv2.imshow("Seleccione cuatro puntos", frame_bgr)
 
-                if cv2.waitKey(1) & 0xFF == ord('q') or len(self.points) == 4:
+                if cv2.waitKey(1) & 0xFF == ord('q'):
                     break
-
 
             cv2.destroyAllWindows()
 
-            # if len(self.points) == 4:
-            #     (x1, y1), (x2, y2), (x3, y3), (x4, y4) = self.points
-            #     x1_entry.delete(0, ctk.END)
-            #     y1_entry.delete(0, ctk.END)
-            #     x2_entry.delete(0, ctk.END)
-            #     y2_entry.delete(0, ctk.END)
-            #     x3_entry.delete(0, ctk.END)
-            #     y3_entry.delete(0, ctk.END)
-            #     x4_entry.delete(0, ctk.END)
-            #     y4_entry.delete(0, ctk.END)
-            #     x1_entry.insert(0, str(x1))
-            #     y1_entry.insert(0, str(y1))
-            #     x2_entry.insert(0, str(x2))
-            #     y2_entry.insert(0, str(y2))
-            #     x3_entry.insert(0, str(x3))
-            #     y3_entry.insert(0, str(y3))
-            #     x4_entry.insert(0, str(x4))
-            #     y4_entry.insert(0, str(y4))
 
         def click_event(event, x, y, flags, param):
-            if event == cv2.EVENT_LBUTTONDOWN and len(self.points) < 4:
+            if event == cv2.EVENT_LBUTTONDOWN:
                 self.points.append((x, y))
                 print(f"Punto seleccionado: {x, y}")
 
@@ -616,46 +620,27 @@ class View(ctk.CTk):
             centroid = (sum([p[0] for p in puntos]) / len(puntos), sum([p[1] for p in puntos]))
             return sorted(puntos, key=lambda p: np.arctan2(p[1] - centroid[1], p[0] - centroid[0]))
 
-        def start_calibration():
-            try:
-                square_size = int(square_size_entry.get())
-                physical_width_mm = int(width_entry.get())
-                physical_height_mm = int(height_entry.get())
-                x1 = int(x1_entry.get())
-                y1 = int(y1_entry.get())
-                x2 = int(x2_entry.get())
-                y2 = int(y2_entry.get())
-                x3 = int(x3_entry.get())
-                y3 = int(y3_entry.get())
-                x4 = int(x4_entry.get())
-                y4 = int(y4_entry.get())
+        # labels = [
+        #     "Tamaño del cuadrado:", "Ancho físico (mm):", "Altura física (mm):", 
+        #     "Coordenada X1:", "Coordenada Y1:", "Coordenada X2:", "Coordenada Y2:", 
+        #     "Coordenada X3:", "Coordenada Y3:", "Coordenada X4:", "Coordenada Y4:"
+        # ]
+        # entries = []
+        # for i, label_text in enumerate(labels):
+        #     label = ctk.CTkLabel(scrollable_frame, text=label_text)
+        #     label.grid(row=i + 1, column=0, padx=5, pady=5, sticky="w")
+        #     entry = ctk.CTkEntry(scrollable_frame)
+        #     entry.grid(row=i + 1, column=1, padx=5, pady=5, sticky="ew")
+        #     entries.append(entry)
 
-                self.calibrate_camera(square_size, physical_width_mm, physical_height_mm, x1, y1, x2, y2, x3, y3, x4, y4)
-                calibration_window.destroy()
-            except ValueError:
-                print("Por favor, ingrese valores numéricos válidos.")
-
-        labels = [
-            "Tamaño del cuadrado:", "Ancho físico (mm):", "Altura física (mm):", 
-            "Coordenada X1:", "Coordenada Y1:", "Coordenada X2:", "Coordenada Y2:", 
-            "Coordenada X3:", "Coordenada Y3:", "Coordenada X4:", "Coordenada Y4:"
-        ]
-        entries = []
-        for i, label_text in enumerate(labels):
-            label = ctk.CTkLabel(scrollable_frame, text=label_text)
-            label.grid(row=i + 1, column=0, padx=5, pady=5, sticky="w")
-            entry = ctk.CTkEntry(scrollable_frame)
-            entry.grid(row=i + 1, column=1, padx=5, pady=5, sticky="ew")
-            entries.append(entry)
-
-        (square_size_entry, width_entry, height_entry, x1_entry, y1_entry, x2_entry, y2_entry, 
-        x3_entry, y3_entry, x4_entry, y4_entry) = entries
+        # (square_size_entry, width_entry, height_entry, x1_entry, y1_entry, x2_entry, y2_entry, 
+        # x3_entry, y3_entry, x4_entry, y4_entry) = entries
 
         select_points_button = ctk.CTkButton(scrollable_frame, text="Seleccionar Puntos en la Cámara", command=open_camera_and_select_points)
-        select_points_button.grid(row=len(labels) + 1, column=0, columnspan=2, padx=10, pady=10, sticky="ew")
+        select_points_button.grid(row=1, column=0, columnspan=2, padx=10, pady=10, sticky="ew")
+        # select_points_button.grid(row=len(labels) + 1, column=0, columnspan=2, padx=10, pady=10, sticky="ew")
 
-        start_button = ctk.CTkButton(scrollable_frame, text="Aplicar Calibración", command=start_calibration)
-        start_button.grid(row=len(labels) + 2, column=0, columnspan=2, padx=10, pady=10, sticky="ew")
+        # start_button.grid(row=len(labels) + 2, column=0, columnspan=2, padx=10, pady=10, sticky="ew")
 
         scrollable_frame.grid_columnconfigure(1, weight=1)
 
@@ -963,7 +948,7 @@ class View(ctk.CTk):
         img = self.processing_service.capture_image()
      
         
-    def calibrate_camera(self, square_size, physical_width_mm=200, physical_height_mm=200, x1=None, y1=None, x2=None, y2=None, x3=None, y3=None, x4=None, y4=None):
+    def calibrate_camera(self, square_size=400, physical_width_mm=200, physical_height_mm=200, x1=None, y1=None, x2=None, y2=None, x3=None, y3=None, x4=None, y4=None):
         print("Iniciando calibración por distorsión")
         self.mtx, self.dist = self.processing_service.calibrate(
             dirpath="./calibracion",
