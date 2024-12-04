@@ -826,9 +826,10 @@ class View(ctk.CTk):
                     print("Artículo enviado exitosamente.")
                 else:
                     print("Error en el envío del artículo:", response)
+
             def noDetection(response):
                 if response == "OK":
-                    print("No se detecno ningun articulo")
+                    print("No se detectó ningún artículo.")
                 else:
                     print("Error en movimiento de cinta:", response)
 
@@ -837,31 +838,31 @@ class View(ctk.CTk):
                     print("Confirmación de SEGUI recibida. Preparando para nuevo ciclo de clasificación.")
                     self.reset_procesamiento()  # Restablece para iniciar una nueva clasificación
                     self.iniciar_clasificacion()  # Captura nueva imagen y clasifica
-                    
                 else:
                     print("Error en confirmación de fin:", response)
-                    
+
             if len(self.df_filtrado) == 0:
-                
-                command = f"{0},{0},{0},-200,nada"
+                command = f"{0.00},{0.00},{0.00},-200,nada"
                 print(f"Enviando comando de único dato: {command}")
-                self.communication_service.send_and_receive(command, "OK", noDetection)        
+                self.communication_service.send_and_receive(command, "OK", noDetection)
 
             if len(self.df_filtrado) == 1:
                 # Procesar y enviar el único elemento
                 row = self.df_filtrado.iloc[0]
                 x, y, z, clase = self.coordenada_unica(row)
-                command = f"{x},{y},{z},{self.offset},{clase}"
+                # Formatear x, y, z, c con 2 decimales
+                command = f"{x:.2f},{y:.2f},{z:.2f},{self.offset:.2f},{clase}"
                 print(f"Enviando comando de único dato: {command}")
                 self.communication_service.send_and_receive(command, "OK", saveArticle)
-                
+
             if len(self.df_filtrado) > 1:
                 # Procesar y enviar múltiples elementos
                 first_command = True
                 c = self.offset
 
                 for x, y, z, clase in self.coordenadas_generator(self.df_filtrado):
-                    command = f"{x},{y},{z},{c},{clase}"
+                    # Formatear x, y, z, c con 2 decimales
+                    command = f"{x:.2f},{y:.2f},{z:.2f},{c:.2f},{clase}"
                     print(f"Enviando comando de datos: {command}")
                     self.communication_service.send_and_receive(command, "OK", saveArticle)
 
@@ -871,6 +872,7 @@ class View(ctk.CTk):
 
             print("Enviando mensaje de finalización (FIN).")
             self.communication_service.send_and_receive("FIN", "SEGUI", confirm_end)
+
 
     def esperar_start(self):
         """
