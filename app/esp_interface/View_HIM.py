@@ -535,17 +535,18 @@ class View(ctk.CTk):
     def calibrate_camera_type(self):
         calibration_window = ctk.CTkToplevel(self)
         calibration_window.title("Configuración de Calibración")
-        calibration_window.geometry("640x480")
+        calibration_window.geometry("400x300")
 
 
-        scrollable_frame = ctk.CTkScrollableFrame(calibration_window, width=400, height=500)
+        scrollable_frame = ctk.CTkScrollableFrame(calibration_window, width=380, height=280)
+        # scrollable_frame = ctk.CTkScrollableFrame(calibration_window, width=400, height=500)
         scrollable_frame.pack(fill="both", expand=True, padx=10, pady=10)
 
         instruction_label = ctk.CTkLabel(scrollable_frame, text=("Por favor, seleccione los puntos en la imagen"))
         instruction_label.grid(row=0, column=0, columnspan=2, padx=10, pady=(10, 20), sticky="ew")
 
         # Etiqueta para mostrar el estado de la calibración
-        self.calibration_status_label = ctk.CTkLabel(scrollable_frame, text="")
+        self.calibration_status_label = ctk.CTkLabel(scrollable_frame, text="", font=("Arial",12,"bold"))
         self.calibration_status_label.grid(row=1, column=0, columnspan=2, padx=10, pady=(0, 20), sticky="ew")
         
         self.points = []
