@@ -21,9 +21,11 @@ class MLModelService(MLModelInterface):
     def inicialiced_model(self,img):
         try:
             results = self.model(img)
+            
             if not results:
                 print("No se detectaron objetos.")
                 return None, None
+            return results
         except Exception as e:
             print("Fallo la inicializacion")
             return None
