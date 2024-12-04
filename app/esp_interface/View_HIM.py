@@ -745,52 +745,52 @@ class View(ctk.CTk):
                 if self.df_filtrado is None or self.df_filtrado.empty:
                     print("Entramos a la clasificación - Primer ciclo o nuevo inicio.")
 
-                    def capture_image_in_background():
-                        print("Capturando imagen en segundo plano...")
-                        img = self.processing_service.capture_image()
-                  
-                        if img is None:
-                            print("Error: No se pudo capturar la imagen. Reiniciando proceso.")
-                            self.root.after(500, self.reset_procesamiento)
-                            return
+                    #def capture_image_in_background():
+                    print("Capturando imagen en segundo plano...")
+                    img = self.processing_service.capture_image()
+                
+                    if img is None:
+                        print("Error: No se pudo capturar la imagen. Reiniciando proceso.")
+                        self.root.after(500, self.reset_procesamiento)
+                        return
 
-                        try:
-                            img_undistorted = img
-                            
-                            print("Imagen capturada y corregida para distorsión.")
+                    try:
+                        img_undistorted = img
+                        
+                        print("Imagen capturada y corregida para distorsión.")
 
-                            def detection_callback(df_filtrado, img_resultado, residue_list):
-                                self.df_filtrado = df_filtrado
-                                self.image_resultado = img_resultado
-                                self.residue_list = residue_list
-                                print("Clasificación completada, resultados almacenados en memoria.")
-                                self.update_articles_table()
-                                #self.processing_service.save_residue_list(residue_list)
-                                self.update_image(self.image_resultado)
-                                self.isProcessing = False
+                        def detection_callback(df_filtrado, img_resultado, residue_list):
+                            self.df_filtrado = df_filtrado
+                            self.image_resultado = img_resultado
+                            self.residue_list = residue_list
+                            print("Clasificación completada, resultados almacenados en memoria.")
+                            #self.update_articles_table()
+                            #self.processing_service.save_residue_list(residue_list)
+                            self.update_image(self.image_resultado)
+                            self.isProcessing = False
 
 
-                                if self.first_run:
-                                    print("Primer ciclo de clasificación: enviando datos sin esperar START.")
-                                    self.first_run = False
-                                    self.verificar_disponibilidad()
-                                else:
-                                    print("Ciclo posterior a primer ciclo: esperando disponibilidad.")
-                                    self.esperar_start()
+                            if self.first_run:
+                                print("Primer ciclo de clasificación: enviando datos sin esperar START.")
+                                self.first_run = False
+                                self.verificar_disponibilidad()
+                            else:
+                                print("Ciclo posterior a primer ciclo: esperando disponibilidad.")
+                                self.esperar_start()
 
-                            # Suponiendo que self.points contiene los cuatro puntos seleccionados
-                            
+                        # Suponiendo que self.points contiene los cuatro puntos seleccionados
+                        
 
-                            # Pasar el ROI calculado al procesamiento de detección de objetos
-                            self.processing_service.detected_objects_in_background(
-                                img_undistorted, 0.8, detection_callback, self.mmx, self.mmy, self.roi,self.x_center,self.y_center,self.points
-                            )
+                        # Pasar el ROI calculado al procesamiento de detección de objetos
+                        self.processing_service.detected_objects_in_background(
+                            img_undistorted, 0.8, detection_callback, self.mmx, self.mmy, self.roi,self.x_center,self.y_center,self.points
+                        )
 
-                        except Exception as e:
-                            print(f"Error al procesar la imagen: {e}")
-                            self.root.after(500, self.reset_procesamiento)
+                    except Exception as e:
+                        print(f"Error al procesar la imagen: {e}")
+                        self.root.after(500, self.reset_procesamiento)
 
-                    self.root.after(10, capture_image_in_background)
+                    #self.root.after(10, capture_image_in_background)
                 else:
                     print("Buffer de datos lleno. Verificando disponibilidad para enviar...")
 
