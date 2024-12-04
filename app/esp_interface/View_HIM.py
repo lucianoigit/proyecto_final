@@ -494,7 +494,7 @@ class View(ctk.CTk):
         self.communication_service.send_and_receive(command, f"{variable} {value}", callback)
 
         
-    def update_articles_table(self):
+    def ble(self):
         # Limpiar filas anteriores
         for widget in self.articles_frame.winfo_children()[5:]:  # Ignoramos las primeras 5 que son los headers
             widget.destroy()
@@ -764,8 +764,7 @@ class View(ctk.CTk):
                             self.image_resultado = img_resultado
                             self.residue_list = residue_list
                             print("Clasificación completada, resultados almacenados en memoria.")
-                            self.update_articles_table()
-                            self.processing_service.save_residue_list(residue_list)
+                            #self.update_articles_table()
                             self.update_image(self.image_resultado)
                             self.isProcessing = False
 
@@ -1116,7 +1115,7 @@ class View(ctk.CTk):
 
         if chart_type == "pie":
             # Tamaño reducido de la figura
-            fig1, ax1 = plt.subplots(figsize=(4, 2))  # Ajustar tamaño de gráfico (ancho, alto)
+            fig1, ax1 = plt.subplots(figsize=(5, 2))  # Ajustar tamaño de gráfico (ancho, alto)
             ax1.pie(category_counts.values(), labels=category_counts.keys(), autopct='%1.1f%%')
             ax1.axis('equal')
             self.update_figure(self.category_pie_chart, fig1)
@@ -1124,7 +1123,7 @@ class View(ctk.CTk):
 
             
             # Tamaño reducido de la figura
-            fig2, ax2 = plt.subplots(figsize=(4, 2))  # Ajustar tamaño de gráfico (ancho, alto)
+            fig2, ax2 = plt.subplots(figsize=(5, 2))  # Ajustar tamaño de gráfico (ancho, alto)
             ax2.bar(name_counts.keys(), name_counts.values())
             ax2.set_xlabel('Clase')
             ax2.set_ylabel('Cantidad de Residuos')

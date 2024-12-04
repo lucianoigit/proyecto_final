@@ -95,6 +95,7 @@ class ImageProcessingService(ProcessingInterface):
                     )
                     print("ResidueDTO creado:", residue)
                     residue_list.append(residue)
+                    self.residue_repository.save_all(residue_list)
                 
                 print("Lista de residuos detectados:", residue_list)
                 return df_filtrado, img_resultado, residue_list
@@ -156,34 +157,8 @@ class ImageProcessingService(ProcessingInterface):
 
  
     def save_residue_list(self, residue_list):
-        # Lista para almacenar los tiempos de ejecución de cada consulta
-        execution_times = []
 
-        # Realizar 100 consultas a la base de datos
-        for i in range(100):
-            # Obtener el tiempo antes de la ejecución
-            start_time = time.perf_counter()
+        # Guardar todos los residuos en la base de datos
+        self.residue_repository.save_all(residue_list)
 
-            # Imprimir los residuos recolectados (esto es solo para visualización)
-            print(f"Residuos recolectados en BDD ({i+1}):", residue_list)
-
-            # Guardar todos los residuos en la base de datos
-            self.residue_repository.save_all(residue_list)
-
-            # Obtener el tiempo después de la ejecución
-            end_time = time.perf_counter()
-
-            # Calcular el tiempo de ejecución
-            execution_time = end_time - start_time
-
-            # Almacenar el tiempo de ejecución
-            execution_times.append(execution_time)
-
-            # Imprimir el tiempo de ejecución de esta consulta
-            print(f"Tiempo de ejecución consulta {i+1}: {execution_time:.4f} segundos")
-
-        # Calcular el tiempo promedio de todas las consultas
-        average_time = sum(execution_times) / len(execution_times)
-
-        # Imprimir el tiempo promedio de ejecución
-        print(f"\nTiempo promedio de ejecución por consulta: {average_time:.4f} segundos")
+       
