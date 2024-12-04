@@ -918,8 +918,8 @@ class View(ctk.CTk):
         Genera la coordenada para un único dato clasificado.
         """
         x_mm, y_mm = self.transport_service.convert_pixels_to_mm(
-            (row["center_x"]) / 2 -self.x_center,
-            (row["center_y"]) / 2 -self.y_center, self.mmx, self.mmy
+            (row["center_x"]) - self.x_center,
+            (row["center_y"]) - self.y_center, self.mmx, self.mmy
         )
         clase = row["class_name"]
         print(f"Coordenada única generada: x={x_mm}, y={y_mm}, z={z}, clase={clase}")
@@ -929,8 +929,8 @@ class View(ctk.CTk):
         print("Generando coordenadas para datos clasificados.")
         for _, row in df_filtrado.iterrows():
             x_mm, y_mm = self.transport_service.convert_pixels_to_mm(
-            (row["center_x"]) / 2 -self.x_center,
-            (row["center_y"]) / 2 -self.y_center, self.mmx, self.mmy
+            (row["center_x"])  - self.x_center,
+            (row["center_y"]) - self.y_center, self.mmx, self.mmy
         )
             clase = row["class_name"]
             print(f"Coordenada generada: x={x_mm}, y={y_mm}, z={z}, clase={clase}")
@@ -984,14 +984,11 @@ class View(ctk.CTk):
 
         self.x_center = x_center
         self.y_center = y_center
-        offset = 200
-        print(f"Offset calculado: offset={offset}")
 
+        self.offset=-200
         self.square_size = square_size 
         self.calibracion = True
-        self.mmx = pixels_per_mm_x
-        self.mmy = pixels_per_mm_y
-        self.offset = offset
+
         
         print("Calibración de ROI basada en los puntos seleccionados.")
 
@@ -1379,7 +1376,7 @@ class View(ctk.CTk):
         y4 = self.points[3][1]  # Coordenada y del cuarto punto
 
         # Supongamos que el offset es la diferencia entre y1 y y4, ajustado a una escala adecuada
-        self.offset=200
+        self.offset=-200
 
         # Establecer el estado de calibración
         self.calibracion = True
