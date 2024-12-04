@@ -1159,114 +1159,6 @@ class View(ctk.CTk):
             self.communication_service.send_and_receive("CONECTAR", "Conectado", handle_response)
 
 
-    def select_point_from_camera(self):
-        """Abre la cámara para seleccionar un punto y lo envía al procesador si cumple con los límites."""
-        self.selected_point = None  # Inicializar variable para el punto seleccionado
-
-        def click_event(event, x, y, flags, param):
-            """Captura el evento de clic en la imagen y guarda las coordenadas del punto seleccionado."""
-            if event == cv2.EVENT_LBUTTONDOWN:
-                self.selected_point = (x, y)
-                print(f"Punto seleccionado: X={x}, Y={y}")
-                cv2.destroyAllWindows()  # Cerrar la ventana después de seleccionar un punto
-
-        # Abrir ventana de la cámara
-        cv2.namedWindow("Seleccione un punto", cv2.WINDOW_NORMAL)
-        cv2.resizeWindow("Seleccione un punto", 640, 480)  # Redimensionar la ventana
-        cv2.setMouseCallback("Seleccione un punto", click_event)
-
-        while True:
-            # Asegúrate de que la cámara esté correctamente inicializada
-            if self.picam2 is None:
-                print("Error: Cámara no inicializada")
-                break
-
-            frame = self.picam2.capture_array()  # Capturar frame de la cámara
-            if frame is None:
-                print("Error: No se pudo obtener un frame de la cámara")
-                break
-            
-            frame_bgr = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
-
-            # Mostrar el punto seleccionado en el frame
-            if self.selected_point:
-                cv2.circle(frame_bgr, self.selected_point, 5, (0, 255, 0), -1)  # Dibujar punto seleccionado
-
-            cv2.imshow("Seleccione un punto", frame_bgr)
-
-            # Esperar a que se seleccione un punto o se presione 'q' para salir
-            if cv2.waitKey(1) & 0xFF == ord('q') or self.selected_point:
-                break
-
-        cv2.destroyAllWindows()  # Asegurarse de que se cierre la ventana
-
-        if self.selected_point:
-            x, y = self.selected_point
-            try:
-                print(f"Punto seleccionado: X={x}, Y={y}")
-                self.process_and_validate_point(x, y)  # Llama a la función para procesar y validar el punto
-            except Exception as e:
-                print(f"Error al procesar el punto: {e}")
-        else:
-            print("No se seleccionó ningún punto.")
-
-    def process_and_validate_point(self, x_pixel, y_pixel):
-        """
-        Convierte las coordenadas de píxeles a milímetros y las valida.
-        Solo se envían las coordenadas si están dentro del rango permitido.
-        """
-        try:
-            # Asegúrate de que las relaciones estén inicializadas correctamente
-            if self.mmx == 0 or self.mmy == 0:
-                print("Error: Las relaciones mmx o mmy no están inicializadas correctamente.")
-                return
-
-            relation_x = self.mmx  # Relación píxeles a milímetros en X
-            relation_y = self.mmy  # Relación píxeles a milímetros en Y
-
-            # Asegúrate de que el servicio de transporte esté inicializado
-            if self.transport_service is None:
-                print("Error: El servicio de transporte no está inicializado.")
-                return
-
-            # Convertir los puntos de píxeles a milímetros
-            x_mm, y_mm = self.transport_service.convert_pixels_to_mm(
-                x_pixel - self.x_center, y_pixel - self.y_center, relation_y, relation_x
-            )
-            print(f"Coordenadas convertidas: X_mm={x_mm}, Y_mm={y_mm}")
-
-            # Validar si están dentro de los límites permitidos
-            if -100 <= x_mm <= 100 and -100 <= y_mm <= 100:
-                print(f"Punto válido: X_mm={x_mm}, Y_mm={y_mm}")
-                self.send_coordinates(x_mm, y_mm)
-            else:
-                print(f"Punto fuera de rango: X_mm={x_mm}, Y_mm={y_mm}. No se enviará.")
-        except Exception as e:
-            print(f"Error en la validación del punto: {e}")
-
-    def send_coordinates(self, x_mm, y_mm):
-        """Envía las coordenadas validadas al sistema."""
-        try:
-            # Asegúrate de que el comando sea válido
-            command = f"SEND_POINT {x_mm:.2f} {y_mm:.2f}"  # Crear el comando
-            print(f"Enviando comando: {command}")
-
-            # Asegúrate de que el servicio de comunicación esté disponible
-            if self.communication_service is None:
-                print("Error: El servicio de comunicación no está disponible.")
-                return
-
-            def callback(response):
-                if response == "OK":
-                    print(f"Coordenadas enviadas con éxito: X_mm={x_mm}, Y_mm={y_mm}")
-                else:
-                    print(f"Error al enviar coordenadas. Respuesta: {response}")
-
-            command = f"{x_mm},{y_mm},{-600},{self.offset},nada"
-            print(f"Enviando comando de único dato: {command}")
-            self.communication_service.send_and_receive(command, "OK", callback)
-        except Exception as e:
-            print(f"Error al enviar las coordenadas: {e}")    
     
     def calculate_scale_factor(self, reference_size=(200,200)):
         """
@@ -1294,3 +1186,9 @@ class View(ctk.CTk):
 
         print(f"Factor de escala (píxeles a mm): {self.mmy}")
         
+    def update_figure(self, container, figure):
+        for widget in container.winfo_children():
+            widget.destroy()
+        canvas = FigureCanvasTkAgg(figure, master=container)
+        canvas.draw()
+        canvas.get_tk_widget().pack(fill='both', expand=True)
