@@ -178,18 +178,18 @@ class View(ctk.CTk):
                                         border_color=self.btn_color,
                                         hover_color=self.bg_color,
                                         text_color=self.text_color)
-        self.stop_button.grid(row=1, column=0, padx=5, pady=5, sticky="ew")
+        self.stop_button.grid(row=1, column=0, columnspan=2, padx=5, pady=5, sticky="ew")
         self.stop_button.grid_remove()  # Inicialmente ocultamos el botón de detener
 
 
 
         # Área de imagen clasificada
-        self.image_label = ctk.CTkLabel(main_panel, text="Imagen clasificada aparecerá aquí", anchor="center",
+        self.image_label = ctk.CTkLabel(main_panel, text="", anchor="center",
                                         fg_color=self.img_frame_color, text_color=self.text_color)
         # self.image_label.grid(row=2, column=0, columnspan=2, padx=10, pady=10, sticky="nsew")
         self.image_label.grid(row=2, column=1, padx=10, pady=10, sticky="nsew")
 
-        self.image_label2 = ctk.CTkLabel(main_panel, text="Imagen 2", anchor="center",
+        self.image_label2 = ctk.CTkLabel(main_panel, text="", anchor="center",
                                   fg_color=self.img_frame_color, text_color=self.text_color)
         self.image_label2.grid(row=2, column=0, padx=10, pady=10, sticky="nsew")
 
@@ -744,7 +744,7 @@ class View(ctk.CTk):
         
         
     def iniciar_clasificacion(self):
-        if self.isOpen is True and self.stop_process is False:
+        if self.isOpen is True and self.stopProcess is False:
             if not self.isProcessing:
                 # print("### Iniciando proceso de clasificación ###")
                 # print("relacion x ", self.mmx)
