@@ -744,7 +744,7 @@ class View(ctk.CTk):
         
         
     def iniciar_clasificacion(self):
-        if self.isOpen is True:
+        if self.isOpen is True and self.stop_process is False:
             if not self.isProcessing:
                 # print("### Iniciando proceso de clasificación ###")
                 # print("relacion x ", self.mmx)
