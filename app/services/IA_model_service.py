@@ -50,8 +50,7 @@ class MLModelService(MLModelInterface):
     def run_model(self, img_path_or_img, confianza_minima=0.8, x_centroide=None, y_centroide=None, area_de_trabajo=None):
         """
         Ejecuta el modelo, calcula los centros de los objetos detectados, y filtra por clases y confianza.
-        Además, dibuja el centroide general y los centros de las detecciones de los objetos.
-        También dibuja el polígono del área de trabajo en la imagen.
+        Genera una imagen con todas las detecciones y devuelve un DataFrame filtrado.
         """
         try:
             # Cargar la imagen
@@ -86,45 +85,45 @@ class MLModelService(MLModelInterface):
             df['class_name'] = df['class'].apply(lambda x: names[int(x)])
 
             # Filtrar por confianza mínima
-            df_filtrado = df[df['confidence'] >= confianza_minima]
+            df = df[df['confidence'] >= confianza_minima]
+
+            # Crear una copia para trabajar en el DataFrame filtrado
+            df_filtrado = df.copy()
 
             # Filtrar las detecciones que están dentro del área de trabajo
             if area_de_trabajo:
-                df_filtrado = df_filtrado[df_filtrado.apply(lambda row: self.is_point_inside_workspace(row['center_x'], row['center_y'], area_de_trabajo), axis=1)]
-            
+                df_filtrado = df_filtrado[df_filtrado.apply(
+                    lambda row: self.is_point_inside_workspace(row['center_x'], row['center_y'], area_de_trabajo), axis=1
+                )]
+
             # Dibujar el polígono del área de trabajo si está definido
             if area_de_trabajo:
-                area_points = np.array(area_de_trabajo, np.int32)
-                area_points = area_points.reshape((-1, 1, 2))  # Reshape para cv2.polylines
-                cv2.polylines(img, [area_points], isClosed=True, color=(0, 255, 255), thickness=2)  # Dibujar el área de trabajo en amarillo
+                area_points = np.array(area_de_trabajo, np.int32).reshape((-1, 1, 2))
+                cv2.polylines(img, [area_points], isClosed=True, color=(0, 255, 255), thickness=2)  # Amarillo
 
             # Dibujar las detecciones en la imagen
-            for _, row in df_filtrado.iterrows():
+            for _, row in df.iterrows():
                 xmin, ymin, xmax, ymax = int(row['xmin']), int(row['ymin']), int(row['xmax']), int(row['ymax'])
                 class_name = row['class_name']
                 confidence = row['confidence']
                 center_x, center_y = row['center_x'], row['center_y']
 
-                # Dibujar las detecciones dentro o fuera del área de trabajo
+                # Dibujar detecciones dentro del área de trabajo en verde, fuera en rojo
                 if self.is_point_inside_workspace(center_x, center_y, area_de_trabajo):
-                    # Si el centro está dentro del área de trabajo, lo dibujamos en verde
-                    cv2.rectangle(img, (xmin, ymin), (xmax, ymax), (0, 255, 0), 2)  # Verde para detecciones dentro
-                    cv2.circle(img, (int(center_x), int(center_y)), 5, (0, 255, 0), -1)  # Centro de la detección
-                    cv2.putText(img, f"{class_name} {confidence:.2f}", (xmin, ymin - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+                    cv2.rectangle(img, (xmin, ymin), (xmax, ymax), (0, 255, 0), 2)  # Verde
+                    cv2.circle(img, (int(center_x), int(center_y)), 5, (0, 255, 0), -1)
+                    cv2.putText(img, f"{class_name} {confidence:.2f}", (xmin, ymin - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
                 else:
-                    # Si el centro no está dentro, lo dibujamos en rojo
-                    cv2.rectangle(img, (xmin, ymin), (xmax, ymax), (0, 0, 255), 2)  # Rojo para detecciones fuera
-                    cv2.circle(img, (int(center_x), int(center_y)), 5, (0, 0, 255), -1)  # Centro de la detección en rojo
-                    cv2.putText(img, f"{class_name} {confidence:.2f}", (xmin, ymin - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
+                    cv2.rectangle(img, (xmin, ymin), (xmax, ymax), (0, 0, 255), 2)  # Rojo
+                    cv2.circle(img, (int(center_x), int(center_y)), 5, (0, 0, 255), -1)
+                    cv2.putText(img, f"{class_name} {confidence:.2f}", (xmin, ymin - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
 
             # Graficar el centroide general (x_centroide, y_centroide) si están definidos
             if x_centroide is not None and y_centroide is not None:
-                cv2.circle(img, (int(x_centroide), int(y_centroide)), 5, (255, 0, 0), -1)  # Centroide general (azul)
+                cv2.circle(img, (int(x_centroide), int(y_centroide)), 5, (255, 0, 0), -1)  # Azul
                 cv2.putText(img, "Centroide", (int(x_centroide), int(y_centroide) - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
-                
-            if area_de_trabajo:
-                df_filtrado = df_filtrado[df_filtrado.apply(lambda row: self.is_point_inside_workspace(row['center_x'], row['center_y'], area_de_trabajo), axis=1)]
-            
+
+            # Retornar DataFrame filtrado y la imagen completa con todas las detecciones
             return df_filtrado, img
         except Exception as e:
             print(f"Error al ejecutar el modelo: {e}")
