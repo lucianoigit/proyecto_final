@@ -127,7 +127,7 @@ class ImageProcessingService(ProcessingInterface):
         # Crear y arrancar el hilo
         self.detection_thread = threading.Thread(target=run_detection)
         self.detection_thread.start()
-        self.hilos.append(self.detection_thread)
+
         
     def inicialiced_model_inference(self,callback=None):
         """
