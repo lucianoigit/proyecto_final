@@ -30,6 +30,7 @@ class View(ctk.CTk):
         self.picam2 = picamera  # Almacenamos la cámara para uso futuro
         self.dist = None
         self.calibracion = False
+        self.calibration_model = False
         self.reports = []
         self.image = None
         self.conected = False
@@ -62,6 +63,7 @@ class View(ctk.CTk):
         self.moving_home_max_speed=None
         self.categories = []
         self.stopProcess = False
+        self.led = False
 
         
 
@@ -71,14 +73,23 @@ class View(ctk.CTk):
         self.nav_color = "#ffffff"  # Fondo del menú de navegación
         self.img_frame_color = "#ffffff"  # Fondo del cuadro de imagen
         self.text_color = "#000000"  # Color del texto
+        self.verde = "#4CAF50"  # Verde claro, equilibrado y agradable
+        self.rojo = "#FF6347"  # Rojo tomate, un tono cálido y suave
+
+
 
         # Aplicar fondo principal
         self.configure(fg_color=self.bg_color)
 
         self.panels = {}
         self.create_widgets()
+        self.i = 0
+        
+        self.img = None
+        self.update_flag = False
 
-        threading.Thread(target=self.frame_real_time, ).start()
+        threading.Thread(target=self.frame_real_time, daemon=True).start()
+        self.update_gui()
 
     def create_widgets(self):
         self.grid_columnconfigure(1, weight=1)  # Column for content
@@ -103,7 +114,7 @@ class View(ctk.CTk):
         # Otros botones con el mismo estilo
         start_section_button = ctk.CTkButton(nav_bar, command=self.show_main_panel,
                                             text="", 
-                                            image=self.load_icon("icons/start.png"),
+                                            image=self.load_icon("icons/home.png"),
                                             width=150, height=50,
                                             fg_color=self.bg_color,
                                             border_color=self.btn_color,
@@ -148,6 +159,7 @@ class View(ctk.CTk):
 
         main_panel.grid_columnconfigure(0, weight=1)
         main_panel.grid_rowconfigure(2, weight=1)
+        
 
         main_panel.grid_columnconfigure(1, weight=1)
 
@@ -160,17 +172,8 @@ class View(ctk.CTk):
                                         border_width=2,
                                         hover_color=self.bg_color,
                                         text_color=self.text_color)
+        self.start_button.configure(state="disabled")
         self.start_button.grid(row=1, column=0, columnspan=2, padx=5, pady=5, sticky="ew") 
-        
-        """         self.test_button = ctk.CTkButton(main_panel, text="", 
-                                        command=self.select_point_from_camera, 
-                                        image=self.load_icon("icons/start.png"),
-                                        fg_color=self.img_frame_color, 
-                                        border_color=self.btn_color,              
-                                        border_width=2,
-                                        hover_color=self.bg_color,
-                                        text_color=self.text_color)
-        self.test_button.grid(row=1, column=0, padx=5, pady=5, sticky="ew") """
 
         self.stop_button = ctk.CTkButton(main_panel, text="", 
                                         command=self.on_stop_button_clicked, 
@@ -180,6 +183,7 @@ class View(ctk.CTk):
                                         border_color=self.btn_color,
                                         hover_color=self.bg_color,
                                         text_color=self.text_color)
+
         self.stop_button.grid(row=1, column=0, columnspan=2, padx=5, pady=5, sticky="ew")
         self.stop_button.grid_remove()  # Inicialmente ocultamos el botón de detener
 
@@ -201,7 +205,7 @@ class View(ctk.CTk):
         """   self.articles_frame.grid(row=3, column=0, columnspan=2, padx=10, pady=10, sticky="nsew") """
 
 
-                # Configurar las columnas de la tabla
+        # Configurar las columnas de la tabla
         # Crear la tabla con formato estilo Excel
         """  headers = ["ID", "Nombre", "Categoría", "Confianza", "Fecha"]
         col_widths = [50, 100, 100, 100, 100]  # Definir los anchos de las columnas
@@ -321,10 +325,11 @@ class View(ctk.CTk):
         calibration_button.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
 
         # Botón de calibración de modelo ML
-        ml_model_button = ctk.CTkButton(configure_panel, text="Calibración de Modelo ML", 
+        self.ml_model_button = ctk.CTkButton(configure_panel, text="Calibración de Modelo ML", 
                                         command=self.configure_classifier, fg_color=self.nav_color, 
                                         hover_color="#a3a7d9", text_color=self.text_color)
-        ml_model_button.grid(row=0, column=1, padx=10, pady=10, sticky="nsew")
+        self.ml_model_button.configure(state="disabled")
+        self.ml_model_button.grid(row=0, column=1, padx=10, pady=10, sticky="nsew")
 
     
 
@@ -424,6 +429,8 @@ class View(ctk.CTk):
                 print(f"Categoría '{name}' añadida con éxito en posición ({x}, {y}, {z}).")
                 self.categories.append((name, x, y, z))  # Guardar en memoria
                 self.update_category_frame()
+                self.calibration_model = True
+                self.start_button.configure(state="normal")
             else:
                 print(f"Error al añadir la categoría '{name}'. Respuesta: {response}")
 
@@ -549,27 +556,40 @@ class View(ctk.CTk):
         calibration_window.title("Configuración de Calibración")
         calibration_window.geometry("400x300")
 
+        calibration_window.grid_columnconfigure(0, weight=1)
+        calibration_window.grid_rowconfigure(1, weight=1)
+
         fram = ctk.CTkFrame(calibration_window, width=380, height=280)
-        fram.pack(fill="both", expand=True, padx=10, pady=10)
+        fram.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
+        fram.grid_columnconfigure(0, weight=1)
+        # fram.pack(fill="both", expand=True, padx=10, pady=10)
 
-        # scrollable_frame = ctk.CTkScrollableFrame(calibration_window, width=380, height=280)
-        # # scrollable_frame = ctk.CTkScrollableFrame(calibration_window, width=400, height=500)
-        # scrollable_frame.pack(fill="both", expand=True, padx=10, pady=10)
+        # Instruction label
+        instruction_label = ctk.CTkLabel(fram, text="Por favor, seleccione los puntos en la imagen", 
+                                            wraplength=360, justify="center")
+        instruction_label.grid(row=0, column=0, padx=10, pady=(10, 20), sticky="ew")
 
-        instruction_label = ctk.CTkLabel(fram, text=("Por favor, seleccione los puntos en la imagen"))
-        instruction_label.grid(row=0, column=0, columnspan=2, padx=10, pady=(10, 20), sticky="ew")
+        # Calibration status label (initially empty)
+        self.calibration_status_label = ctk.CTkLabel(fram, text="", 
+                                                        font=("Arial", 16, "bold"),
+                                                        text_color="green")
+        self.calibration_status_label.grid(row=2, column=0, padx=10, pady=(0, 20), sticky="ew")
 
-        
-
-        # Etiqueta para mostrar el estado de la calibración
-        self.calibration_status_label = ctk.CTkLabel(fram, text="", font=("Arial",16,"bold"))
-        self.calibration_status_label.grid(row=2, column=0, columnspan=2, padx=10, pady=(0, 20), sticky="ew")
-        
         self.points = []
+        # instruction_label = ctk.CTkLabel(fram, text=("Por favor, seleccione los puntos en la imagen"))
+        # instruction_label.grid(row=0, column=0, columnspan=2, padx=10, pady=(10, 20), sticky="ew")
+
+        
+
+        # # Etiqueta para mostrar el estado de la calibración
+        # self.calibration_status_label = ctk.CTkLabel(fram, text="", font=("Arial",16,"bold"))
+        # self.calibration_status_label.grid(row=2, column=0, columnspan=2, padx=10, pady=(0, 20), sticky="ew")
+        
+        # self.points = []
 
         def open_camera_and_select_points():
+            self.calibration_status_label.configure(text="")  # Reset status label
             self.points.clear()
-
             cv2.namedWindow("Seleccione cuatro puntos",cv2.WINDOW_NORMAL)
             cv2.setWindowProperty("Seleccione cuatro puntos",cv2.WND_PROP_FULLSCREEN,cv2.WINDOW_FULLSCREEN)
             cv2.setMouseCallback("Seleccione cuatro puntos", click_event)
@@ -591,25 +611,30 @@ class View(ctk.CTk):
                 
 
                 if len(self.points) == 4:
+
                     ordered_points = ordenar_puntos(self.points)
-                    
-                    (x1, y1), (x2, y2), (x3, y3), (x4, y4) = self.points   
+                    # (x1, y1), (x2, y2), (x3, y3), (x4, y4) = self.points   
+                    (x1, y1), (x2, y2), (x3, y3), (x4, y4) = ordered_points
+
+                    cv2.polylines(frame_bgr, [np.array(ordered_points)], isClosed=True, color=(0, 255, 0), thickness=2)
                     
                     self.calibrate_camera(square_size=400, physical_width_mm=200, physical_height_mm=200,
                                       x1=x1, y1=y1, 
                                       x2=x2, y2=y2, 
                                       x3=x3, y3=y3,
                                       x4=x4, y4=y4)
-
-                    cv2.polylines(frame_bgr, [np.array(ordered_points)], isClosed=True, color=(0, 255, 0), thickness=2)
-                    
                     font = cv2.FONT_HERSHEY_SIMPLEX
                     cv2.putText(frame_bgr, "Guardando...", (50, 450), font, 1, (0, 255, 255), 2, cv2.LINE_AA)
                     cv2.imshow("Seleccione cuatro puntos", frame_bgr)
+                    
                     cv2.waitKey(2000)
                     
                     # Actualizar la leyenda después de la calibración
                     self.calibration_status_label.configure(text="La calibración se realizó con éxito")
+                    
+                    # Hide the button after successful calibration
+                    select_points_button.grid_remove()
+
                     calibration_window.update()  # Asegura que el texto se muestre inmediatamente
 
                     # Esperar dos segundos antes de cerrar la ventana
@@ -627,7 +652,8 @@ class View(ctk.CTk):
 
             cv2.destroyAllWindows()
         select_points_button = ctk.CTkButton(fram, text="Seleccionar Puntos en la Cámara", command=open_camera_and_select_points)
-        select_points_button.grid(row=1, column=0, columnspan=2, padx=10, pady=10, sticky="ew")
+        select_points_button.grid(row=1, column=0, padx=10, pady=10, sticky="ew")
+        # select_points_button.grid(row=1, column=0, columnspan=2, padx=10, pady=10, sticky="ew")
 
         def click_event(event, x, y, flags, param):
             if event == cv2.EVENT_LBUTTONDOWN:
@@ -695,13 +721,27 @@ class View(ctk.CTk):
         self.update_reports()
 
     def show_connectivity_panel(self):
+        # if self.calibration_model and self.calibracion:
+            
+        self.ml_model_button.configure(state="normal")
+
         self.communication_service.initialize_communication()
-        self.communication_service.send_message("LED_ON")
+        if self.led == False:
+            self.communication_service.send_message("LED_ON")
+        else:
+            self.communication_service.send_message("LED_OFF")
+
         isOpen = self.communication_service.getStatus()
         
         print ("serial status", isOpen)
         
-        self.isOpen = isOpen
+        self.isOpen =  isOpen
+        self.led = not self.led
+
+  
+ 
+
+ 
 
     def hide_all_panels(self):
         for panel in self.panels.values():
@@ -954,7 +994,7 @@ class View(ctk.CTk):
         Método principal de clasificación.
         """
         if self.stopProcess == False:
-            if not self.calibracion:
+            if not self.calibracion or not self.calibration_model:
                 print("No puede iniciar sin antes calibrar la camara")
             else:
                 self.iniciar_clasificacion()  # Asegurarse de ejecutar el método correctamente
@@ -1160,22 +1200,52 @@ class View(ctk.CTk):
         except Exception as e:
             print(f"Error al actualizar la imagen: {e}")
     
-    def update_image_real_time(self, img):
+    def update_image_real_time(self):
         """
-        Actualiza la etiqueta de la interfaz para mostrar la imagen original
+        Actualiza la etiqueta de la interfaz para mostrar la imagen original.
         """
         try:
-            # imagen = Image.fromarray(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
-            imagen = Image.fromarray(img)
-            imagen = imagen.resize((320, 240), Image.LANCZOS)
-            imagen = ImageTk.PhotoImage(imagen)
-            self.image_label2.configure(image=imagen)
-            self.image_label2.image = imagen
+            if self.img is not None:
+                # Convierte la imagen de OpenCV (array de NumPy) a una imagen PIL
+                imagen = Image.fromarray(self.img)
+                imagen = imagen.resize((320, 240), Image.LANCZOS)
+                
+                # Convierte la imagen PIL directamente a un formato que CustomTkinter pueda manejar
+                ctk_image = ctk.CTkImage(light_image=imagen, size=(320, 240))
+                
+                # Actualiza la etiqueta con la nueva imagen
+                self.image_label2.configure(image=ctk_image)
+                self.image_label2.image = ctk_image  # Mantener una referencia a la imagen
         except Exception as e:
             print(f"Error al actualizar la imagen en tiempo real: {e}")
 
     def frame_real_time(self):
-        self.update_image_real_time(img=self.picam2.capture_array("main"))
+        while True:  # Bucle infinito para capturar imágenes continuamente
+            start_time = time.time()
+            img = self.picam2.capture_array("main")  # Captura la imagen
+
+            # Guardamos la imagen y establecemos el flag de actualización
+            self.img = img
+            self.update_flag = True
+
+            # Controlamos la frecuencia de actualización (por ejemplo, 20 FPS)
+            elapsed_time = time.time() - start_time
+            time_to_sleep = max(0, (1/20) - elapsed_time)  # Controla a 20 FPS
+            time.sleep(time_to_sleep)
+
+    def update_gui(self):
+        """
+        Actualiza la interfaz en el hilo principal.
+        """
+        if self.update_flag:
+            # Si hay una nueva imagen disponible, actualizamos la interfaz
+            self.update_image_real_time()
+
+            # Reseteamos el flag de actualización
+            self.update_flag = False
+        
+        # Llamamos nuevamente a `update_gui()` para seguir actualizando la interfaz
+        self.root.after(50, self.update_gui)  # Llamar cada 50 ms (20 FPS)
 
 
     def start_communication(self):
