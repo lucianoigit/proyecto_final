@@ -147,6 +147,8 @@ class View(ctk.CTk):
         main_panel.grid_columnconfigure(0, weight=1)
         main_panel.grid_rowconfigure(2, weight=1)
 
+        main_panel.grid_columnconfigure(1, weight=1)
+
         # Crear botón de inicio y detener
         self.start_button = ctk.CTkButton(main_panel, text="", 
                                         command=self.on_start_button_clicked, 
@@ -184,7 +186,12 @@ class View(ctk.CTk):
         # Área de imagen clasificada
         self.image_label = ctk.CTkLabel(main_panel, text="Imagen clasificada aparecerá aquí", anchor="center",
                                         fg_color=self.img_frame_color, text_color=self.text_color)
-        self.image_label.grid(row=2, column=0, columnspan=2, padx=10, pady=10, sticky="nsew")
+        # self.image_label.grid(row=2, column=0, columnspan=2, padx=10, pady=10, sticky="nsew")
+        self.image_label.grid(row=2, column=0, padx=10, pady=10, sticky="nsew")
+
+        self.image_label2 = ctk.CTkLabel(main_panel, text="Imagen 2", anchor="center",
+                                  fg_color=self.img_frame_color, text_color=self.text_color)
+        self.image_label2.grid(row=2, column=1, padx=10, pady=10, sticky="nsew")
 
 
         # Tabla para mostrar los últimos 5 artículos clasificados
@@ -749,6 +756,7 @@ class View(ctk.CTk):
                     #def capture_image_in_background():
                     print("Capturando imagen en segundo plano...")
                     img = self.processing_service.capture_image()
+                    self.update_image_real_time(img=img)
                 
                     if img is None:
                         print("Error: No se pudo capturar la imagen. Reiniciando proceso.")
@@ -1146,11 +1154,21 @@ class View(ctk.CTk):
             imagen = ImageTk.PhotoImage(imagen)
             self.image_label.configure(image=imagen)
             self.image_label.image = imagen
-
-
-
         except Exception as e:
             print(f"Error al actualizar la imagen: {e}")
+    
+    def update_image_real_time(self, img):
+        """
+        Actualiza la etiqueta de la interfaz para mostrar la imagen original
+        """
+        try:
+            imagen = Image.fromarray(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
+            imagen = imagen.resize((320, 240), Image.LANCZOS)
+            imagen = ImageTk.PhotoImage(imagen)
+            self.image_label2.configure(image=imagen)
+            self.image_label2.image = imagen
+        except Exception as e:
+            print(f"Error al actualizar la imagen en tiempo real: {e}")
 
 
 
