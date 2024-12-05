@@ -548,8 +548,7 @@ class View(ctk.CTk):
         instruction_label = ctk.CTkLabel(fram, text=("Por favor, seleccione los puntos en la imagen"))
         instruction_label.grid(row=0, column=0, columnspan=2, padx=10, pady=(10, 20), sticky="ew")
 
-        select_points_button = ctk.CTkButton(fram, text="Seleccionar Puntos en la Cámara", command=open_camera_and_select_points)
-        select_points_button.grid(row=1, column=0, columnspan=2, padx=10, pady=10, sticky="ew")
+        
 
         # Etiqueta para mostrar el estado de la calibración
         self.calibration_status_label = ctk.CTkLabel(fram, text="", font=("Arial",16,"bold"))
@@ -616,7 +615,8 @@ class View(ctk.CTk):
                     break
 
             cv2.destroyAllWindows()
-
+        select_points_button = ctk.CTkButton(fram, text="Seleccionar Puntos en la Cámara", command=open_camera_and_select_points)
+        select_points_button.grid(row=1, column=0, columnspan=2, padx=10, pady=10, sticky="ew")
 
         def click_event(event, x, y, flags, param):
             if event == cv2.EVENT_LBUTTONDOWN:
@@ -1130,13 +1130,22 @@ class View(ctk.CTk):
         Actualiza la etiqueta de la interfaz para mostrar la imagen procesada, incluyendo el ROI.
         """
         try:
-            img_pil = Image.fromarray(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
+            # img_pil = Image.fromarray(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
 
-            # Dibujar el ROI en la imagen si está definido
+            # # Dibujar el ROI en la imagen si está definido
 
-            ctk_img = ctk.CTkImage(img_pil, size=(640, 480))
-            self.image_label.configure(image=ctk_img)
-            self.image_label.image = ctk_img
+            # ctk_img = ctk.CTkImage(img_pil, size=(640, 480))
+            # self.image_label.configure(image=ctk_img)
+            # self.image_label.image = ctk_img
+
+
+            imagen = Image.fromarray(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
+            imagen = imagen.resize((320, 240), Image.LANCZOS)
+            imagen = ImageTk.PhotoImage(imagen)
+            self.image_label.configure(image=imagen)
+            self.image_label.image = imagen
+
+
 
         except Exception as e:
             print(f"Error al actualizar la imagen: {e}")
