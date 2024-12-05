@@ -12,7 +12,7 @@ from app.abstracts.ICommunication import CommunicationInterface
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from app.abstracts.IProcessing import ProcessingInterface
 import sys
-
+import threading
 from app.services.reports_service import ReportsService
 
 class View(ctk.CTk):
@@ -77,6 +77,8 @@ class View(ctk.CTk):
 
         self.panels = {}
         self.create_widgets()
+
+        threading.Thread(target=self.frame_real_time, ).start()
 
     def create_widgets(self):
         self.grid_columnconfigure(1, weight=1)  # Column for content
@@ -349,9 +351,9 @@ class View(ctk.CTk):
         classifier_window.title("Configuración de Clasificador")
         classifier_window.geometry("640x480")
 
-        # Botón para actualizar interfaz
-        refresh_button = ctk.CTkButton(classifier_window, text="Actualizar Interfaz", command=self.update_category_frame)
-        refresh_button.grid(row=0, column=0, padx=10, pady=10, columnspan=2)
+        # # Botón para actualizar interfaz
+        # refresh_button = ctk.CTkButton(classifier_window, text="Actualizar Interfaz", command=self.update_category_frame)
+        # refresh_button.grid(row=0, column=0, padx=10, pady=10, columnspan=2)
 
         # Frame para mostrar y configurar categorías
         self.category_frame = ctk.CTkFrame(classifier_window)
@@ -745,6 +747,7 @@ class View(ctk.CTk):
         
     def iniciar_clasificacion(self):
         if self.isOpen is True and self.stopProcess is False:
+
             if not self.isProcessing:
                 # print("### Iniciando proceso de clasificación ###")
                 # print("relacion x ", self.mmx)
@@ -950,7 +953,6 @@ class View(ctk.CTk):
         """
         Método principal de clasificación.
         """
-        self.update_image_real_time(img=self.picam2.capture_array("main"))
         if self.stopProcess == False:
             if not self.calibracion:
                 print("No puede iniciar sin antes calibrar la camara")
@@ -1163,7 +1165,8 @@ class View(ctk.CTk):
         Actualiza la etiqueta de la interfaz para mostrar la imagen original
         """
         try:
-            imagen = Image.fromarray(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
+            # imagen = Image.fromarray(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
+            imagen = Image.fromarray(img)
             imagen = imagen.resize((320, 240), Image.LANCZOS)
             imagen = ImageTk.PhotoImage(imagen)
             self.image_label2.configure(image=imagen)
@@ -1171,7 +1174,8 @@ class View(ctk.CTk):
         except Exception as e:
             print(f"Error al actualizar la imagen en tiempo real: {e}")
 
-
+    def frame_real_time(self):
+        self.update_image_real_time(img=self.picam2.capture_array("main"))
 
 
     def start_communication(self):
