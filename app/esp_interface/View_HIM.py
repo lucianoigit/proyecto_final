@@ -158,7 +158,7 @@ class View(ctk.CTk):
                                         border_width=2,
                                         hover_color=self.bg_color,
                                         text_color=self.text_color)
-        self.start_button.grid(row=1, column=0, padx=5, pady=5, sticky="ew") 
+        self.start_button.grid(row=1, column=0, columnspan=2, padx=5, pady=5, sticky="ew") 
         
         """         self.test_button = ctk.CTkButton(main_panel, text="", 
                                         command=self.select_point_from_camera, 
@@ -187,11 +187,11 @@ class View(ctk.CTk):
         self.image_label = ctk.CTkLabel(main_panel, text="Imagen clasificada aparecerá aquí", anchor="center",
                                         fg_color=self.img_frame_color, text_color=self.text_color)
         # self.image_label.grid(row=2, column=0, columnspan=2, padx=10, pady=10, sticky="nsew")
-        self.image_label.grid(row=2, column=0, padx=10, pady=10, sticky="nsew")
+        self.image_label.grid(row=2, column=1, padx=10, pady=10, sticky="nsew")
 
         self.image_label2 = ctk.CTkLabel(main_panel, text="Imagen 2", anchor="center",
                                   fg_color=self.img_frame_color, text_color=self.text_color)
-        self.image_label2.grid(row=2, column=1, padx=10, pady=10, sticky="nsew")
+        self.image_label2.grid(row=2, column=0, padx=10, pady=10, sticky="nsew")
 
 
         # Tabla para mostrar los últimos 5 artículos clasificados
@@ -756,7 +756,7 @@ class View(ctk.CTk):
                     #def capture_image_in_background():
                     print("Capturando imagen en segundo plano...")
                     img = self.processing_service.capture_image()
-                    self.update_image_real_time(img=img)
+                    
                 
                     if img is None:
                         print("Error: No se pudo capturar la imagen. Reiniciando proceso.")
@@ -950,6 +950,7 @@ class View(ctk.CTk):
         """
         Método principal de clasificación.
         """
+        self.update_image_real_time(img=self.picam2.capture_array("main"))
         if self.stopProcess == False:
             if not self.calibracion:
                 print("No puede iniciar sin antes calibrar la camara")
