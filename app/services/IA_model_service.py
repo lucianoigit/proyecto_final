@@ -121,7 +121,10 @@ class MLModelService(MLModelInterface):
             if x_centroide is not None and y_centroide is not None:
                 cv2.circle(img, (int(x_centroide), int(y_centroide)), 5, (255, 0, 0), -1)  # Centroide general (azul)
                 cv2.putText(img, "Centroide", (int(x_centroide), int(y_centroide) - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
-
+                
+            if area_de_trabajo:
+                df_filtrado = df_filtrado[df_filtrado.apply(lambda row: self.is_point_inside_workspace(row['center_x'], row['center_y'], area_de_trabajo), axis=1)]
+            
             return df_filtrado, img
         except Exception as e:
             print(f"Error al ejecutar el modelo: {e}")
