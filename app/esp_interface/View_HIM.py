@@ -940,7 +940,7 @@ class View(ctk.CTk):
         """
         Método principal de clasificación.
         """
-        if self.stopProcess == True:
+        if self.stopProcess == False:
             if not self.calibracion:
                 print("No puede iniciar sin antes calibrar la camara")
             else:
