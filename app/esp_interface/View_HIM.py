@@ -61,6 +61,7 @@ class View(ctk.CTk):
         self.moving_conveyor_belt_speed=None
         self.moving_home_max_speed=None
         self.categories = []
+        self.stopProcess = False
 
         
 
@@ -705,10 +706,12 @@ class View(ctk.CTk):
             self.message_entry.delete(0, ctk.END)
 
     def start_process(self):
+        self.stopProcess = False
         self.clasificacion()
 
     def stop_process(self):
-        pass
+        self.stopProcess = True
+        
 
 
 
@@ -937,13 +940,14 @@ class View(ctk.CTk):
         """
         Método principal de clasificación.
         """
-        
-        if not self.calibracion:
-            print("No puede iniciar sin antes calibrar la camara")
+        if self.stopProcess == True:
+            if not self.calibracion:
+                print("No puede iniciar sin antes calibrar la camara")
+            else:
+                self.iniciar_clasificacion()  # Asegurarse de ejecutar el método correctamente
+            # Iniciar la clasificación de manera continua
         else:
-            self.iniciar_clasificacion()  # Asegurarse de ejecutar el método correctamente
-        # Iniciar la clasificación de manera continua
-        
+            print("Error, no se puede iniciar la clasificacion")
   
     def tomar_foto(self):
         img = self.processing_service.capture_image()
